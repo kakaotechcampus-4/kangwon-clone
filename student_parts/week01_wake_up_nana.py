@@ -172,13 +172,44 @@ def personal_create_schedule(
 
     # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
 
+    # 1. schedule dict 생성
+    schedule = {
+        "id": _new_personal_id(),
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees or [],
+        "created_at": _now_iso(),
+        "session_id": current_session_scope(),
+    }
+
+    # 2. 전역 저장소 (PERSONAL_SCHEDULES)에 추가
+    PERSONAL_SCHEDULES.append(schedule)
+
+    # 3. 반환 JSON 생성
+    return _json(schedule)
+
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
+    
+    # 1. 현재 세션 일정 가져오기
+    schedules = _current_session_schedules()
+
+    # 2. 날짜 필터 적용
+    if date_from:
+        # date_from 이상인 일정만 남기기
+        schedules = [s for s in schedules if s["date"] >= date_from]
+    if date_to:
+        # date_to 이하인 일정만 남기기
+        schedules = [s for s in schedules if s["date"] <= date_to]
+
+    # 3. 반환 JSON 생성
+    return _json({"schedules": schedules})
 
 
 @tool
@@ -186,7 +217,17 @@ def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
 
     # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    session_id = current_session_scope()
+    before = len(PERSONAL_SCHEDULES)
+
+    # 1. 현재 세션 일정만 남기고, schedule_id가 일치하는 일정은 제거
+    PERSONAL_SCHEDULES[:] = [s for s in PERSONAL_SCHEDULES if not (s["id"] == schedule_id and _schedule_scope(s) == session_id)]
+
+    # 2. 삭제된 일정 수 계산
+    deleted_count = before - len(PERSONAL_SCHEDULES)
+
+    # 3. 반환 JSON 생성
+    return _json({"deleted_count": deleted_count})
 
 
 def week01_tools() -> list[Any]:
