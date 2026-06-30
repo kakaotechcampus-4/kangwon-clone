@@ -27,7 +27,7 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = "당신은 개인 일정 관리 매니저입니다. 오늘 날짜는 2026-06-30이고, 일정 생성/수정/삭제를 다음 tool을 이용합니다.\
+CHAT_MEMORY_PROMPT = f"당신은 개인 일정 관리 매니저입니다. 오늘 날짜는 {current_app_date_iso()}이고, 일정 생성/수정/삭제를 다음 tool을 이용합니다.\
                         personal_create_schedule/personal_list_schedules/personal_delete_schedule"
 
 def join_system_prompt(parts: list[str]) -> str:
