@@ -174,6 +174,7 @@ def personal_create_schedule(
     if attendees is None:
         attendees = []
 
+    # schedule 생성
     schedule = {
         "id": _new_personal_id(),
         "title": title,
@@ -185,13 +186,15 @@ def personal_create_schedule(
         "session_id": current_session_scope(),
     }
     
+    
     PERSONAL_SCHEDULES.append(schedule)
     
-    return _json(
+    # json 반환
+    return _json({
         "ok": True,
         "tool_name": "personal_create_schedule",
         "created_at": _now_iso(),
-    )
+    })
 
 
 @tool
