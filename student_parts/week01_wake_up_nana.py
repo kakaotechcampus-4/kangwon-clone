@@ -27,7 +27,9 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = """
+
+"""
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -195,20 +197,21 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
 
-    schedules_list = []
+    schedules_list = _current_session_schedules()
+    result_list = []
 
     if date_from and date_to:
-        for schedule in PERSONAL_SCHEDULES:
+        for schedule in schedules_list:
             if date_from <= schedule["date"] and date_to >= schedule["date"]:
-                schedules_list.append(schedule)
+                result_list.append(schedule)
     elif date_from and not date_to:
-        for schedule in PERSONAL_SCHEDULES:
+        for schedule in schedules_list:
             if date_from <= schedule["date"]:
-                schedules_list.append(schedule)
+                result_list.append(schedule)
     elif not date_from and date_to:
-        for schedule in PERSONAL_SCHEDULES:
+        for schedule in schedules_list:
             if date_to >= schedule["date"]:
-                schedules_list.append(schedule)
+                result_list.append(schedule)
     else:
         schedules_list = PERSONAL_SCHEDULES[:]
 
@@ -256,6 +259,8 @@ def week01_prompt_parts() -> list[str]:
 
     return [
         # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        f"현재 날짜는 {_now_iso()}다.",
+        CHAT_MEMORY_PROMPT
     ]
 
 
