@@ -180,7 +180,7 @@ def personal_create_schedule(
         "date": date,
         "start_time": start_time,
         "end_time": end_time,
-        "attendeews": attendees or [],
+        "attendees": attendees or [],
         "created_at": _now_iso(),
         "session_id": current_session_scope(),
     }
