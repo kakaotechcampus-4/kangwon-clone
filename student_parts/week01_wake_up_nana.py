@@ -224,9 +224,32 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
-
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    
+    schedules = _current_session_schedules()
+    
+    #삭제 전 길이 구하기
+    before_len = len(schedule)
+    
+    # schedule id 가 같으면 삭제하기
+    for index, schedule in enumerate(schedules):
+        if schedule["id"] == schedule_id:
+            schedules.pop(index)
+            break
+    
+    # 삭제 되었나 확인
+    after_len = len(schedules)
+    deleted = before_len - after_len
+    
+    # 대입
+    PERSONAL_SCHEDULES[:] = schedules
+    
+    # json 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_delete_schedule",
+        "deleted": deleted
+    })
+        
 
 
 def week01_tools() -> list[Any]:
