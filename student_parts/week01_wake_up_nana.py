@@ -170,26 +170,19 @@ def personal_create_schedule(
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
     # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
+    schedule_dict = {
+        "id": _new_personal_id(),
+        "created_at": _now_iso(),
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees if attendees is not None else [],
+        "session_id": current_session_scope()
+    }
 
-    try:
-        schedule_dict = {
-            "id": _new_personal_id(),
-            "created_at": _now_iso(),
-            "title": title,
-            "date": date,
-            "start_time": start_time,
-            "end_time": end_time,
-            "attendees": attendees if attendees is not None else [],
-            "session_id": current_session_scope()
-        }
-        PERSONAL_SCHEDULES.append(schedule_dict)
-    except:
-        return _json({
-            "ok": False,
-            "tool_name": "personal_create_schedule",
-            "created_schedule": schedule_dict
-        })
-    
+    PERSONAL_SCHEDULES.append(schedule_dict)
+
     return _json({
         "ok": True,
         "tool_name": "personal_create_schedule",
@@ -203,27 +196,22 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
 
     schedules_list = []
-    try:
-        if date_from and date_to:
-            for schedule in PERSONAL_SCHEDULES:
-                if date_from <= schedule["date"] and date_to >= schedule["date"]:
-                    schedules_list.append(schedule)
-        elif date_from and not date_to:
-            for schedule in PERSONAL_SCHEDULES:
-                if date_from <= schedule["date"]:
-                    schedules_list.append(schedule)
-        elif not date_from and date_to:
-            for schedule in PERSONAL_SCHEDULES:
-                if date_to >= schedule["date"]:
-                    schedules_list.append(schedule)
-        else:
-            schedules_list = PERSONAL_SCHEDULES[:]
-    except:
-        return _json({
-            "ok": False,
-            "tool_name": "personal_list_schedules",
-            "schedules": schedules_list
-        })
+
+    if date_from and date_to:
+        for schedule in PERSONAL_SCHEDULES:
+            if date_from <= schedule["date"] and date_to >= schedule["date"]:
+                schedules_list.append(schedule)
+    elif date_from and not date_to:
+        for schedule in PERSONAL_SCHEDULES:
+            if date_from <= schedule["date"]:
+                schedules_list.append(schedule)
+    elif not date_from and date_to:
+        for schedule in PERSONAL_SCHEDULES:
+            if date_to >= schedule["date"]:
+                schedules_list.append(schedule)
+    else:
+        schedules_list = PERSONAL_SCHEDULES[:]
+
     return _json({
         "ok": True,
         "tool_name": "personal_list_schedules",
