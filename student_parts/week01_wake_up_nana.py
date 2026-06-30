@@ -219,12 +219,12 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     except:
         return _json({
             "ok": False,
-            "tool_name": personal_list_schedules,
+            "tool_name": "personal_list_schedules",
             "schedules": schedules_list
         })
     return _json({
         "ok": True,
-        "tool_name": personal_list_schedules,
+        "tool_name": "personal_list_schedules",
         "schedules": schedules_list
     })
 
