@@ -206,7 +206,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     try:
         if date_from and date_to:
             for schedule in PERSONAL_SCHEDULES:
-                if date_from <= schedule["date"] and date_to > schedule["date"]:
+                if date_from <= schedule["date"] and date_to >= schedule["date"]:
                     schedules_list.append(schedule)
         elif date_from and not date_to:
             for schedule in PERSONAL_SCHEDULES:
@@ -214,7 +214,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
                     schedules_list.append(schedule)
         elif not date_from and date_to:
             for schedule in PERSONAL_SCHEDULES:
-                if date_to > schedule["date"]:
+                if date_to >= schedule["date"]:
                     schedules_list.append(schedule)
         else:
             schedules_list = PERSONAL_SCHEDULES[:]
