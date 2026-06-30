@@ -184,17 +184,32 @@ def personal_create_schedule(title: str, date: str, start_time: str, end_time: s
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
-
-    # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
-
+    result = _current_session_schedules()
+    if date_from is not None:
+        result = [s for s in result if s["date"] >= date_from]
+    if date_to is not None:
+        result = [s for s in result if s["date"] <= date_to]
+    
+        
+    return json.dumps(
+    {"ok": True, "tool_name": "personal_list_schedules", "schedules": result},
+    ensure_ascii=False,
+)
 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
-
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    scope = current_session_scope()
+    before_len = len(PERSONAL_SCHEDULES)
+    #삭제가 아닌 조건에 부합하지 않는 리스트를 따로 저장
+    new_list = [s for s in PERSONAL_SCHEDULES if not (s["id"] == schedule_id and _schedule_scope(s) == scope)]
+    PERSONAL_SCHEDULES[:] = new_list
+    deleted = before_len - len(PERSONAL_SCHEDULES)
+        
+    return json.dumps(
+    {"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted},
+    ensure_ascii=False,
+)
 
 
 def week01_tools() -> list[Any]:
