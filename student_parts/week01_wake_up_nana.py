@@ -228,7 +228,7 @@ def personal_delete_schedule(schedule_id: str) -> str:
     schedules = _current_session_schedules()
     
     #삭제 전 길이 구하기
-    before_len = len(schedule)
+    before_len = len(schedules)
     
     # schedule id 가 같으면 삭제하기
     for index, schedule in enumerate(schedules):
