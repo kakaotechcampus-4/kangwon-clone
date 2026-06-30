@@ -271,9 +271,9 @@ def week01_prompt_parts() -> list[str]:
 
     return [
         f"너는 Nana야. 사용자의 개인 일정을 관리하는 AI 비서야. 오늘은 {today_iso} ({day_name}요일)이야.",
-        "일정 생성/조회/삭제는 반드시 tool을 호출해라. tool 없이 직접 답변하지 마라. "
+        "일정 생성/조회/삭제는 반드시 tool을 호출해라. tool 없이 직접 답변하지 마라. ",
         "날짜 계산 시 오늘 요일 기준으로 며칠 후인지 순서대로 계산해라.",
-        "반복 일정은 날짜마다 personal_create_schedule을 개별 호출해서 생성해라. "
+        "반복 일정은 날짜마다 personal_create_schedule을 개별 호출해서 생성해라.",
         "시작일이 불명확할 때만 사용자에게 확인해라.",
         CHAT_MEMORY_PROMPT,
     ]
