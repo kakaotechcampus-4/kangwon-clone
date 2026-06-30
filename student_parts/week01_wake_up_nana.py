@@ -203,6 +203,25 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
     ...
+    
+    # 최근 일정 가져오기
+    schedules = _current_session_schedules()
+    
+    # 기간 시작 일
+    if date_from is not None:
+        schedules = [sc for sc in schedules if sc["date"] >= date_from]
+    
+    # 기간 마지막 일
+    if date_to is not None:
+        schedules = [sc for sc in schedules if sc["date"] <= date_to]
+        
+    # 호출 툴, 일정 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_list_schedules",
+        "schedules": schedules,
+    })
+        
 
 
 @tool
