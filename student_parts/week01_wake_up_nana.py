@@ -216,8 +216,31 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
 
-
-
+    schedules_list = []
+    try:
+        if date_from and date_to:
+            for schedule in PERSONAL_SCHEDULES:
+                if date_from <= schedule["date"] and date_to > schedule["date"]:
+                    schedules_list.append(schedule)
+        elif date_from and not date_to:
+            for schedule in PERSONAL_SCHEDULES:
+                if date_from <= schedule["date"]:
+                    schedules_list.append(schedule)
+        elif not date_from and date_to:
+            for schedule in PERSONAL_SCHEDULES:
+                if date_to > schedule["date"]:
+                    schedules_list.append(schedule)
+    except:
+        return _json({
+            "ok": False,
+            "tool_name": personal_list_schedules,
+            "schedules": schedules_list
+        })
+    return _json({
+        "ok": True,
+        "tool_name": personal_list_schedules,
+        "schedules": schedules_list
+    })
 
 #   3. personal_delete_schedule
 #      - schedule_id가 일치하면서 현재 대화 범위에 속한 일정만 삭제합니다.
