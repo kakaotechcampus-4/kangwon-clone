@@ -216,6 +216,8 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
             for schedule in PERSONAL_SCHEDULES:
                 if date_to > schedule["date"]:
                     schedules_list.append(schedule)
+        else:
+            schedules_list = PERSONAL_SCHEDULES[:]
     except:
         return _json({
             "ok": False,
