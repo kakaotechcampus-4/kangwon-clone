@@ -1,7 +1,7 @@
 # 프로젝트 개요
 
-Kanana 강의용 일정 Agent 실습 프로젝트입니다.
-학생은 `student_parts/` 내 파일에 TODO 함수를 구현하고, Gradio 채팅 UI와 상세 trace에서 결과를 확인합니다.
+일정 Agent 실습 프로젝트입니다.
+`student_parts/` 내 파일에 TODO 함수를 구현하고, Gradio 채팅 UI와 상세 trace에서 결과를 확인합니다.
 
 | 경로 | 역할 |
 | --- | --- |
@@ -15,6 +15,7 @@ Kanana 강의용 일정 Agent 실습 프로젝트입니다.
 - 구현은 `student_parts/` 내부 파일로만 한정한다.
 - `fixed/`는 참고 전용이며 수정하지 않는다.
 - 새 의존성이 필요하면 `uv add`를 사용하고 `fixed/`의 import를 바꾸지 않는다.
+- 수정 가능한 파일은 프롬프트에서 지정해준 파일만 수정 가능하다.
 
 # 개발 워크플로
 
