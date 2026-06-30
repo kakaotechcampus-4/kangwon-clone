@@ -27,8 +27,9 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = "always use honorific language in korean for your answer, and remember the current chat memory."
 
+#한국어보다 영어를 더 잘 이해한다고 해서 영어로 써봤습니다, 근데 입력을 영어로"한국어 존대말을 써!" 라고 했는데 이러면 입력이 영어니까 영어로 출력되는 경우도 있을까요?!
 
 def join_system_prompt(parts: list[str]) -> str:
     """주차별 prompt 조각을 읽기 쉬운 누적 system prompt로 합칩니다."""
@@ -136,7 +137,6 @@ def join_system_prompt(parts: list[str]) -> str:
 #   - ensure_demo_personal_schedule()
 #     데모/테스트에서 빈 일정 저장소를 피하려고 기본 임시 일정을 하나 넣습니다. 이미 일정이 있으면 아무 일도 하지 않습니다.
 
-
 def _json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False)
 
@@ -169,15 +169,53 @@ def personal_create_schedule(
     attendees: list[str] | None = None,
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
-
+    if attendees is None:
+        attendees = []
+    session_id = current_session_scope()
+    schedule = {
+        "id": _new_personal_id(),
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees,
+        "created_at": _now_iso(),
+        "session_id": session_id,
+    }
+    PERSONAL_SCHEDULES.append(schedule)
+    return _json({
+        "ok": True,
+        "tool_name": "personal_create_schedule",
+        "created_schedule": schedule,
+    })
     # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
     ...
-
+# 구현 대상
+#   1. personal_create_schedule
+#      - title/date/start_time/end_time/attendees 인자로 schedule dict를 만듭니다.
+#      - id는 "personal_" 접두어가 붙은 임시 ID, created_at은 현재 시각으로 채웁니다.
+#      - attendees가 None이면 빈 list로 바꾸고, session_id=current_session_scope()를 함께 넣어
+#        PERSONAL_SCHEDULES에 append합니다.
+#      - 반환 JSON에는 ok, tool_name, created_schedule을 넣습니다.
+#      - Week 1 반환에는 structured_request나 sqlite_save를 넣지 않습니다.
+#
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
-
+    schedules = _current_session_schedules()
+    
+    if date_from is not None:
+        schedules = [s for s in schedules if s.get("date") >= date_from]
+        
+    if date_to is not None:
+        schedules = [s for s in schedules if s.get("date") <= date_to]
+        
+    return _json({
+        "ok": True,
+        "tool_name": "personal_list_schedules",
+        "schedules": schedules,
+    })
     # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
     ...
 
@@ -185,7 +223,21 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
-
+    session_id = current_session_scope()
+    
+    before = len(PERSONAL_SCHEDULES)
+    
+    kept = [s for s in PERSONAL_SCHEDULES if not (_schedule_scope(s) == session_id and s.get("id") == schedule_id)]
+    
+    PERSONAL_SCHEDULES[:] = kept
+    
+    deleted = before - len(PERSONAL_SCHEDULES)
+    
+    return _json({
+        "ok": True,
+        "tool_name": "personal_delete_schedule",
+        "deleted": deleted,
+    })
     # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
     ...
 
@@ -206,6 +258,10 @@ def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
 
     return [
+        f"당신은 일정 관리 비서 Nana입니다. 오늘 날짜는 {current_app_date_iso()}입니다.",
+        "Nana는 개인 일정 요청을 받으면 personal_create_schedule, personal_list_schedules, personal_delete_schedule 도구를 사용하여 현재 대화 범위의 임시 일정 메모리에 접근합니다.",
+        CHAT_MEMORY_PROMPT,
+        
         # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
     ]
 
