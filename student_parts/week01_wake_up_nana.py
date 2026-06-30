@@ -111,14 +111,14 @@ def join_system_prompt(parts: list[str]) -> str:
 #   - _current_session_schedules()
 #     PERSONAL_SCHEDULES 전체 중 현재 conversation/session 범위에 속한 일정만 골라 반환합니다.
 #
-#   - personal_create_schedule(...)
+#   - personal_create_schedule(...)  -- 내가 구현할 tool
 #     LLM이 일정 생성이 필요하다고 판단했을 때 호출하는 tool입니다. 입력 인자로 schedule dict를 만들고
 #     PERSONAL_SCHEDULES에 append한 뒤, 생성된 schedule을 JSON 문자열로 반환합니다.
 #
-#   - personal_list_schedules(date_from, date_to)
+#   - personal_list_schedules(date_from, date_to)  -- 내가 구현할 tool
 #     현재 대화 범위의 임시 일정만 읽고 날짜 범위 필터를 적용합니다. 리스트를 수정하지 않고 조회 결과만 반환합니다.
 #
-#   - personal_delete_schedule(schedule_id)
+#   - personal_delete_schedule(schedule_id)  -- 내가 구현할 tool
 #     현재 대화 범위에서 schedule_id가 같은 일정만 제거합니다. 다른 대화 범위의 일정은 같은 ID처럼 보여도 지우지 않습니다.
 #
 #   - week01_tools()
@@ -170,8 +170,30 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
+    # attendees 확인
+    if attendees is None:
+        attendees = []
+
+    # schedule dict 생성
+    schedule = {
+        "id":         _new_personal_id(),
+        "title":      title,
+        "date":       date,
+        "start_time": start_time,
+        "end_time":   end_time,
+        "attendees":  attendees,
+        "created_at": _now_iso(),
+        "session_id": current_session_scope(),
+    }
+
+    # PERSONAL_SCHEDULES에 append
+    PERSONAL_SCHEDULES.append(schedule)
+
+    return _json({
+        "ok": True,
+        "tool_name": "personal_create_schedule",
+        "created_schedule": schedule,
+    })
 
 
 @tool
