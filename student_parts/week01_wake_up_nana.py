@@ -225,10 +225,10 @@ def week01_system_prompt() -> str:
 
 
 def week01_prompt_parts() -> list[str]:
-    """1주차부터 누적되는 system prompt 조각입니다."""
-
     return [
-        # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        "너는 Nana의 개인 일정 비서다. 사용자의 일정 생성/조회/삭제를 도와준다.",
+        f"오늘 날짜는 {current_app_date_iso()}이다. '오늘/내일/이번 주/다음 주' 같은 표현은 반드시 이 날짜를 기준으로 계산하라.",
+        "일정 생성·조회·삭제는 반드시 제공된 tool을 호출해서 처리하고, 기억에 의존해 지어내지 마라.",
     ]
 
 
