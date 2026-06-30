@@ -230,6 +230,7 @@ def personal_delete_schedule(schedule_id: str) -> str:
 
     return _json({
         "ok": True,
+        "tool_name": "personal_delete_schedule",
         "deleted": deleted,
     })
 
