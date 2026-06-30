@@ -111,14 +111,14 @@ def join_system_prompt(parts: list[str]) -> str:
 #   - _current_session_schedules()
 #     PERSONAL_SCHEDULES 전체 중 현재 conversation/session 범위에 속한 일정만 골라 반환합니다.
 #
-#   - personal_create_schedule(...)
+#   - personal_create_schedule(...)  -- 내가 구현할 tool
 #     LLM이 일정 생성이 필요하다고 판단했을 때 호출하는 tool입니다. 입력 인자로 schedule dict를 만들고
 #     PERSONAL_SCHEDULES에 append한 뒤, 생성된 schedule을 JSON 문자열로 반환합니다.
 #
-#   - personal_list_schedules(date_from, date_to)
+#   - personal_list_schedules(date_from, date_to)  -- 내가 구현할 tool
 #     현재 대화 범위의 임시 일정만 읽고 날짜 범위 필터를 적용합니다. 리스트를 수정하지 않고 조회 결과만 반환합니다.
 #
-#   - personal_delete_schedule(schedule_id)
+#   - personal_delete_schedule(schedule_id)  -- 내가 구현할 tool
 #     현재 대화 범위에서 schedule_id가 같은 일정만 제거합니다. 다른 대화 범위의 일정은 같은 ID처럼 보여도 지우지 않습니다.
 #
 #   - week01_tools()
@@ -170,24 +170,86 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
+    # attendees 확인
+    if attendees is None:
+        attendees = []
+
+    # schedule 생성
+    schedule = {
+        "id": _new_personal_id(),
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees,
+        "created_at": _now_iso(),
+        "session_id": current_session_scope(),
+    }
+    
+    
+    PERSONAL_SCHEDULES.append(schedule)
+    
+    # json 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_create_schedule",
+        "created_at": _now_iso(),
+    })
 
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
-
-    # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
+    
+    # 최근 일정 가져오기
+    schedules = _current_session_schedules()
+    
+    # 기간 시작 일
+    if date_from is not None:
+        schedules = [sc for sc in schedules if sc["date"] >= date_from]
+    
+    # 기간 마지막 일
+    if date_to is not None:
+        schedules = [sc for sc in schedules if sc["date"] <= date_to]
+        
+    # 호출 툴, 일정 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_list_schedules",
+        "schedules": schedules,
+    })
+        
 
 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
-
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    
+    schedules = _current_session_schedules()
+    
+    #삭제 전 길이 구하기
+    before_len = len(schedules)
+    
+    # schedule id 가 같으면 삭제하기
+    for index, schedule in enumerate(schedules):
+        if schedule["id"] == schedule_id:
+            schedules.pop(index)
+            break
+    
+    # 삭제 되었나 확인
+    after_len = len(schedules)
+    deleted = before_len - after_len
+    
+    # 대입
+    PERSONAL_SCHEDULES[:] = schedules
+    
+    # json 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_delete_schedule",
+        "deleted": deleted
+    })
+        
 
 
 def week01_tools() -> list[Any]:

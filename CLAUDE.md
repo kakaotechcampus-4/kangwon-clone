@@ -1,0 +1,46 @@
+# 프로젝트 개요
+
+일정 Agent 실습 프로젝트입니다.
+`student_parts/` 내 파일에 TODO 함수를 구현하고, Gradio 채팅 UI와 상세 trace에서 결과를 확인합니다.
+
+| 경로 | 역할 |
+| --- | --- |
+| `app.py` | Gradio 채팅 UI + trace 화면 |
+| `student_parts/` | 학생 구현 대상 파일 (수정 가능) |
+| `fixed/` | 기준 구현 코드 (수정 금지) |
+| `run.sh` | 설치 및 앱 실행 runner |
+
+# 수정 범위
+
+- 구현은 `student_parts/` 내부 파일로만 한정한다.
+- `fixed/`는 참고 전용이며 수정하지 않는다.
+- 새 의존성이 필요하면 `uv add`를 사용하고 `fixed/`의 import를 바꾸지 않는다.
+- 수정 가능한 파일은 프롬프트에서 지정해준 파일만 수정 가능하다.
+
+# 개발 워크플로
+
+앱 실행:
+```bash
+./run.sh          # Week 1 기본 실행
+./run.sh --week1  # Week 1 명시 실행
+./run.sh --install  # 최초 의존성 설치
+```
+
+구현 확인은 자동 테스트 없이 앱을 직접 실행한 뒤 Gradio 상세 탭의 trace JSON으로 한다.
+tool 호출 여부와 결과 payload를 trace에서 확인하는 것이 기준이다.
+
+# Plan 모드 규칙
+
+- plan 작성 시 구현 과정을 보여줄 수 있는 순서대로 체크리스트를 작성한다.
+- 한번에 전체를 구현하지 않고 파트별로 완료 후 진행 확인을 받고 다음 단계로 넘어간다.
+
+# 언어 및 응답 스타일
+
+- 모든 설명과 답변은 한국어로 한다.
+- 코드 식별자와 기술 용어는 원문 그대로 유지한다.
+- 응답은 간결하게 유지하되, 학습에 도움이 되는 insight는 적극적으로 제공한다.
+
+# Hard rules
+- 사용자 명시적 승인 없이 git push, gh pr create, gh pr merge 금지
+- 파괴적 명령 금지 (reset --hard, push --force, branch -D, rm -rf 등) — 사용자가 명시적으로 요청한 경우에만
+- 시크릿이 들어갈 수 있는 파일 (.env, credentials.json, *.pem 등) 커밋 금지
