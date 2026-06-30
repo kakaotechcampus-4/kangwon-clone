@@ -160,19 +160,26 @@ def _current_session_schedules() -> list[dict[str, Any]]:
     return [schedule for schedule in PERSONAL_SCHEDULES if _schedule_scope(schedule) == session_id]
 
 
-@tool
-def personal_create_schedule(
-    title: str,
-    date: str,
-    start_time: str,
-    end_time: str = "미정",
-    attendees: list[str] | None = None,
-) -> str:
-    """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
-
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
-
+@tool("personal_create_schedule", description="개인 일정을 생성한다. date는 YYYY-MM-DD, start_time은 HH:MM 형식이다.")
+def personal_create_schedule(title: str, date: str, start_time: str, end_time: str = "미정",  attendees: list[str] | None = None) -> str:
+    """Create a personal schedule."""
+    # 모델이 만든 tool 인자들을 하나의 schedule dict로 묶고, tool 안에서 바로 저장한다.
+    schedule = {
+        "id": _new_personal_id(),
+        "session_id": current_session_scope(),
+        "title": title,
+        "created_at": _now_iso(),
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees or [],
+    }
+    PERSONAL_SCHEDULES.append(schedule)
+    # tool은 실행 결과를 JSON 문자열로 돌려주고, agent는 이 값을 보고 최종 답변을 만든다.
+    return json.dumps(
+    {"ok": True, "tool_name": "personal_create_schedule", "created_schedule": schedule},
+    ensure_ascii=False,
+)
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
