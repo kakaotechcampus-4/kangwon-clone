@@ -22,12 +22,12 @@ from fixed.llm import chat_model
 from fixed.runtime_clock import current_app_date_iso, next_weekday_iso
 from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
 
-
+#빈 리스트 생성, 일정 하나하나를 여기에 차곡차곡 넣는 것
 PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = "" 
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -76,7 +76,16 @@ def join_system_prompt(parts: list[str]) -> str:
 #      - 리스트 객체 자체는 유지해야 하므로 PERSONAL_SCHEDULES[:]에 새 목록을 대입합니다.
 #      - 삭제 전후 길이 비교로 deleted 값을 만들고 JSON으로 반환합니다.
 #      - 다른 대화 범위의 같은 ID는 삭제하면 안 됩니다.
-#
+
+"""
+나나 라는 AI비서를 만들어야 한다. 예를 들면 "나 내일 9시에 회의 일정 잡아줘"
+라고 명령 하면 나나는 일정을 만들어야 함. 근데 나나(LLM)은 직접 일정을 저장할 손이 없다.
+말만 할 줄 알기 때문에 우리가 "도구(tool)"를 만들어서 나나에게 손에 쥐여주는 것!"
+그러면 나나가 상황에 맞게 "아 지금은 만들기 도구를 써야겠다!" 하고 스스로 골라서 쓰는 것이다.
+나나는 똑똑한 비서일 뿐이고 일정을 적을 만들기 도구, 조회 도구, 삭제 도구를 내가 아직 안 가르쳐줬으니
+이번 과제에서 이 3가지를 가르치는 것이 목표! (이렇게 이해하고 시작했다.)
+"""
+
 # 중요한 반환 규칙
 #   LangChain tool은 문자열 반환이 가장 안정적입니다. dict를 만든 뒤 _json(...)으로 감싸세요.
 #   Week 1 도구는 현재 대화 안에서만 쓰는 임시 일정 dict만 반환하며 SQLite/App store를 호출하지 않습니다.
@@ -155,7 +164,13 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
+
 def _current_session_schedules() -> list[dict[str, Any]]:
+    """
+    지금 대화 범위에 속한 일정만 골라서 돌려주는 함수
+    AI가 이게 왜 필요한지 알려줬는데 철수랑 영희가 같은 PERSONAL_SCHEDULES를 공유하고 있어서
+    철수가 만든 일정이 영희한테도 보이면 안 되기 때문에 현재 대화 범위에 속한 일정만 골라서 돌려주는 함수가 필요하다고 해줬다.
+    """
     session_id = current_session_scope()
     return [schedule for schedule in PERSONAL_SCHEDULES if _schedule_scope(schedule) == session_id]
 
@@ -170,24 +185,89 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
+    # 1단계 : 새 id(번호표) 만들기
+    schedule_id = _new_personal_id()
+
+    # 2단계 : 지금 대화 주인 ( session_id ) 읽기
+    session_id = current_session_scope()
+
+    # 3단계 : attendees 가 none이면 빈 list로 바꾸기
+    if attendees is None:
+        attendees = []
+
+    # 4단계 : 일정 dict 만들기
+    schedule = {
+        "id": schedule_id,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees,
+        "created_at": _now_iso(),
+        "session_id": session_id,
+    }
+
+    # 5단계 : 리스트에 추가하기
+    PERSONAL_SCHEDULES.append(schedule)
+
+    # 6단계 : ok, tool_name, created_schedule를 담은 JSON 문자열 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_create_schedule",
+        "created_schedule": schedule,
+    })
 
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
-    # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
+    # 1단계 : 내 대화 범위 일정만 가져오기
+    schedules = _current_session_schedules()
+
+    # 2단계 : date_from이 있으면, 그 날짜 이상만 남기기
+    if date_from is not None:
+        schedules = [s for s in schedules if s["date"] >= date_from]
+
+    # 3단계 : date_to가 있으면, 그 날짜 이하만 남기기
+    if date_to is not None:
+        schedules = [s for s in schedules if s["date"] <= date_to]
+    
+    # 4단계 : ok, tool_name, schedules를 담은 JSON 문자열 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_list_schedules",
+        "schedules": schedules,
+    })
 
 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
 
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    # 1단계 : 지우기 전 개수 기록
+    before = len(PERSONAL_SCHEDULES)
+
+    # 2단계 : 내 범위 + ID 같은 것을 뺀 새 목록 (= 남길 것만)
+    session_id = current_session_scope()
+    remaining = [
+        s for s in PERSONAL_SCHEDULES
+        if s["id"] != schedule_id or _schedule_scope(s) != session_id 
+    ]
+
+    # 3단계 : 원본 내용물 교체
+    PERSONAL_SCHEDULES[:] = remaining
+
+    # 4단계 : 지운 개수 계산
+    after = len(PERSONAL_SCHEDULES)
+    deleted = before - after
+
+    # 5단계 : ok, tool_name, deleted를 담은 JSON 문자열 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_delete_schedule",
+        "deleted": deleted,
+    })
 
 
 def week01_tools() -> list[Any]:
