@@ -188,7 +188,7 @@ def personal_create_schedule(
     PERSONAL_SCHEDULES.append(schedule)
 
     # 3. 반환 JSON 생성
-    return _json(schedule)
+    return _json({"ok": True, "tool_name": "personal_create_schedule", "created_schedule": schedule})
 
 
 @tool
@@ -209,7 +209,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
         schedules = [s for s in schedules if s["date"] <= date_to]
 
     # 3. 반환 JSON 생성
-    return _json({"schedules": schedules})
+    return _json({"ok": True, "tool_name": "personal_list_schedules", "schedules": schedules})
 
 
 @tool
@@ -227,7 +227,7 @@ def personal_delete_schedule(schedule_id: str) -> str:
     deleted_count = before - len(PERSONAL_SCHEDULES)
 
     # 3. 반환 JSON 생성
-    return _json({"deleted_count": deleted_count})
+    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted_count})
 
 
 def week01_tools() -> list[Any]:
@@ -246,7 +246,8 @@ def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
 
     return [
-        # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        f""" 당신은 개인 일정 관리 비서 도우미 시스템 "Nana"입니다.
+        참고 사항 : 현재 날짜를 {current_app_date_iso()}로 인식합니다. """,
     ]
 
 
