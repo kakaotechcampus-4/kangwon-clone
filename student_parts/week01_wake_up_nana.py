@@ -27,7 +27,11 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = (
+    "대화 중 사용자가 언급한 날짜, 시간, 장소, 참석자 등 일정 관련 정보를 기억하고 "
+    "이후 요청에서 자연스럽게 활용해라. "
+    "사용자가 이미 말한 정보를 다시 묻지 마라."
+)
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -170,24 +174,80 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
+    # 1. title/date/start_time/end_time/attendees 인자로 schedule dict 생성
+    #     1. id는 "personal_" 접두어가 붙은 임시 ID, created_at은 현재 시각으로 채움
+    #     2. attendees는 None이면 빈 list로 바꾸기
+    #     3. created_at은 _now_iso() 함수를 통해 현재 시간 넣기
+    #     4. session_id=current_session_scope()를 함께 넣어 PERSONAL_SCHEDULES에 append
+    #        특정 세션(대화창)에서 요청한 것만 후에 걸러낼 수 있도록 정보 추가
+    created_schedule = {
+        "id": _new_personal_id(),
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees if attendees is not None else [],
+        "created_at": _now_iso(),
+        "session_id": current_session_scope()
+    }
+
+    # 2. 만든 schedule 저장 (로컬 저장소가 아닌 딕셔너리 리스트)
+    PERSONAL_SCHEDULES.append(created_schedule)
+
+    # 3. JSON 반환 - ok, tool_name, created_schedule 포함
+    return _json({
+            "ok": True,
+            "tool_name": "personal_create_schedule",
+            "created_schedule": created_schedule
+    })
 
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
+    
+    # 1. PERSONAL_SCHEDULES를 직접 수정하지 않고 현재 대화 범위의 일정만 조회
+    schedules = _current_session_schedules()
 
-    # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
+    # 2. 날짜 필터링
+
+    # 2-1. date_from이 있으면 그 날짜 이상만 남김
+    if date_from:
+        schedules = [schedule for schedule in schedules if schedule["date"] >= date_from]
+
+    # 2-2. date_to가 있으면 그 날짜 이하만 남김
+    if date_to:
+        schedules = [schedule for schedule in schedules if schedule["date"] <= date_to]
+
+    # 3. JSON 반환 - ok, tool_name, schedules 포함
+    return _json({
+        "ok": True,
+        "tool_name": "personal_list_schedules",
+        "schedules": schedules
+    })
 
 
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
+    
+    # 1. 삭제 전후 길이 비교를 위해 삭제 전 schedule 개수 기록
+    before_length = len(PERSONAL_SCHEDULES)
 
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    # 2. 필터링 삭제
+    #   2-1. id가 일치하며
+    #   2-2. 현재 세션인 것
+    PERSONAL_SCHEDULES[:] = [schedule for schedule in PERSONAL_SCHEDULES if not (schedule["id"] == schedule_id and _schedule_scope(schedule) == current_session_scope())]
+
+    # 3. 삭제된 개수 계산
+    deleted = before_length - len(PERSONAL_SCHEDULES)
+
+    # 4. JSON 반환 - ok, tool_name, deleted 반환
+    return _json({
+        "ok": True,
+        "tool_name": "personal_delete_schedule",
+        "deleted": deleted
+    })
 
 
 def week01_tools() -> list[Any]:
@@ -205,8 +265,17 @@ def week01_system_prompt() -> str:
 def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
 
+    day_names = ["월", "화", "수", "목", "금", "토", "일"]
+    today_iso = current_app_date_iso()
+    day_name = day_names[datetime.fromisoformat(today_iso).weekday()]
+
     return [
-        # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        f"너는 Nana야. 사용자의 개인 일정을 관리하는 AI 비서야. 오늘은 {today_iso} ({day_name}요일)이야.",
+        "일정 생성/조회/삭제는 반드시 tool을 호출해라. tool 없이 직접 답변하지 마라. ",
+        "날짜 계산 시 오늘 요일 기준으로 며칠 후인지 순서대로 계산해라.",
+        "반복 일정은 날짜마다 personal_create_schedule을 개별 호출해서 생성해라.",
+        "시작일이 불명확할 때만 사용자에게 확인해라.",
+        CHAT_MEMORY_PROMPT,
     ]
 
 
