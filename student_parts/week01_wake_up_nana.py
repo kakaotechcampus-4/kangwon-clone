@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import json
-import uuid
+import json                     # 데이터 파싱 하고 생성하는 데 필요한 모듈 불러오는 구문
+import uuid                     # 전세계적으로 고유한 식별자를 생성하기 위해 불러오는 구문 / 중복 없는 ID 필요시
 from datetime import datetime
-from typing import Any
+from typing import Any          # 변수나 함수의 매개변수가 모든 타입(자료형)과 호환될 수 있도록 지정 / 동적 타이핑 필요시 & 외부 API 응답처럼 반환 타입 미리 특정할 수 없을 때
 
-from langchain.agents import create_agent
-from langchain.tools import tool
+from langchain.agents import create_agent # 랭체인(LangChain)에서 언어 모델이 도구를 활용해 목표를 수행하는 에이전트(Agent)를 생성하는 통합 API
+from langchain.tools import tool          # LangChain에서 제공하는 @tool을 가져옴 LLM을 호출할 수 있는 도구를 만들 때 사용.
 
-from fixed.config import CONFIG
-from fixed.langchain_trace import (
+from fixed.config import CONFIG     # 프로젝트 내부의 fixed.config 모듈에서 설정 객체 CONFIG 가져오기 API키, 모델 이름, 환경 설정 등을 담는 경우가 많음.
+from fixed.langchain_trace import ( # Langchain 실행 과정 추적하고 로그 분석하기 위한 여러 함수 가져오기
     extract_agent_events,
     extract_final_text,
     extract_langchain_trace,
@@ -18,16 +18,24 @@ from fixed.langchain_trace import (
     normalize_messages_value,
     stream_chunk_messages,
 )
-from fixed.llm import chat_model
-from fixed.runtime_clock import current_app_date_iso, next_weekday_iso
-from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
+from fixed.llm import chat_model    # 프로젝트에서 사용하는 LLM 객체를 가져옴 / GPT나 Claude 등의 모델이 래핑되어 있을 가능성이 큼.
+from fixed.runtime_clock import current_app_date_iso, next_weekday_iso  # 현재 날짜와 다음 특정 요일을 계산하는 날짜 유틸리티 함수를 가져옴
+from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope    # 현재 대화의 범위를 관리하는 객체와 기본 세션 범위를 가져옴
+# 세션을 격리 하는 이유: PERSONAL_SCHEDULES는 모듈 전역 변수라 모든 대화가 같은 리스트를 공유함.
+# 격리가 없으면 대화끼리 서로의 데이터를 볼 수 있음.
+# 이를 해결하기 위해 SESSION_ID를 사용
 
-
-PERSONAL_SCHEDULES: list[dict[str, Any]] = []
+PERSONAL_SCHEDULES: list[dict[str, Any]] = []   # DB가 없음. 프로세스가 살아있는 동안만 존재하는 메모리 변수.
+# 리스트인 이유 : 전체 순회, 순서 보존. -> 딕셔너리를 만약에 썼다면 ID로 빠른 단건 조회는 가능하지만, 날짜 범위로 걸러서 목록을 반환하는 경우에는
+# 전체 순회가 필요하다. 
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = """
+이전 대화에서 사용자가 제공한 정보를 참고하여 답변하세요. 
+이미 알고 있는 정보는 반복해서 질문하지 마세요.
+사용자의 최근 맥락을 우선적으로 고려하세요.
+"""
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -170,24 +178,88 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO: PERSONAL_SCHEDULES에 현재 대화 범위의 개인 일정을 생성하세요.
-    ...
+    # TODO 1: attendees가 None이면 빈 리스트로 바꾸기.
+    if attendees is None :
+        attendees = []
+        
+    # TODO 2: schedule dict를 위의 구조대로 만들기.
+    schedule = {
+      "id":           _new_personal_id(),
+      "title":        title,
+      "date":         date,
+      "start_time":   start_time,
+      "end_time":     end_time,
+      "attendees":    attendees,
+      "created_at":   _now_iso(),
+      "session_id":   current_session_scope(),
+  }
+
+    # TODO 3: PERSONAL_SCHEDULES에 schedule을 추가하기.
+    PERSONAL_SCHEDULES.append(schedule)
+
+    # TODO 4: _json()으로 감싼 결과를 반환하기.
+    pass
+    return _json({"ok": True, "tool_name": "personal_create_schedule", "created_schedule": schedule})
 
 
 @tool
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
-    # TODO: 현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    ...
+    # TODO 1: _current_session_schedules()로 현재 세션 일정을 가져오기.
+    schedule = _current_session_schedules()
+    # TODO 2: date_from이 있으면 그 날짜 이상인 일정만 남기기.
+    if date_from:
+        # schedule = [s for s in schedule if s["date"] >= date_from] # List Comprehension이라는 문법
+        new_schedule = []
+        for s in schedule:
+            if s["date"] >= date_from:
+                new_schedule.append(s)
+        
+        schedule = new_schedule
+    # TODO 3: date_to가 있으면 그 날짜 이하인 일정만 남기기.
+    if date_to:
+        schedule = [s for s in schedule if s["data"] <= date_to]
+    # TODO 4: _json()으로 결과를 반환하기.
+    pass
+    return _json({"ok": True, "tool_name": "personal_list_schedules", "schedule": schedule})
 
 
+# 전역 변수인 PERSONAL_SCHEDULES을 함수 안에서 바꿀 수 없음 같은 이름이지만 새로운 지역 변수를 만드는 꼴.
+# 따라서 슬라이스 대입 [:]을 쓴다.
+# [:]는 "리스트의 전체 내용을 가리킴". 변수를 새로 만드는 것이 아닌 기존 리스트의 안을 교체한다.
+# PERSONAL_SCHEDULES는 모듈 전역에서 여러 곳에서 참조하는 리스트라 [:] 방식을 써야한다.
 @tool
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
 
-    # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
-    ...
+    # TODO 1: 삭제 전 PERSONAL_SCHEDULES 길이를 기록하기.
+    before = len(PERSONAL_SCHEDULES)
+    # TODO 2: id가 일치하면서 현재 세션에 속한 일정만 제거하기.
+    #         PERSONAL_SCHEDULES[:] = ... 방식을 써야 합니다.
+    
+    # session_id = current_session_scope()
+    # PERSONAL_SCHEDULES[:] = [
+    #     s for s in PERSONAL_SCHEDULES
+    #     if not (s["id"] == schedule_id and _schedule_scope(s) == session_id)
+    # ]
+    # 아래의 List Comprehension
+    
+    session_id = current_session_scope()
+    new_schedules = []
+    
+    for s in PERSONAL_SCHEDULES:
+        if not (s["id"] == schedule_id and _schedule_scope(s) == session_id):
+            new_schedules.append(s)
+    PERSONAL_SCHEDULES[:] = new_schedules
+    
+    # TODO 3: 삭제 전후 길이 비교로 deleted(True/False) 값을 만들기.
+    deleted = len(PERSONAL_SCHEDULES) < before
+    
+    # TODO 4: _json()으로 결과를 반환하기.
+    pass
+    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted})
+
 
 
 def week01_tools() -> list[Any]:
