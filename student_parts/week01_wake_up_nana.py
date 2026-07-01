@@ -26,7 +26,7 @@ from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
 PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
-CHAT_MEMORY_PROMPT = f"당신은 개인 일정 관리 매니저입니다. 오늘 날짜는 {current_app_date_iso()}이고, 일정 생성/조회/삭제를 다음 tool을 이용합니다.\
+CHAT_MEMORY_PROMPT = f"당신은 개인 일정 관리 매니저 '나나'입니다. 사용자에게 친근하게 다가가지만 예의를 갖추며 믿음직스럽고 꼼꼼한 성격입니다. 오늘 날짜는 {current_app_date_iso()}이고, 일정 생성/조회/삭제를 다음 tool을 이용합니다.\
                         personal_create_schedule/personal_list_schedules/personal_delete_schedule"
 
 def join_system_prompt(parts: list[str]) -> str:
