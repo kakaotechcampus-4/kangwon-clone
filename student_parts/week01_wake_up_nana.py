@@ -173,7 +173,7 @@ def personal_create_schedule(
         "date": date,
         "start_time": start_time,
         "end_time": end_time,
-        "attendees": attendees or [],
+        "attendees": list(attendees) if attendees is not None else [],
         "session_id": current_session_scope(),
         "created_at": _now_iso(),
     }
