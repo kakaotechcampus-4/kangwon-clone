@@ -204,10 +204,10 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     # 2. 날짜 필터 적용
     if date_from:
         # date_from 이상인 일정만 남기기
-        schedules = [s for s in schedules if s["date"] >= date_from]
+        schedules = [schedule for schedule in schedules if schedule["date"] >= date_from]
     if date_to:
         # date_to 이하인 일정만 남기기
-        schedules = [s for s in schedules if s["date"] <= date_to]
+        schedules = [schedule for schedule in schedules if schedule["date"] <= date_to]
 
     # 3. 반환 JSON 생성
     return _json({"ok": True, "tool_name": "personal_list_schedules", "schedules": schedules})
@@ -218,16 +218,18 @@ def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
 
     session_id = current_session_scope()
-    before = len(PERSONAL_SCHEDULES)
+    before_count = len(PERSONAL_SCHEDULES)
 
     # 1. 현재 세션 일정만 남기고, schedule_id가 일치하는 일정은 제거
+    # 함수 내 재할당은 지역 변수가 되고, 다른 참조자들이 변경을 볼 수 없으므로
+    # 슬라이스 대입으로 같은 객체를 유지하면서 내용만 교체한다.
     PERSONAL_SCHEDULES[:] = [s for s in PERSONAL_SCHEDULES if not (s["id"] == schedule_id and _schedule_scope(s) == session_id)]
 
-    # 2. 삭제된 일정 수 계산
-    deleted_count = before - len(PERSONAL_SCHEDULES)
+    #2. 삭제 여부 확인
+    deleted = (before_count - len(PERSONAL_SCHEDULES)) > 0
 
     # 3. 반환 JSON 생성
-    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted_count})
+    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted})
 
 
 def week01_tools() -> list[Any]:
