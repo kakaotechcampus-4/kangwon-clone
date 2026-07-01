@@ -200,7 +200,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
     #현재 대화 범위의 PERSONAL_SCHEDULES를 날짜 조건으로 조회하세요.
-    check_schedule = _current_session_schedules() #현재 대화에 저장된 모든 일정 가져옴
+    schedules = _current_session_schedules()
 
     #1일 일정은 date_from, date_to 값이 같음
     if date_from: #시작 일정이 있다면?
