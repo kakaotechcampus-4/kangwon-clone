@@ -170,7 +170,7 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다. date는 YYYY-MM-DD, start_time/end_time은 HH:MM 형식이어야 합니다."""
     schedule = {
-        "schedule_id": _new_personal_id(),
+        "id": _new_personal_id(),
         "title": title,
         "date": date,
         "start_time": start_time,
@@ -201,7 +201,7 @@ def personal_delete_schedule(schedule_id: str) -> str:
 
     PERSONAL_SCHEDULES[:] = [
         schedule for schedule in PERSONAL_SCHEDULES 
-        if not (schedule["schedule_id"] == schedule_id 
+        if not (schedule["id"] == schedule_id 
         and _schedule_scope(schedule) == current_session_scope())
     ]
     
