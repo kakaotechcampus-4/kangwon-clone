@@ -216,9 +216,7 @@ def personal_delete_schedule(schedule_id: str) -> str:
 
     # TODO: 현재 대화 범위에서 schedule_id가 일치하는 개인 일정을 삭제하세요.
     delete_before = len(PERSONAL_SCHEDULES)
-
-    schedules = _current_session_schedules()
-    schedules = [s for s in schedules if s['id'] != schedule_id]
+    schedules = [s for s in PERSONAL_SCHEDULES if s['id'] != schedule_id or _schedule_scope(s) != current_session_scope() ]
 
     PERSONAL_SCHEDULES[:] = schedules
 
