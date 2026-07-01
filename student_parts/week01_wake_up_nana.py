@@ -178,11 +178,9 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 현재 대화의 임시 메모리에 생성합니다."""
 
-    # TODO 1: attendees가 None이면 빈 리스트로 바꾸기.
     if attendees is None :
         attendees = []
         
-    # TODO 2: schedule dict를 위의 구조대로 만들기.
     schedule = {
       "id":           _new_personal_id(),
       "title":        title,
@@ -194,10 +192,8 @@ def personal_create_schedule(
       "session_id":   current_session_scope(),
   }
 
-    # TODO 3: PERSONAL_SCHEDULES에 schedule을 추가하기.
     PERSONAL_SCHEDULES.append(schedule)
 
-    # TODO 4: _json()으로 감싼 결과를 반환하기.
     pass
     return _json({"ok": True, "tool_name": "personal_create_schedule", "created_schedule": schedule})
 
@@ -206,23 +202,18 @@ def personal_create_schedule(
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
-    # TODO 1: _current_session_schedules()로 현재 세션 일정을 가져오기.
     schedule = _current_session_schedules()
-    # TODO 2: date_from이 있으면 그 날짜 이상인 일정만 남기기.
     if date_from:
-        # schedule = [s for s in schedule if s["date"] >= date_from] # List Comprehension이라는 문법
         new_schedule = []
         for s in schedule:
             if s["date"] >= date_from:
                 new_schedule.append(s)
         
         schedule = new_schedule
-    # TODO 3: date_to가 있으면 그 날짜 이하인 일정만 남기기.
     if date_to:
-        schedule = [s for s in schedule if s["data"] <= date_to]
-    # TODO 4: _json()으로 결과를 반환하기.
+        schedule = [s for s in schedule if s["date"] <= date_to]
     pass
-    return _json({"ok": True, "tool_name": "personal_list_schedules", "schedule": schedule})
+    return _json({"ok": True, "tool_name": "personal_list_schedules", "schedules": schedule})
 
 
 # 전역 변수인 PERSONAL_SCHEDULES을 함수 안에서 바꿀 수 없음 같은 이름이지만 새로운 지역 변수를 만드는 꼴.
@@ -233,17 +224,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
 
-    # TODO 1: 삭제 전 PERSONAL_SCHEDULES 길이를 기록하기.
     before = len(PERSONAL_SCHEDULES)
-    # TODO 2: id가 일치하면서 현재 세션에 속한 일정만 제거하기.
-    #         PERSONAL_SCHEDULES[:] = ... 방식을 써야 합니다.
-    
-    # session_id = current_session_scope()
-    # PERSONAL_SCHEDULES[:] = [
-    #     s for s in PERSONAL_SCHEDULES
-    #     if not (s["id"] == schedule_id and _schedule_scope(s) == session_id)
-    # ]
-    # 아래의 List Comprehension
     
     session_id = current_session_scope()
     new_schedules = []
@@ -253,10 +234,8 @@ def personal_delete_schedule(schedule_id: str) -> str:
             new_schedules.append(s)
     PERSONAL_SCHEDULES[:] = new_schedules
     
-    # TODO 3: 삭제 전후 길이 비교로 deleted(True/False) 값을 만들기.
     deleted = len(PERSONAL_SCHEDULES) < before
     
-    # TODO 4: _json()으로 결과를 반환하기.
     pass
     return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted})
 
@@ -276,9 +255,38 @@ def week01_system_prompt() -> str:
 
 def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
+    
+    date_part = (
+        f"오늘 날짜는 {current_app_date_iso()}입니다. "
+        "사용자가 '오늘', '내일', '다음 주 월요일'처럼 상대적인 날짜를 말하면 "
+        "이 기준 날짜를 이용해 YYYY-MM-DD 형식의 절대 날짜로 변환한 뒤 tool을 호출하세요."
+    )
+    
+    tool_usage_part = (
+        "tool 사용 규칙:\n"
+        "- 새 일정을 만들어야 하면 personal_create_schedule을 호출하세요.\n"
+        "- 일정을 조회/확인해야 하면 personal_list_schedules를 호출하세요.\n"
+        "- 일정을 삭제해야 하면 personal_delete_schedule을 호출하세요.\n"
+        "- date는 YYYY-MM-DD, start_time과 end_time은 HH:MM(24시간제) 형식으로 전달하세요.\n"
+        "- end_time이나 attendees처럼 사용자가 말하지 않은 값은 비워두거나 기본값을 사용해도 됩니다.\n"
+        "- 제목, 날짜, 시작 시간처럼 일정 생성에 꼭 필요한 정보가 빠졌다면 "
+        "tool을 호출하기 전에 사용자에게 먼저 물어보세요."
+    )
+    
+    response_style_part = (
+        "tool 호출 결과는 JSON 형태로 반환되지만, 이를 그대로 사용자에게 보여주지 마세요. "
+        "결과 내용을 바탕으로 자연스러운 한국어 문장으로 정리해서 답하세요. "
+        "예를 들어 일정이 생성되면 '몇 월 며칠 몇 시에 어떤 일정을 등록했어요' 같은 식으로 확인해주고, "
+        "조회 결과가 비어 있으면 해당 기간에 일정이 없다고 안내하고, "
+        "삭제가 되지 않았다면 해당 ID의 일정을 찾을 수 없다고 안내하세요."
+    )
 
     return [
         # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        date_part,
+        tool_usage_part,
+        response_style_part,
+        CHAT_MEMORY_PROMPT,
     ]
 
 
