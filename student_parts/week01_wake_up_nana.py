@@ -205,7 +205,7 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     #1일 일정은 date_from, date_to 값이 같음
     if date_from: #시작 일정이 있다면?
         result = []
-        for s in check_schedule:
+        for schedule in schedules:
             if s["date"] >= date_from: #시작 일정<=일정들만 result에 넣음
                 result.append(s)
         check_schedule = result
