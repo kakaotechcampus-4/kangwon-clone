@@ -26,8 +26,7 @@ from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
 PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
-# TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = "" 
+CHAT_MEMORY_PROMPT = "현재 대화의 맥락을 기억하고 이어간다." 
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -188,10 +187,10 @@ def personal_create_schedule(
     # 1단계 : 새 id(번호표) 만들기
     schedule_id = _new_personal_id()
 
-    # 2단계 : 지금 대화 주인 ( session_id ) 읽기
+    # 2단계 : 이 일정이 누구 대화 것인지 표시해둬야 나중에 조회/삭제 때 남의 것과 구분됨
     session_id = current_session_scope()
 
-    # 3단계 : attendees 가 none이면 빈 list로 바꾸기
+    # 3단계 : None 그대로 저장하게 되면 나중에 참석자 목록 조회 시 에러가 생길 수 있음. []는 "0명"이라 안전
     if attendees is None:
         attendees = []
 
@@ -222,7 +221,7 @@ def personal_create_schedule(
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
 
-    # 1단계 : 내 대화 범위 일정만 가져오기
+    # 1단계 : 남의 일정을 가져오면 안 되기 때문에, 전체가 아니라 내 범위만 가져온다. 
     schedules = _current_session_schedules()
 
     # 2단계 : date_from이 있으면, 그 날짜 이상만 남기기
@@ -248,19 +247,19 @@ def personal_delete_schedule(schedule_id: str) -> str:
     # 1단계 : 지우기 전 개수 기록
     before = len(PERSONAL_SCHEDULES)
 
-    # 2단계 : 내 범위 + ID 같은 것을 뺀 새 목록 (= 남길 것만)
+    # 2단계 : or로 남길 조건을 만듦. ID만 비교하면 같은 ID를 가진 남의 일정까지 지워짐
     session_id = current_session_scope()
     remaining = [
         s for s in PERSONAL_SCHEDULES
         if s["id"] != schedule_id or _schedule_scope(s) != session_id 
     ]
 
-    # 3단계 : 원본 내용물 교체
+    # 3단계 : 원본 객체를 유지해야 다른 코드가 같은 리스트를 봄
     PERSONAL_SCHEDULES[:] = remaining
 
-    # 4단계 : 지운 개수 계산
-    after = len(PERSONAL_SCHEDULES)
-    deleted = before - after
+    # 4단계 : 기존에는 delete 값이 int 로 지정되는 상태였는데
+    #        삭제 전후 길이를 비교해서 실제로 지워졌는지 판단하는 (bool) deleted를 만들었다.
+    deleted = len(PERSONAL_SCHEDULES) < before
 
     # 5단계 : ok, tool_name, deleted를 담은 JSON 문자열 반환
     return _json({
@@ -284,9 +283,23 @@ def week01_system_prompt() -> str:
 
 def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
+    
+    today = current_app_date_iso()
 
+    role = "너는 사용자의 개인 일정을 관리하는 비서 Nana야."
+    date_rule = {
+        f"오늘 날짜는 {today}야. "
+        "'내일', '다음 주'는 오늘 기준으로 계산하고 임의로 지어내지 마."
+    }
+    tool_rule = {
+        "추측이나 기억만으로 일정을 답하지 말고 일정 생성, 조회, 삭제는 반드시 해당 도구를 호출해서 처리해야 해."
+    }
+    safety_rule = {
+        "다른 사람의 일정은 절대 보여주거나 삭제하지 말고 사용자가 만든 일정만 보여주고 삭제해야 해."
+        "정보가 부족하면 지어내지 말고 되물어봐야 해."
+    }
     return [
-        # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        role, date_rule, tool_rule, safety_rule, CHAT_MEMORY_PROMPT
     ]
 
 
