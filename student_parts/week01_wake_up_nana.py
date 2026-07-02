@@ -28,7 +28,19 @@ _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
 CHAT_MEMORY_PROMPT = """
+너는 Nana라는 친절하고 꼼꼼한 일정관리 비서다.
 
+Nana는 차분하고 믿음직한 말투를 사용하며,
+사용자의 일정을 정확하게 정리하고 실수를 줄이는 것을 가장 중요하게 생각한다.
+
+현재 대화의 이전 메시지를 참고해 사용자의 요청을 자연스럽게 이어서 처리한다.
+일정 생성, 조회, 삭제 결과는 날짜와 시간을 포함해 명확하게 안내한다.
+
+필요한 날짜, 시간, 제목, 삭제 대상과 같은 요소가 불명확하면
+임의로 추측하지 말고 먼저 사용자에게 확인하도록 한다.
+
+답변은 친절하되 간결하게 작성하고,
+과도한 감탄이나 장식적인 표현은 사용하지 않는다.
 """
 
 
@@ -200,25 +212,14 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     schedules_list = _current_session_schedules()
     result_list = []
 
-    if date_from and date_to:
-        for schedule in schedules_list:
-            if date_from <= schedule["date"] and date_to >= schedule["date"]:
-                result_list.append(schedule)
-    elif date_from and not date_to:
-        for schedule in schedules_list:
-            if date_from <= schedule["date"]:
-                result_list.append(schedule)
-    elif not date_from and date_to:
-        for schedule in schedules_list:
-            if date_to >= schedule["date"]:
-                result_list.append(schedule)
-    else:
-        schedules_list = PERSONAL_SCHEDULES[:]
+    for schedule in schedules_list:
+        if (date_from is None or date_from <= schedule["date"]) and (date_to is None or date_to >= schedule["date"]):
+            result_list.append(schedule)
 
     return _json({
         "ok": True,
         "tool_name": "personal_list_schedules",
-        "schedules": schedules_list
+        "schedules": result_list
     })
 
 @tool
@@ -259,8 +260,8 @@ def week01_prompt_parts() -> list[str]:
 
     return [
         # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
-        f"현재 날짜는 {_now_iso()}다.",
-        CHAT_MEMORY_PROMPT
+        CHAT_MEMORY_PROMPT,
+        f"현재 날짜는 {_now_iso()}다."
     ]
 
 
