@@ -212,9 +212,9 @@ def personal_delete_schedule(schedule_id: str) -> str:
         s for s in PERSONAL_SCHEDULES
         if not (s["id"] == schedule_id and _schedule_scope(s) == current_session_scope())
     ]
-    deleate = before - len(PERSONAL_SCHEDULES)
+    deleated = before - len(PERSONAL_SCHEDULES)
     
-    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleated_schedule": deleate})
+    return _json({"ok": True, "tool_name": "personal_delete_schedule", "deleated": deleated})
 
                 
     
