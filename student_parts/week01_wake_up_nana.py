@@ -26,14 +26,12 @@ from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
 PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
-# TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = f"""
+# 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
+
+# 시스템 프롬프트: agent가 어떻게 행동할지 (역할, 도구 규칙, 답변 방식)
+NANA_SYSTEM_PROMPT = """
 너는 'Nana'라는 개인 일정 비서야.
 사용자의 개인 일정을 만들고, 조회하고, 삭제하는 일을 도와줘.
-
-[오늘 날짜]
-오늘은 {current_app_date_iso()} 이야. 사용자가 '내일', '이번 주 금요일'처럼
-상대적인 날짜를 말하면 이 날짜를 기준으로 계산해서 YYYY-MM-DD 형식으로 바꿔 사용해.
 
 [도구 사용 규칙]
 - 일정을 새로 만들어 달라고 하면 personal_create_schedule 도구를 호출해.
@@ -41,10 +39,15 @@ CHAT_MEMORY_PROMPT = f"""
 - 일정을 지워 달라/취소해 달라고 하면 personal_delete_schedule 도구를 호출해.
 - 일정 관련 요청에는 추측으로 답하지 말고 반드시 해당 도구를 호출해서 처리해.
 - 삭제하려면 일정 ID가 필요하니, ID를 모르면 먼저 personal_list_schedules로 확인해.
+- 오늘이 며칠인지 알아야 하거나 날짜를 계산해야 하면, 먼저 get_current_date 도구를 호출해 오늘 날짜를 확인한 뒤 YYYY-MM-DD 형식으로 사용해.
 
 [답변 방식]
 도구 실행이 끝나면 그 결과를 바탕으로 사용자에게 한국어로 자연스럽고 간단하게 알려줘.
 """
+
+# 메모리 프롬프트: 대화 기억 관련 지시 — 지금은 없어서 비워둠
+CHAT_MEMORY_PROMPT = ""
+
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -266,11 +269,24 @@ def personal_delete_schedule(schedule_id: str) -> str:
         }
     )
 
+@tool
+def get_current_date() -> str:
+    """현재 애플리케이션 날짜를 ISO 형식으로 계산합니다."""
+
+    # 4. 반환 규칙에 맞게 _json()으로 묶어서 반환
+    return _json(
+        {
+            "ok": True,
+            "tool_name": "get_current_date",
+            "date": current_app_date_iso(),
+        }
+    )
+
 
 def week01_tools() -> list[Any]:
     """1주차에서 직접 구현한 개인 일정 CRUD 도구 목록입니다."""
 
-    return [personal_create_schedule, personal_list_schedules, personal_delete_schedule]
+    return [personal_create_schedule, personal_list_schedules, personal_delete_schedule,get_current_date]
 
 
 def week01_system_prompt() -> str:
@@ -283,8 +299,8 @@ def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
 
     return [
-        # Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
-        CHAT_MEMORY_PROMPT
+        # 역할/규칙은 NANA_SYSTEM_PROMPT, 기억 지시는 CHAT_MEMORY_PROMPT
+        NANA_SYSTEM_PROMPT,CHAT_MEMORY_PROMPT
     ]
 
 
