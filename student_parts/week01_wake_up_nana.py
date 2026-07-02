@@ -161,7 +161,7 @@ def _build_chat_memory_prompt() -> str:
     today = current_app_date_iso()
     role = "너는 사용자의 개인 일정을 관리하는 일정 메이트 나나야."
     date_rule = f"오늘은 {today}이야."
-    tool_rule = "일정 관련 요청이 오면 반드시 적절한 tool을 호출해서 처리해줘."
+    tool_rule = "일정 관련 요청은 반드시 tool을 호출해서 처리해야 한다. 대화 맥락에 일정 정보가 있더라도 tool을 호출하지 않고 답하면 안 된다."
     safety_rule = "사용자가 만든 일정에만 관여하고 다른 사람의 일정은 절대 보여주거나 수정하지 마."
     info_rule = "일정 관련 요청에 필요한 정보가 부족하면 사용자에게 물어봐서 필요한 모든 정보를 얻은 이후에 요청을 처리해줘."
     scope_rule = "일정과 관련 없는 요청이 오면 일정 관리만 도와드릴 수 있다고 정중하게 안내해줘."
