@@ -159,11 +159,23 @@ def _current_session_schedules() -> list[dict[str, Any]]:
     session_id = current_session_scope()
     return [schedule for schedule in PERSONAL_SCHEDULES if _schedule_scope(schedule) == session_id]
 
+def _check_schedule_date(result, date_from: str | None, date_to: str | None) -> list[dict[str, Any]]:
+    if date_from is not None:
+        result = [s for s in result if s["date"] >= date_from]
+    if date_to is not None:
+        result = [s for s in result if s["date"] <= date_to]
+    return result
 
 @tool("personal_create_schedule", description="개인 일정을 생성한다. date는 YYYY-MM-DD, start_time은 HH:MM 형식이다.")
-def personal_create_schedule(title: str, date: str, start_time: str, end_time: str = "미정",  attendees: list[str] | None = None) -> str:
+def personal_create_schedule(
+    title: str,
+    date: str,
+    start_time: str,
+    end_time: str = "미정",
+    attendees: list[str] | None = None,
+) -> str:
     """Create a personal schedule."""
-    # 모델이 만든 tool 인자들을 하나의 schedule dict로 묶고, tool 안에서 바로 저장한다.
+
     schedule = {
         "id": _new_personal_id(),
         "session_id": current_session_scope(),
@@ -174,42 +186,55 @@ def personal_create_schedule(title: str, date: str, start_time: str, end_time: s
         "end_time": end_time,
         "attendees": attendees or [],
     }
+
     PERSONAL_SCHEDULES.append(schedule)
-    # tool은 실행 결과를 JSON 문자열로 돌려주고, agent는 이 값을 보고 최종 답변을 만든다.
-    return json.dumps(
-    {"ok": True, "tool_name": "personal_create_schedule", "created_schedule": schedule},
-    ensure_ascii=False,
-)
 
-@tool
-def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
-    """선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회합니다."""
+    return _json(
+        {
+            "ok": True,
+            "tool_name": "personal_create_schedule",
+            "created_schedule": schedule,
+        }
+    )
+
+@tool("personal_list_schedules", description="개인 일정을 조회한다. date는 YYYY-MM-DD, start_time은 HH:MM 형식이다.")
+def personal_list_schedules(
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> str:
+    """선택한 시작일과 종료일 범위에 포함되는 개인 일정을 조회합니다."""
     result = _current_session_schedules()
-    if date_from is not None:
-        result = [s for s in result if s["date"] >= date_from]
-    if date_to is not None:
-        result = [s for s in result if s["date"] <= date_to]
-    
-        
-    return json.dumps(
-    {"ok": True, "tool_name": "personal_list_schedules", "schedules": result},
-    ensure_ascii=False,
-)
+    result = _check_schedule_date(result, date_from, date_to)
+    return _json(
+        {
+            "ok": True,
+            "tool_name": "personal_list_schedules",
+            "schedules": result,
+        }
+    )
 
-@tool
+@tool("personal_delete_schedule", description="개인 일정을 삭제한다.")
 def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
     scope = current_session_scope()
     before_len = len(PERSONAL_SCHEDULES)
-    #삭제가 아닌 조건에 부합하지 않는 리스트를 따로 저장
-    new_list = [s for s in PERSONAL_SCHEDULES if not (s["id"] == schedule_id and _schedule_scope(s) == scope)]
-    PERSONAL_SCHEDULES[:] = new_list
+    new_schedule = [
+        s
+        for s in PERSONAL_SCHEDULES
+        if not (
+            s["id"] == schedule_id
+            and _schedule_scope(s) == scope
+        )
+    ]
+    PERSONAL_SCHEDULES[:] = new_schedule
     deleted = before_len - len(PERSONAL_SCHEDULES)
-        
-    return json.dumps(
-    {"ok": True, "tool_name": "personal_delete_schedule", "deleted": deleted},
-    ensure_ascii=False,
-)
+    return _json(
+        {
+            "ok": True,
+            "tool_name": "personal_delete_schedule",
+            "deleted": deleted,
+        }
+    )
 
 
 def week01_tools() -> list[Any]:
@@ -226,7 +251,7 @@ def week01_system_prompt() -> str:
 
 def week01_prompt_parts() -> list[str]:
     return [
-        "너는 Nana의 개인 일정 비서다. 사용자의 일정 생성/조회/삭제를 도와준다.",
+        "너는 정승준의 개인 일정 비서다. 사용자의 일정 생성/조회/삭제를 도와준다.",
         f"오늘 날짜는 {current_app_date_iso()}이다. '오늘/내일/이번 주/다음 주' 같은 표현은 반드시 이 날짜를 기준으로 계산하라.",
         "일정 생성·조회·삭제는 반드시 제공된 tool을 호출해서 처리하고, 기억에 의존해 지어내지 마라.",
     ]
