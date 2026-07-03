@@ -31,6 +31,12 @@ CHAT_MEMORY_PROMPT = """
 - 사용자가 "그 일정" "아까 말한 거" 처럼 지칭하면 직전 대화의 문맥을 참고해 schedule_id를 특정하세요.
 - 일정 정보가 필요하면 대화 기록이 아닌 항상 personal_list_schedules tool을 호출해 최신 정보를 가져오세요.
 """
+TOOL_ROUTING_PROMPT = """
+사용자의 지시 유형에 따라 다음 지시를 따르세요.
+- 일정 생성: personal_create_schedule tool을 호출하세요.
+- 일정 조회: personal_list_schedules tool을 호출하세요.
+- 일정 삭제: personal_list_schedules로 schedule_id를 확인한 뒤 personal_delete_schedule tool을 호출하세요.
+"""
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -250,6 +256,7 @@ def week01_prompt_parts() -> list[str]:
         f""" 당신은 개인 일정 관리 비서 도우미 시스템 "Nana"입니다.
         참고 사항 : 현재 날짜를 {current_app_date_iso()}로 인식합니다. """,
         CHAT_MEMORY_PROMPT,
+        TOOL_ROUTING_PROMPT,
     ]
 
 
