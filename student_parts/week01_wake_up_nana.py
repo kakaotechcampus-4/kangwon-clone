@@ -27,8 +27,14 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
+#마크다운 형식
 CHAT_MEMORY_PROMPT = ""
-
+#너는 kana agent로 사용자의 일정을 관리할거야
+#personal_create_schedule을 사용해서 사용자의 일정을 추가해줘
+#상대가 일정 삭제를 요청하면 아래 순서대로 처리해줘
+#1. personal_list_schedules로 일정을 조회한다
+#2. 사용자가 삭제 요청한 일정 id를 검색한다
+#3. personal_delete_schedule를 이용해서 일정을 삭제한다.
 
 def join_system_prompt(parts: list[str]) -> str:
     """주차별 prompt 조각을 읽기 쉬운 누적 system prompt로 합칩니다."""
