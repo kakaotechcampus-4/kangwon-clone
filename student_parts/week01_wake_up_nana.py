@@ -25,7 +25,7 @@ from fixed.session_scope import DEFAULT_SESSION_SCOPE, current_session_scope
 
 PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
-
+# 수정합니다 테스트
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
 CHAT_MEMORY_PROMPT = (
     "너는 kana agent로 개인일정을 관리할거야."
