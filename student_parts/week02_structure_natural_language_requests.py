@@ -106,45 +106,74 @@ class StructuredRequest(BaseModel):
 
     # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
     kind: RequestKind = Field(
-        description="요청 종류. personal_schedule: 개인 일정, group_schedule: 그룹 일정, todo: 할 일, reminder: 알림, unknown: 분류 불가 중 하나만 선택"
+        description=(
+            """
+            요청 종류. 다음 중 하나만 선택한다: 
+            personal_schedule(특정 날짜와 '정확한 시작 시각'이 함께 있는 개인 일정, 예: '오후 3시에 회의'), 
+            group_schedule(여러 참석자가 함께하는, 시작 시각이 있는 일정), 
+            todo(정확한 시작 시각 없이 마감/기한까지 처리해야 하는 해야 할 일, 예: '~까지 제출해야 해', '~해야 한다'), 
+            reminder(특정 시각에 알려달라는 알림 요청, 예: '~시에 알려줘'), 
+            unknown(위 어디에도 명확히 속하지 않는 요청). 
+            구분 기준: 시작 시각이 명시되어 있지 않고 '제출/작성/완료/해야 한다' 같은 작업성 표현이면 
+            personal_schedule이 아니라 todo로 분류한다.
+            """
+        )
     )
     # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     title: str | None = Field(
         default=None,
-        description="일정의 제목. 명확이 판단 될 때만 채우고 불확실하다면 None으로 설정"
+        description="일정의 제목. 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+                    "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     date: str | None = Field(
         default=None,
-        description="일정의 날짜. YYYY-MM-DD 형식으로 작성하며 명확이 판단 될 때만 채우고 불확실하다면 None으로 설정"
+        description="일정의 날짜. YYYY-MM-DD 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+                    "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     start_time: str | None = Field(
         default=None,
-        description="일정 시작 시간. HH-MM 형식으로 작성하며 명확이 판단 될 때만 채우고 불확실하다면 None으로 설정"
+        description="일정 시작 시간. HH:MM 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+                    "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     end_time: str | None = Field(
-        default=None, 
-        description="일정 종료 시간. HH-MM 형식으로 작성하며 명확이 판단 될 때만 채우고 불확실하다면 None으로 설정"
+        default=None,
+        description="일정 종료 시간. HH:MM 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+                    "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
     members: list[str] = Field(
-        default_factory=list, 
+        default_factory=list,
         description="일정과 관련된 인물 목록. 언급이 없거나 불확실하다면 빈 리스트로 설정"
     )
     # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     priority: str | None = Field(
-        default=None, 
-        description="일정의 중요도. high/medium/low로 구분하여 작성하며 불확실하다면 None으로 설정"
+        default=None,
+        description="일정의 중요도. high/medium/low로 구분하여 작성하며 불확실하다면 반드시 None으로 설정한다. "
+                    "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     reason: str | None = Field(
-        default=None, 
-        description="판단 근거. 각 필드에 대한 판단 근거를 간단하게 명시한다. 불확실하다면 None으로 설정"
+        default=None,
+        description="판단 근거. 각 필드에 대한 판단 근거를 간단하게 명시한다. 불확실하다면 반드시 None으로 설정한다"
     )
     # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
     original_text: str = Field(
-        default="", 
-        description="구조화 이전의 자연어 요청 또는 json 원문을 그대로 보존하여 작성한다. 불확실하다면 빈 문자열로 설정"
+        default="",
+        description="구조화 이전의 자연어 요청 또는 json 원문을 그대로 보존하여 작성한다. 불확실하다면 반드시 빈 문자열로 설정한다"
     )
     # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
+
+    @field_validator("title", "date", "start_time", "end_time", "priority", mode="before")
+    @classmethod
+    def _normalize_unknown_placeholder(cls, value: Any) -> Any:
+        """LLM이 description 지시를 어기고 '미정'/'모름' 같은 대체 문자열을 넣는 경우 None으로 정규화한다.
+
+        description만으로는 모델이 placeholder 문자열을 넣는 경우가 있어(예: end_time="미정"),
+        저장/정렬/포맷 검증이 필요한 이후 단계(Week 3 이상)에서 깨지지 않도록 스키마 레벨에서 한 번 더 방어한다.
+        """
+
+        if isinstance(value, str) and value.strip().lower() in _UNKNOWN_PLACEHOLDERS:
+            return None
+        return value
 
 
 class StructuredRequestBatch(BaseModel):
@@ -215,6 +244,12 @@ def week02_prompt_parts() -> list[str]:
     자연어 요청은 StructuredRequest 스키마의 필드로 구조화한다.
     Week 1의 tool JSON을 받은 경우 tool을 재호출하지 않고 payload를 읽어 structured_response로 만든다.
     Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다.
+
+    kind 분류 기준:
+    - '오후 3시에 회의'처럼 정확한 시작 시각이 함께 명시된 일정만 personal_schedule/group_schedule로 분류한다.
+    - 시작 시각 없이 '~까지 제출해야 해', '~해야 한다'처럼 기한/의무를 나타내는 작업 표현은 todo로 분류한다.
+    - '~시에 알려줘'처럼 특정 시각에 알림을 요청하는 문장은 reminder로 분류한다.
+    - 위 기준으로 판단하기 어려우면 unknown으로 분류한다.
     """
     return [
         *week01_prompt_parts(),
