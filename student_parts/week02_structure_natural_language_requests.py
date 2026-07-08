@@ -105,7 +105,7 @@ class StructuredRequest(BaseModel):
     start_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 시작 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
     end_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 종료 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
     members: list[str] = Field(default_factory=list, description="일정에 참여하는 사람들의 list이다. 확실한 명시가 없어 모른다면 빈 list로 둔다.") # default_factory를 사용함으로써 모든 인스턴스가 같은 리스트를 공유하지 않도록 설정함.
-    priority: str | None = Field(default=None, description="할 일의 우선순위를 지정하는 필드다. 확실한 명시가 없으면 값을 억지로 만들지 않는다.")
+    priority: str | None = Field(default=None, description="할 일의 우선순위를 지정하는 필드다. low/medium/high 중 하나로 표현하고, 확실한 명시가 없으면 값을 억지로 만들지 않는다.")
     reason: str | None = Field(default=None, description="할 일의 우선순위를 지정한 판단 근거를 저장하는 필드다. 판단이 명확해서 특별히 설명할 근거가 없다면 None으로 둔다.")
     original_text: str = Field(default="", description="사용자의 입력 텍스트 원문 보존용 필드다.")
 
@@ -158,7 +158,8 @@ def week02_prompt_parts() -> list[str]:
         f"너는 자연어 요청을 구조화하는 agent야. 오늘의 날짜는 {current_app_date_iso()}이야. 상대 날짜 표현은 반드시 이 날짜를 기준으로 계산해.",
         "최종 답변은 반드시 StructuredRequestBatch 형식으로 반환해. 추출된 요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아. 일정과 무관한 대화라면 requests를 빈 list로 둬. 일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 채운 항목 하나를 담아.",
         "Week 1 tool을 호출해 얻은 결과 JSON이 있다면 다시 tool을 호출하지 말고, 그 결과의 created_schedule 값을 읽어 StructuredRequest 필드로 옮겨 담아.",
-        "Week 2에서는 SQLite 저장, RAG 검색, 외부 멤버 일정 조율을 하지 않아."
+        "Week 2에서는 SQLite 저장, RAG 검색, 외부 멤버 일정 조율을 하지 않아.",
+        "출력에는 유효한 JSON 객체 하나만 포함하고, 인사말이나 설명 등 다른 텍스트는 앞뒤에 절대 붙이지 마."
     ]
 
 
