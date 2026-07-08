@@ -185,7 +185,6 @@ def personal_create_schedule(
         "created_schedule": schedule,
     })
 
-
 @tool("personal_list_schedules", description="선택한 시작일과 종료일 범위에 포함되는 Nana의 개인 일정을 조회하는 Tool. date_from/date_to는 YYYY-MM-DD 포맷이다.")
 def personal_list_schedules(date_from: str | None = None, date_to: str | None = None) -> str:
     schedules = _current_session_schedules()
