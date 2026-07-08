@@ -160,7 +160,7 @@ class StructuredRequest(BaseModel):
         description="구조화 이전의 자연어 요청 또는 json 원문을 그대로 보존하여 작성한다. 불확실하다면 반드시 빈 문자열로 설정한다"
     )
 
-    @field_validator("title", "date", "start_time", "end_time", "priority", mode="before")
+    @field_validator("title", "date", "start_time", "end_time", "priority", "reason", mode="before")
     @classmethod
     def _normalize_unknown_placeholder(cls, value: Any) -> Any:
         """LLM이 description 지시를 어기고 '미정'/'모름' 같은 대체 문자열을 넣는 경우 None으로 정규화한다.
