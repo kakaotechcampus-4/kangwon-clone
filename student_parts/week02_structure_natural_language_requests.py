@@ -166,8 +166,8 @@ def week02_system_prompt() -> str:
     
     # 1. TODO에 적힌 지시사항을 LLM이 읽을 수 있는 '자연어(문자열)'로 작성합니다.
     week2_rules = (
-        "[Week 2 최종 답변 규칙]\n"
-        "1. 사용자의 요청이 하나뿐이더라도, StructuredRequestBatch의 requests 필드에는 반드시 StructuredRequest 하나를 담은 리스트(list) 형태를 유지하라\n"
+        "[Week 2 최종 답변 규칙]",
+        "1. 사용자의 요청이 하나뿐이더라도, StructuredRequestBatch의 requests 필드에는 반드시 StructuredRequest 하나를 담은 리스트(list) 형태를 유지하라",
         "2. 개인 일정 생성 요청 시 personal_create_schedule tool이 반환한 결과 JSON에서 'created_schedule' 데이터를 읽어 구조화 필드를 채워라."
     )
 
@@ -183,11 +183,23 @@ def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
 
     return [
-        *week01_prompt_parts(),
+        *week01_prompt_parts(), 
+        
         # TODO: Week 2 요청 구조화 agent 역할과 현재 날짜(current_app_date_iso()) 기준을 추가하세요.
+        "[Week 2 에이전트 역할 및 기준일]",
+        f"너는 사용자의 자연어 요청을 정형화된 데이터 스키마로 구조화하는 에이전트입니다. 오늘 기준 날짜는 {current_app_date_iso()} 입니다.",
+        
         # TODO: 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)로 구조화하도록 지시하세요.
+        "[데이터 구조화 지시]",
+        "사용자의 자연어 입력을 철저히 분석하여 StructuredRequest의 각 필드(kind, title, date, start_time, end_time, members, priority, reason 등)를 정확하게 추출하고 채우세요.",
+        
         # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
+        "[Tool JSON 처리 규칙]",
+        "만약 Week 1 tool(예: personal_create_schedule)의 결과 JSON을 이미 전달받았다면, 도구를 다시 호출하지 말고 해당 JSON의 payload(예: created_schedule)를 읽어 최종 structured_response를 생성하세요.",
+        
         # TODO: Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다고 명시하세요.
+        "[제한 사항]",
+        "주의: Week 2 단계에서는 SQLite 데이터베이스 저장, RAG(검색 증강 생성), 외부 멤버와의 일정 조율 기능을 절대 수행하지 않습니다. 오로지 데이터의 '구조화'만 수행하세요."
     ]
 
 
