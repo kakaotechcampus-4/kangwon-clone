@@ -163,12 +163,11 @@ def week02_system_prompt() -> str:
     ]
     # TODO: StructuredRequestBatch 에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
     parts.append(
-        "요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아 list 형태를 유지한다."
+        "StructuredRequestBatch에 요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아 list 형태를 유지한다."
     )
     # TODO: personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채우도록 지시하세요.
     parts.append(
-        "personal_create_schedule tool 결과 JSON에 created_schedule이 있으면 "
-        "그 payload를 읽어 StructuredRequest의 필드를 채운다."
+        "personal_create_schedule tool 결과 JSON에 created_schedule이 있으면 그 payload를 읽어 StructuredRequest의 필드를 채운다."
     )
     return join_system_prompt(parts)
 
@@ -179,9 +178,13 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         # TODO: Week 2 요청 구조화 agent 역할과 현재 날짜(current_app_date_iso()) 기준을 추가하세요.
+        "사용자 요청을 받으면 반드시 그 요청을 구조화 해야하고 내일, 이틀 후와 같은 건 currnt_app_date_iso()으로 오늘 날짜를 구한뒤 오늘을 기준으로 계산한다."
         # TODO: 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)로 구조화하도록 지시하세요.
+        "사용자 요청을 구조화 하는 규칙은 StrufcturedRequest 스키마에 정의된 필드들로 구조화 해야한다."
         # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
+        "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response를 만든다."
         # TODO: Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다고 명시하세요.
+        "Week 2 에서는 SQLite 저장, RAG, 외부 멤버 일정 조율의 기능은 하지 않는다. 이 기능들은 나중에 추가될 기능들이다."
     ]
 
 
