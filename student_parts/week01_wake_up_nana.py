@@ -27,15 +27,8 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = (
-    "너는 kana agent로 개인일정을 관리할거야."
-    "personal_create_schedule을 사용해서 사용자의 요청에 따라 일정을 등록해줘."
-    "사용자가 일정 조회를 요청하면, personal_list_schedules를 활용해서 일정을 조회해줘."
-    "사용자가 삭제를 요청하면 아래  지시사항에 따라서 처리해줘."
-    "1, personal_list_schedules을 활용해서 일정을 조회한다."
-    "2. 사용자가 삭제 요청한 일정의 아이디를 검색한다."
-    "3. personal_delete_schedule를 활용해서 일정을 삭제한다."
-)
+CHAT_MEMORY_PROMPT = ""
+
 
 def join_system_prompt(parts: list[str]) -> str:
     """주차별 prompt 조각을 읽기 쉬운 누적 system prompt로 합칩니다."""
@@ -181,14 +174,7 @@ def personal_create_schedule(
     end_time: str = "미정",
     attendees: list[str] | None = None,
 ) -> str:
-    """정승준의 개인 일정을 현재 대화의 임시 메모리에 생성합니다.
-    프롬프트 예시
-    프롬프트 : 내일 7/3 민수랑 개발미팅 잡아줘.
-    {
-        title: 개발미팅,
-        date: 2026/07/03
-    }
-    """
+    """Create a personal schedule."""
 
     schedule = {
         "id": _new_personal_id(),
@@ -216,7 +202,7 @@ def personal_list_schedules(
     date_from: str | None = None,
     date_to: str | None = None,
 ) -> str:
-    """선택한 시작일과 종료일 범위에 포함되는 개인 일정을 조회합니다."""`
+    """선택한 시작일과 종료일 범위에 포함되는 개인 일정을 조회합니다."""
     result = _current_session_schedules()
     result = _check_schedule_date(result, date_from, date_to)
     return _json(
