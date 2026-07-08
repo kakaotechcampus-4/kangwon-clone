@@ -213,6 +213,8 @@ def personal_list_schedules(date_from: str | None = None, date_to: str | None = 
     return _json({"ok": True, "tool_name": "personal_list_schedules", "schedules": schedules})
 
 
+
+
 #일정 삭제
 #사용자(~날 일정 일정 삭제해줘) -> AI가 삭제 함수 호출(텍스트 추출 후 인자로) -> 일정 ID에 해당하는 스케줄 삭제
 #-> json 반환 -> AI가 json 읽고 일정 알려줌 -> trace 탭에 기록
