@@ -112,11 +112,10 @@ class StructuredRequest(BaseModel):
 
 class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
-
-    # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
-    # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
-    # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
-    ...
+    
+    requests: list[StructuredRequest] = Field(default_factory=list, description="이번 사용자 발화에서 추출한 개별 요청들의 목록이다. 요청이 하나뿐이어도 StructuredRequest 하나를 담은 list로 유지하고, 추출할 요청이 없으면 빈 list로 둔다.")
+    base_date: str = Field(default_factory=current_app_date_iso, description="오늘/내일/다음 주 같은 상대 날짜 표현을 해석하는 기준일이다(YYYY-MM-DD). 시스템 프롬프트에 안내된 오늘 날짜와 일치해야 한다.")
+    
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
