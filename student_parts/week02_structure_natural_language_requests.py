@@ -207,7 +207,7 @@ def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
 
     week02_prompt="""
-    자연어 요청은 StructuedRequest 스키마의 필드로 구조화한다.
+    자연어 요청은 StructuredRequest 스키마의 필드로 구조화한다.
     Week 1의 tool JSON을 받은 경우 tool을 재호출하지 않고 payload를 읽어 structured_response로 만든다.
     Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다.
     """
