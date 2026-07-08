@@ -104,7 +104,6 @@ _UNKNOWN_PLACEHOLDERS = {"미정", "모름", "없음", "unknown", "tbd", "n/a", 
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-
     kind: RequestKind = Field(
         description=(
             """
@@ -122,22 +121,22 @@ class StructuredRequest(BaseModel):
 
     title: str | None = Field(
         default=None,
-        description="일정의 제목. 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+        description="일정의 제목. 명확히 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
                     "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     date: str | None = Field(
         default=None,
-        description="일정의 날짜. YYYY-MM-DD 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+        description="일정의 날짜. YYYY-MM-DD 형식으로 작성하며 명확히 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
                     "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     start_time: str | None = Field(
         default=None,
-        description="일정 시작 시간. HH:MM 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+        description="일정 시작 시간. HH:MM 형식으로 작성하며 명확히 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
                     "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
     end_time: str | None = Field(
         default=None,
-        description="일정 종료 시간. HH:MM 형식으로 작성하며 명확이 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
+        description="일정 종료 시간. HH:MM 형식으로 작성하며 명확히 판단될 때만 채우고 불확실하다면 반드시 None으로 설정한다. "
                     "'미정', '모름' 같은 대체 문자열을 넣지 않는다."
     )
 
@@ -212,11 +211,11 @@ def week02_tools() -> list[Any]:
 
     return week01_tools()
 
+
 def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
 
-    # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
-    response_rule="""
+    response_rule = """
     * Week 2 최종 답변 규칙
     - 요청이 하나뿐이더라도 request 목록에 StructuredRequest 하나를 담는다.
     - 요청 스키마의 필드를 채울 때 personal_create_schedule tool 결과 JSON의 created_schedule을 참조한다.
@@ -226,10 +225,11 @@ def week02_system_prompt() -> str:
         response_rule
     ])
 
+
 def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
 
-    week02_prompt="""
+    week02_prompt = """
     자연어 요청은 StructuredRequest 스키마의 필드로 구조화한다.
     Week 1의 tool JSON을 받은 경우 tool을 재호출하지 않고 payload를 읽어 structured_response로 만든다.
     Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다.
@@ -245,6 +245,7 @@ def week02_prompt_parts() -> list[str]:
         f"현재 날짜는 {current_app_date_iso()}다",
         week02_prompt
     ]
+
 
 def build_week02_agent() -> object:
     """Week 2 대화에서 structured_response를 직접 반환하는 단일 LangChain agent를 만듭니다."""
