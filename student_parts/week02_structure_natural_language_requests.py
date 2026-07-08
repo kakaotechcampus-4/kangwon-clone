@@ -153,7 +153,7 @@ _WEEK02_AGENT: Any | None = None
 
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
-    
+
     kind: RequestKind = Field(description="요청 종류. personal_schedule/group_schedule/todo/reminder/unknown 중 하나.")
     title: str | None = Field(default=None, description="일정/할 일 제목. 확실하지 않으면 None.")
     date: str | None = Field(default=None, description="YYYY-MM-DD 형식의 날짜. 확실하지 않으면 None.")
@@ -234,6 +234,7 @@ def week02_prompt_parts() -> list[str]:
 Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워.
 요청이 하나여도 requests 리스트에 담아 반환해.
 Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않아.
+종료 시간을 모르면 반드시 None으로 두고 '미정' 같은 임의 문자열을 넣지 마.
         """,
     ]
 
