@@ -194,7 +194,7 @@ def week02_system_prompt() -> str:
     - 요청이 하나뿐이더라도 request 목록에 StructuredRequest 하나를 담는다.
     - 요청 스키마의 필드를 채울 때 personal_create_schedule tool 결과 JSON의 created_schedule을 참조한다.
     """
-    join_system_prompt([
+    return join_system_prompt([
         *week02_prompt_parts(),
         response_rule
     ])
