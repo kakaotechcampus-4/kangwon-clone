@@ -160,7 +160,15 @@ class StructuredRequest(BaseModel):
     # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
     # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
-    ...
+    kind: RequestKind = Field(description='요청 종류. personal_schedule/group_schedule/todo/reminder 중에 고르고 애매하면 unknown')
+    title: str | None = Field(default=None, description='일정이나 할 일 제목. 모르면 None')
+    date: str | None = Field(default=None, description='날짜. 내일, 다음주 화요일 같은 표현은 기준 날짜로 계산해서 확실할 때만 YYYY-MM-DD로 쓰고 모르면 None')
+    start_time: str | None = Field(default=None, description='시작 시간. 확실할 때만 HH:MM으로 쓰고 모르면 None')
+    end_time: str | None = Field(default=None, description='종료 시간. 확실할 때만 HH:MM으로 쓰고 모르면 None')
+    members: list[str] = Field(default_factory=list, description='참석자 이름 리스트. 언급 없으면 빈 리스트')
+    priority: str | None = Field(default=None, description='할 일 우선순위. 원문에 없으면 None')
+    reason: str | None = Field(default=None, description='왜 이렇게 판단했는지 간단한 근거')
+    original_text: str = Field(default='', description='사용자가 입력한 원문 그대로')
 
 
 class StructuredRequestBatch(BaseModel):
@@ -169,7 +177,8 @@ class StructuredRequestBatch(BaseModel):
     # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
     # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
     # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
-    ...
+    requests: list[StructuredRequest] = Field(default_factory=list, description='구조화된 요청 목록. 요청이 하나여도 리스트에 담고 여러 개면 나눠서 담는다')
+    base_date: str = Field(default_factory=current_app_date_iso, description='내일, 다음주 같은 상대 날짜를 계산하는 기준 날짜')
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
@@ -178,7 +187,11 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
     # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
     # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
     # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
-    ...
+    if isinstance(value, StructuredRequest):
+        return value
+    if isinstance(value, dict):
+        return StructuredRequest.model_validate(value)
+    raise RuntimeError(f'StructuredRequest로 변환할 수 없는 응답: {type(value)}')
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
@@ -187,7 +200,12 @@ def extract_structured_request(text: str) -> StructuredRequest:
     # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
     # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
     # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
-    ...
+    structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    result = structured_llm.invoke([
+        ('system', join_system_prompt(week02_prompt_parts())),
+        ('user', text),
+    ])
+    return _coerce_structured_request(result)
 
 
 @tool
@@ -197,14 +215,21 @@ def extract_schedule_request(query: str) -> str:
     # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
     # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
     # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    ...
+    structured = extract_structured_request(query)
+
+    return json.dumps({
+        'ok' : True,
+        'tool_name' : 'extract_schedule_request',
+        'base_date' : current_app_date_iso(),
+        'structured_request' : structured.model_dump(),
+    }, ensure_ascii=False)
 
 
 def week02_tools() -> list[Any]:
     """Week 2 agent에 Week 1 도구를 노출해 tool JSON을 structured_response 근거로 씁니다."""
 
     # TODO: Week 1에서 구현한 tool 목록을 그대로 반환하세요.
-    ...
+    return week01_tools()
 
 
 def week02_system_prompt() -> str:
@@ -213,7 +238,12 @@ def week02_system_prompt() -> str:
     # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
     # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
     # TODO: personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채우도록 지시하세요.
-    ...
+    return join_system_prompt([
+        *week02_prompt_parts(),
+        "최종 답변은 무조건 StructuredRequestBatch 형식의 structured_response로 반환해줘."
+        "요청이 하나여도 requests 리스트에 담고, 한 문장에 여러 의도가 섞여 있으면 나눠서 담아줘.",
+        "personal_create_schedule을 호출했으면 결과 JSON의 created_schedule을 읽어서 title/date/start_time/end_time/members 필드를 채워줘.",
+    ])
 
 
 def week02_prompt_parts() -> list[str]:
@@ -225,6 +255,13 @@ def week02_prompt_parts() -> list[str]:
         # TODO: 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)로 구조화하도록 지시하세요.
         # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
         # TODO: Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다고 명시하세요.
+        "너는 2주차 요청 구조화 agent야. 사용자의 자연어 요청을 구조화된 데이터로 바꿔줘."
+        f"내일, 다음주 같은 상대 날짜는 {current_app_date_iso()}를 기준으로 계산해줘.",
+        "자연어 요청을 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)에 맞춰서 구조화해줘."
+        "확실하지 않은 값은 억지로 만들지 말고 None이나 빈 리스트로 둬."
+        "date는 YYYY-MM-DD, 시간은 HH:MM 형식으로 써줘.",
+        "Week 1 tool 결과 JSON을 받았으면 tool을 다시 호출하지 말고 payload를 읽어서 structured_response로 만들어줘.",
+        "2주차에서는 SQLite 저장, RAG, 외부 멤버 일정 조율은 하지 않는다.",
     ]
 
 
@@ -236,7 +273,17 @@ def build_week02_agent() -> object:
     # TODO: create_agent에는 model=chat_model(), tools=week02_tools(), response_format=StructuredRequestBatch,
     #       system_prompt=week02_system_prompt()를 연결하세요.
     # TODO: 생성 또는 재사용한 _WEEK02_AGENT를 반환하세요.
-    ...
+    if not CONFIG.has_openai_key:
+        raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
+    global _WEEK02_AGENT
+    if _WEEK02_AGENT is None:
+        _WEEK02_AGENT = create_agent(
+            model=chat_model(),
+            tools=week02_tools(),
+            response_format=StructuredRequestBatch,
+            system_prompt=week02_system_prompt(),
+        )
+    return _WEEK02_AGENT
 
 
 def build_week_agent() -> object:
