@@ -131,7 +131,7 @@ class StructuredRequest(BaseModel):
         default_factory=list,
         description="함께 일정에 참여하거나 관련된 멤버들 목록입니다. 언급이 따로 없거나 모른다면 빈 list로 둡니다."
     )
-    
+
     # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     priority: str | None = Field(
         default=None,
@@ -156,7 +156,17 @@ class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
 
     # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
+    requests: list[StructuredRequest] = Field(
+        default_factory=list,
+        description="자연어 요청을 구조화한 StructuredRequest 목록입니다. 요청이 하나뿐이어도 list 형태를 유지합니다."
+    )
+
     # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
+    base_date: str = Field(
+        default_factory=current_app_date_iso,
+        description="상대 날짜 해석 기준일입니다. current_app_date_iso()를 사용해 현재 날짜를 기준으로 합니다."
+    )
+
     # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
     ...
 
@@ -184,6 +194,7 @@ def week02_tools() -> list[Any]:
     """Week 2 agent에 Week 1 도구를 노출해 tool JSON을 structured_response 근거로 씁니다."""
 
     # TODO: Week 1에서 구현한 tool 목록을 그대로 반환하세요.
+    return week01_tools()
     ...
 
 
@@ -193,6 +204,24 @@ def week02_system_prompt() -> str:
     # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
     # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
     # TODO: personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채우도록 지시하세요.
+    return join_system_prompt(
+        [
+            *week02_prompt_parts(),
+            (
+                "최종 답변은 무조건 StructuredRequestBatch의 structured_response로만 반환합니다."
+                "그 외에 임의로 답하지 않습니다."
+            ),
+            (
+                "만약 들어온 요청이 하나뿐이어도 StructuredRequestBatch의 requests 목록에는 StrucutredRequest 객체"
+                "하나를 담아 리스트 형태를 유지하도록 합니다."
+            ),
+            (
+                "개인 일정 생성 요청을 처리할때 personal_create_schedule tool을 호출한 뒤에"
+                "그 tool의 결과에 담긴 JSON을 읽어서 created_schedule 필드의 값을"
+                "StructuredRequest의 각 필드에 채웁니다. 값을 임의로 만들어내지 않습니다."
+            )
+        ]
+    )
     ...
 
 
