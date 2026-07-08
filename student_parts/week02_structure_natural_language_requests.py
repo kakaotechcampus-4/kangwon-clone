@@ -99,6 +99,18 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
+    kind : RequestKind = Field(description="사용자 요청의 종류")
+    title : str | None = Field(default=None, description="일정 제목 또는 주제")
+    date : str | None = Field(default=None, description="일정이 진행되는 날짜 확실할 때만 YYYY-MM-DD형식")
+    start_time : str | None = Field(default=None, description="일정 시작 시간 확실할 때만 HH:MM형식")
+    end_time : str | None = Field(default=None, description="일정 종료 시간 확실할 때만 HH:MM형식")
+    members : list[str] = Field(default_factory=list, description="참석자/관련 멤버 list입니다. 모르면 빈 list로 둡니다.")
+    priority : str | None = Field(default=None, description="일정의 우선순위")
+    reason : str | None = Field(default=None, description="해당 우선순위로 설정된 이유")
+    original_text : str = Field(default="", description="사용자가 입력한 원본 텍스트")
+
+
+
     # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
     # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
@@ -115,6 +127,10 @@ class StructuredRequestBatch(BaseModel):
     # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
     # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
     ...
+    
+    requests : list[StructuredRequest] = Field(default_factory = list, description="유저 프롬프트에서 추출된 StructuredRequest의 리스트")
+    base_date : str = Field(default_factory = current_app_date_iso, description="텍스트 내 상대 날짜를 절대 날짜로 계산하기 위한 기준일 (YYYY-MM-DD 형식)")
+
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
