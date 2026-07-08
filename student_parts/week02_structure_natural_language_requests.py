@@ -102,17 +102,17 @@ class StructuredRequest(BaseModel):
     # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
     kind: RequestKind = Field(description="저장 payload 기준")
     # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    title: str | None = Field(default= None, description="")
-    date: str | None = Field(default=None, description="")
-    start_time: str | None = Field(default=None, description="")
-    end_time: str | None = Field(default=None, description="")
+    title: str | None = Field(default=None, description="일정 또는 할 일의 제목. 확실하지 않으면 None으로 둔다.")
+    date: str | None = Field(default=None, description="일정 날짜. 확실할 때만 YYYY-MM-DD 형식으로 채우고, 모르면 None으로 둔다.")
+    start_time: str | None = Field(default=None, description="시작 시각. 확실할 때만 HH:MM 형식으로 채우고, 모르면 None으로 둔다.")
+    end_time: str | None = Field(default=None, description="종료 시각. 확실할 때만 HH:MM 형식으로 채우고, 모르면 None으로 둔다.")
     # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
-    members: list[str] = Field(default_factory=list, description="")
+    members: list[str] = Field(default_factory=list, description="참석자 이름 리스트. 모르면 빈 list로 둔다.")
     # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    priority: str | None = Field(default=None, description="")
-    reason: str | None = Field(default=None, description="")
+    priority: str | None = Field(default=None, description="할 일의 우선순위. 사용자 프롬프트에 우선순위에 대한 요청이 없으면 None으로 둔다.")
+    reason: str | None = Field(default=None, description="우선순위가 있다면 그렇게 판단한 근거 작성.")
     # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
-    original_text: str = Field(default="", description="")
+    original_text: str = Field(default="", description="사용자 프롬프트의 원문 그대로 작성.")
     # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
     ...
 
