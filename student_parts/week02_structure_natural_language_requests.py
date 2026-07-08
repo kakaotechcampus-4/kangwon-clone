@@ -107,7 +107,7 @@ class StructuredRequest(BaseModel):
     start_time: str | None = Field(default=None, description="")
     end_time: str | None = Field(default=None, description="")
     # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
-    members: list[str] = Field(default=None, description="")
+    members: list[str] = Field(default_factory=list, description="")
     # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     priority: str | None = Field(default=None, description="")
     reason: str | None = Field(default=None, description="")
@@ -157,8 +157,9 @@ def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
 
     # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
-    join_system_prompt()
-    # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
+    
+    # TODO: StructuredRequestBatch 에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
+    
     # TODO: personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채우도록 지시하세요.
     ...
 
