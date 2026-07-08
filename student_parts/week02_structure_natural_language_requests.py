@@ -99,12 +99,12 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="요청의 종류로 personal_schedule, group_schedule, todo, reminder, unknown 중 하나다.")
+    kind: RequestKind = Field(description="요청의 종류로 personal_schedule, group_schedule, todo, reminder, unknown 중 하나다.") # 기본값을 주지 않음으로써 LLM이 매번 kind를 반드시 선택하도록 강제함.
     title: str | None = Field(default=None, description="일정 앱이 실제로 저장할 일정의 제목이다.")
     date: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 계획 날짜로, 확실한 명시가 있다면 YYYY-MM-DD 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
     start_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 시작 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
     end_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 종료 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
-    members: list[str] = Field(default_factory=list, description="일정에 참여하는 사람들의 list이다. 확실한 명시가 없어 모른다면 빈 list로 둔다.")
+    members: list[str] = Field(default_factory=list, description="일정에 참여하는 사람들의 list이다. 확실한 명시가 없어 모른다면 빈 list로 둔다.") # default_factory를 사용함으로써 모든 인스턴스가 같은 리스트를 공유하지 않도록 설정함.
     priority: str | None = Field(default=None, description="할 일의 우선순위를 지정하는 필드다. 확실한 명시가 없으면 값을 억지로 만들지 않는다.")
     reason: str | None = Field(default=None, description="할 일의 우선순위를 지정한 판단 근거를 저장하는 필드다. 판단이 명확해서 특별히 설명할 근거가 없다면 None으로 둔다.")
     original_text: str = Field(default="", description="사용자의 입력 텍스트 원문 보존용 필드다.")
@@ -114,6 +114,7 @@ class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
 
     requests: list[StructuredRequest] = Field(default_factory=list, description="이번 사용자 발화에서 추출한 개별 요청들의 목록이다. 요청이 하나뿐이어도 StructuredRequest 하나를 담은 list로 유지하고, 추출할 요청이 없으면 빈 list로 둔다.")
+    # 인스턴스 생성마다 새로 계산할 수 있도록 함수 참조만 전달하도록 함.
     base_date: str = Field(default_factory=current_app_date_iso, description="오늘/내일/다음 주 같은 상대 날짜 표현을 해석하는 기준일이다(YYYY-MM-DD). 시스템 프롬프트에 안내된 오늘 날짜와 일치해야 한다.")
     
 
@@ -173,7 +174,7 @@ def build_week02_agent() -> object:
         _WEEK02_AGENT = create_agent(
             model=chat_model(),
             tools=week02_tools(),
-            response_format=StructuredRequestBatch,
+            response_format=StructuredRequestBatch, # tool 호출 이후에도 최종 답변을 항상 구조화된 답변으로 반환하도록 설정
             system_prompt=week02_system_prompt(),
         )
 
