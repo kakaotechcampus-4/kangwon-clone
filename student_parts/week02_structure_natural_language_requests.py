@@ -154,6 +154,8 @@ def extract_schedule_request(query: str) -> str:
 
 def week02_tools() -> list[Any]:
     """Week 2 agent에 Week 1 도구를 노출해 tool JSON을 structured_response 근거로 씁니다."""
+    
+    return [personal_create_schedule, personal_list_schedules, personal_delete_schedule]
 
     # TODO: Week 1에서 구현한 tool 목록을 그대로 반환하세요.
     ...
@@ -161,6 +163,15 @@ def week02_tools() -> list[Any]:
 
 def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
+    
+    # 1. TODO에 적힌 지시사항을 LLM이 읽을 수 있는 '자연어(문자열)'로 작성합니다.
+    week2_rules = (
+        "[Week 2 최종 답변 규칙]\n"
+        "1. 사용자의 요청이 하나뿐이더라도, StructuredRequestBatch의 requests 필드에는 반드시 StructuredRequest 하나를 담은 리스트(list) 형태를 유지하라\n"
+        "2. 개인 일정 생성 요청 시 personal_create_schedule tool이 반환한 결과 JSON에서 'created_schedule' 데이터를 읽어 구조화 필드를 채워라."
+    )
+
+    return join_system_prompt(week02_prompt_parts(), week2_rules)
 
     # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
     # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
