@@ -99,13 +99,15 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
-    # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
-    # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
-    # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
-    ...
+    kind: RequestKind = Field(description="요청의 종류로 personal_schedule, group_schedule, todo, reminder, unknown 중 하나다.")
+    title: str | None = Field(default=None, description="일정 앱이 실제로 저장할 일정의 제목이다.")
+    date: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 계획 날짜로, 확실한 명시가 있다면 YYYY-MM-DD 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
+    start_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 시작 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
+    end_time: str | None = Field(default=None, description="일정 앱에 실제로 저장할 일정의 종료 시간으로, 확실한 명시가 있다면 HH:MM 형식으로 저장한다. 단, 확실한 명시가 없다면 값을 억지로 만들지 않는다.")
+    members: list[str] = Field(default_factory=list, description="일정에 참여하는 사람들의 list이다. 확실한 명시가 없어 모른다면 빈 list로 둔다.")
+    priority: str | None = Field(default=None, description="할 일의 우선순위를 지정하는 필드다. 확실한 명시가 없으면 값을 억지로 만들지 않는다.")
+    reason: str | None = Field(default=None, description="할 일의 우선순위를 지정한 판단 근거를 저장하는 필드다. 판단이 명확해서 특별히 설명할 근거가 없다면 None으로 둔다.")
+    original_text: str = Field(default="", description="사용자의 입력 텍스트 원문 보존용 필드다.")
 
 
 class StructuredRequestBatch(BaseModel):
