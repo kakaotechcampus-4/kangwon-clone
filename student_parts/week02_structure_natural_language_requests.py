@@ -99,22 +99,23 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
-    # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
-    # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
-    # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
-    # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
-    ...
+    kind: RequestKind = Field(description="요청 종류. personal_schedule, group_schedule, todo, reminder, unknown 중 하나입니다.")
+    title: str | None = Field(default=None, description="요청 제목. 하나의 일정의 주제를 나타낸다.")
+    date: str | None = Field(default=None, description="요청 날짜. YYYY-MM-DD 형식으로 나타낸다.")
+    start_time: str | None = Field(default=None, description="요청 시작 시간. HH:MM 형식으로 나타낸다.")
+    end_time: str | None = Field(default=None, description="요청 종료 시간. HH:MM 형식으로 나타낸다.")
+    members: list[str] = Field(default_factory=list, description="해당 요청 스케줄에 참여하는 멤버 목록.")
+    priority: str | None = Field(default=None, description="해당 일정의 우선순위.")
+    reason: str | None = Field(default=None, description="해당 요청을 구조화한 판단 근거를 나타낸다.")
+    original_text: str = Field(default="", description="해당 요청을 생성한 원문 텍스트를 보존합니다.")
+
 
 
 class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
 
-    # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
-    # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
-    # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
-    ...
+    requests: list[StructuredRequest] = Field(default_factory=list, description="여러 요청을 모은 StructuredRequest 목록. 요청이 하나뿐이어도 list 형태를 유지한다.")
+    base_date: str = Field(default_factory=current_app_date_iso, description="상대 날짜 해석 기준일. 현재 앱 날짜를 ISO 형식으로 나타낸다.")
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
