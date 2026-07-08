@@ -4,8 +4,9 @@ import json
 from typing import Any, Literal
 
 from langchain.agents import create_agent
+from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import tool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from fixed.config import CONFIG
 from fixed.llm import chat_model
@@ -15,6 +16,10 @@ from student_parts.week01_wake_up_nana import join_system_prompt, week01_prompt_
 
 RequestKind = Literal["personal_schedule", "group_schedule", "todo", "reminder", "unknown"]
 _WEEK02_AGENT: Any | None = None
+
+# LLM이 "불확실하면 None" 지시를 어기고 넣는 대체 placeholder 문자열 모음.
+# description만으로는 모델이 종종 이런 값을 그대로 채우므로, 스키마 레벨에서 None으로 정규화한다.
+_UNKNOWN_PLACEHOLDERS = {"미정", "모름", "없음", "unknown", "tbd", "n/a", "-", ""}
 
 
 # [2주차 1회차 수강생 구현 가이드]
@@ -228,13 +233,12 @@ def build_week02_agent() -> object:
     # TODO: CONFIG.has_openai_key가 없으면 RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")를 발생시키세요.
     if not CONFIG.has_openai_key:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
-    # TODO: 전역 _WEEK02_AGENT를 재사용하고, 아직 없을 때만 create_agent(...)로 새 agent를 만드세요.
     global _WEEK02_AGENT
     if _WEEK02_AGENT is None:
         _WEEK02_AGENT = create_agent(
             model=chat_model(),
             tools=week02_tools(),
-            response_format=StructuredRequestBatch,
+            response_format=ToolStrategy(StructuredRequestBatch),
             system_prompt=week02_system_prompt()
         )
     # TODO: create_agent에는 model=chat_model(), tools=week02_tools(), response_format=StructuredRequestBatch,
