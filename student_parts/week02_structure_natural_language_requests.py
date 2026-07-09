@@ -178,10 +178,7 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
         return value
 
     if isinstance(value, dict):
-        try:
-            return StructuredRequest.model_validate(value)
-        except ValidationError as e:
-            raise RuntimeError(f"dict 검증 실패: {e}") from e
+        return StructuredRequest.model_validate(value)
 
     raise RuntimeError(f"예상치 못한 응답 타입 : {type(value).__name__}")
 
