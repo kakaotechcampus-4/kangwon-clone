@@ -224,6 +224,11 @@ class StructuredRequestBatch(BaseModel):
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
+    if isinstance(value, StructuredRequest):
+        return value
+    if isinstance(value, dict):
+        return StructuredRequest.model_validate(value)
+    raise RuntimeError(f"올바르지 않은 값입니다: {value}")
 
 
 
@@ -231,12 +236,30 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-
+    model = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    system_prompt = join_system_prompt(week02_prompt_parts())
+    response = model.invoke(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text},
+        ]
+    )
+    return _coerce_structured_request(response)
 
 
 @tool
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
+
+    structured_request = extract_structured_request(query)
+    result = {
+        "ok": True,
+        "tool_name": "extract_schedule_request",
+        "base_date": current_app_date_iso(),
+        "structured_request": structured_request.model_dump(),
+    }
+
+    return json.dumps(result, ensure_ascii=False)
 
 
 
@@ -276,10 +299,6 @@ def week02_prompt_parts() -> list[str]:
 
     return [
         *week01_prompt_parts(),
-        # TODO: Week 2 요청 구조화 agent 역할과 현재 날짜(current_app_date_iso()) 기준을 추가하세요.
-        # TODO: 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)로 구조화하도록 지시하세요.
-        # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
-        # TODO: Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다고 명시하세요.
         (
             "당신은 이제 Week 2 요청 구조화 agent입니다. "
             "사용자가 입력한 자연어 요청을 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화합니다. "
@@ -302,10 +321,9 @@ def week02_prompt_parts() -> list[str]:
 def build_week02_agent() -> object:
     """Week 2 대화에서 structured_response를 직접 반환하는 단일 LangChain agent를 만듭니다."""
 
-    # TODO: CONFIG.has_openai_key가 없으면 RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")를 발생시키세요.
+
     if not CONFIG.has_openai_key:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
-    # TODO: 전역 _WEEK02_AGENT를 재사용하고, 아직 없을 때만 create_agent(...)로 새 agent를 만드세요.
     global _WEEK02_AGENT
     if _WEEK02_AGENT is None:
         _WEEK02_AGENT = create_agent(
@@ -314,9 +332,6 @@ def build_week02_agent() -> object:
             response_format=StructuredRequestBatch,
             system_prompt=week02_system_prompt(),
         )
-    # TODO: create_agent에는 model=chat_model(), tools=week02_tools(), response_format=StructuredRequestBatch,
-    #       system_prompt=week02_system_prompt()를 연결하세요.
-    # TODO: 생성 또는 재사용한 _WEEK02_AGENT를 반환하세요.
     return _WEEK02_AGENT
     ...
 
