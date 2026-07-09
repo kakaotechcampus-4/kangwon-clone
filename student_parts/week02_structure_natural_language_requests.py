@@ -162,15 +162,15 @@ class StructuredRequest(BaseModel):
 
     # 시간/날짜를 모를 때 LLM이 지어내면 잘못된 일정이 생길 수 있다.
     # 그래서 확실하지 않으면 None으로 두고 나중에 다시 물어보는 쪽이 안전하다고 판단했다.
+    # todo와 personal_schedule을 '시각이 정해졌나'로 구분하도록 기준을 명시했다.
     kind: RequestKind = Field(
-        description="요청 종류를 골라야 해. personal_schedule = 개인일정, reminder = 상기, "
-        "todo = 할일, group_schedule = 여러명 일정, "
+        description="요청 종류를 골라야 해. "
+        "personal_schedule = 특정 날짜/시간이 정해진 내 일정 (예: 내일 3시 회의). "
+        "todo = 특정 시간이 정해지지 않은, 나중에 해야 할 일 (예: 홈플러스에서 장보기, 워크숍 준비물 챙기기.) "
+        "reminder = 특정 시간에 알려달라는 상기 요청. "
+        "group_schedule = 나 말고 여러 명이 함께하는 일정. "
         "unknown = 요청이 애매해서 종류를 확신할 수 없을 때. 억지로 다른 종류로 분류하지 말고 unknown으로 둬."
     )
-
-    
-
-
 
     # "뭘 원하는지 모를 때" 라고 작성하면 LLM이 뭐라도 답하려는 성향이 있어서 personal_schedule을 선택하는 경우가 생긴다. 그래서 PRD에서 강조했던 "모르면 unknown으로 둬"를 실천하기 위해 "억지로 분류하지 말고" 라고 추가하였다.
     title: str | None = Field(
@@ -182,11 +182,15 @@ class StructuredRequest(BaseModel):
     )
     start_time: str | None = Field(
         default=None,
-        description="시작 시간을 HH:MM 24시간 형식으로. '오후 3시'는 '15:00'으로. 모르면 None",
+        description="시작 시간을 HH:MM 24시간 형식으로. '오후 3시'는 '15:00'으로. "
+        "문장에 '~에 끝나', '~까지'처럼 종료를 뜻하는 시각만 있으면 start_time이 아니라 end_time에 넣어. "
+        "시작 시각을 알 수 없으면 None.",
     )
     end_time: str | None = Field(
         default=None,
-        description="종료 시각. '오후 4시 반'은 '16:30'으로. 시작 시간과 종료 시간을 모두 알 수 없으면 둘 다 None",
+        description="종료 시각을 HH:MM 24시간 형식으로. '오후 4시 반'은 '16:30'. "
+        "사용자가 종료 시각을 말하지 않았으면 절대 지어내지 말고 None. "
+        "'미정' 같은 값을 받은 경우에도 None으로 둔다.",
     )
     members: list[str] = Field(
         default_factory=list, description="참석자/관련 멤버 목록. 모르면 빈 list"
