@@ -154,21 +154,21 @@ _WEEK02_AGENT: Any | None = None
 
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
-    kind: RequestKind = Field(description="사용자의 요청을 분류한다.")
-    title: str | None = Field(default=None, description="제목")
-    date: str | None = Field(default=None, description="YYYY-MM-DD")
-    start_time: str | None = Field(default=None, description="HH:MM")
-    end_time: str | None = Field(default=None, description="HH:MM")
-    members: list[str] = Field(default_factory=list, description="참여자/관련멤버 목록")
-    priority: str | None = Field(default=None, description="우선순위")
-    reason: str | None = Field(default=None, description="kind 또는 priority 판단 근거")
-    original_text: str = Field(default="", description="요청 원문")
+    kind: RequestKind = Field(description="사용자의 요청을 가장 적절한 종류로 분류합니다.")
+    title: str | None = Field(default=None, description="요청의 제목입니다. 사용자가 명시적으로 제목을 적지 않았다면 10자 내외로 요약하여 작성하세요.")
+    date: str | None = Field(default=None, description="일정이나 대상의 날짜입니다. 반드시 `YYYY-MM-DD` 형식으로 작성하고, 상대적 날짜 요청은 절대 날짜를 기준으로 계산하세요.")
+    start_time: str | None = Field(default=None, description="시작 시간입니다. 반드시 `HH:MM` 형식으로 작성하세요.")
+    end_time: str | None = Field(default=None, description="종료 시간입니다. 반드시 `HH:MM` 형식으로 작성하세요. 종료 시간이 명확하지 않다면 기본값으로 설정하세요.")
+    members: list[str] = Field(default_factory=list, description="일정에 참여하거나 관련된 사람들의 목록입니다. 없다면 빈 리스트로 반환하세요.")
+    priority: str | None = Field(default=None, description="사용자의 요청, 마감일 등을 고려하여 우선순위를 설정하세요. '낮음', '중간', '높음' 으로 분류하세요.")
+    reason: str | None = Field(default=None, description="사용자의 요청에서 어떤 맥락을 근거로 kind 또는 priority 판단하였는지 근거를 간단하게 작성하세요.")
+    original_text: str = Field(default="", description="사용자가 요청한 원문을 그대로 저장합니다.")
 
 
 class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
-    requests: list[StructuredRequest] = Field(default_factory=list, description="요청 스키마 목록")
-    base_date: str = Field(default_factory=current_app_date_iso, description="상대 날짜 기준일자")
+    requests: list[StructuredRequest] = Field(default_factory=list, description="요청 스키마 목록입니다.")
+    base_date: str = Field(default_factory=current_app_date_iso, description="상대 날짜 기준일자입니다.")
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
