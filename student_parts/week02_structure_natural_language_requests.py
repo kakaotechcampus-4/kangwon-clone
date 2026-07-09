@@ -167,7 +167,7 @@ class StructuredRequest(BaseModel):
 
 class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
-    requests: list[StructuredRequest] = Field(default_factory=list, description="요청 스키마 목록입니다.")
+    requests: list[StructuredRequest] = Field(default_factory=list, description="요청 스키마 목록입니다. 요청이 하나뿐이어도 requests 목록에 StructuredRequest를 담아주세요.")
     base_date: str = Field(default_factory=current_app_date_iso, description="상대 날짜 기준일자입니다.")
 
 
@@ -223,7 +223,6 @@ def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
     return join_system_prompt([
         *week02_prompt_parts(),
-        "StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest를 담아.",
         "일정 생성 시에는 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워."
     ])
 
