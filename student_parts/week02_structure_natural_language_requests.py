@@ -239,7 +239,7 @@ def week02_prompt_parts() -> list[str]:
         "requests에는 무조건 값이 들어있어야 해. 사용자의 요청에 따라 RequestKind을 매칭해.",
         "일정 생성은 personal_schedule, 그룹 일정 생성은 group_schedule, 할 일은 todo, 리마인더(알림)은 reminder, 그 외 매칭이 안되는 요청은 unknown으로 해줘.",
         "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들어.",
-        "reason 필드는 tool JSON에 값이 없더라도 생략하지 말고, 왜 이 kind/priority로 판단했는지 근거를 스스로 작성해줘."
+        "reason 필드는 tool JSON에 값이 없더라도 생략하지 말고, 왜 이 kind/priority로 판단했는지 근거를 스스로 작성해줘.",
         "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않아."
     ]
 
