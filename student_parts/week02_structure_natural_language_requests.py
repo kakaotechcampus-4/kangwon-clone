@@ -223,7 +223,7 @@ def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
     return join_system_prompt([
         *week02_prompt_parts(),
-        "일정 생성 시에는 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워."
+        "일정 생성 시에는 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워주세요."
     ])
 
 
@@ -231,12 +231,12 @@ def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
     return [
         *week01_prompt_parts(),
-        "응답은 무조건 StructuredRequest 필드로 구조화해서 반환하고, 각 필드는 알맞게 채우되 적절하지 않다면 기본값으로 반환해.",
-        "requests에는 무조건 값이 들어있어야 해. 사용자의 요청에 따라 RequestKind을 매칭해.",
-        "일정 생성은 personal_schedule, 그룹 일정 생성은 group_schedule, 할 일은 todo, 리마인더(알림)은 reminder, 그 외 매칭이 안되는 요청은 unknown으로 해줘.",
-        "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들어.",
-        "reason 필드는 tool JSON에 값이 없더라도 생략하지 말고, 왜 이 kind/priority로 판단했는지 근거를 스스로 작성해줘.",
-        "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않아."
+        "응답은 무조건 StructuredRequest 필드로 구조화해서 반환하고, 각 필드는 알맞게 채우되 적절하지 않다면 기본값으로 반환해주세요.",
+        "requests에는 무조건 값이 들어있어야 합니다. 사용자의 요청에 따라 RequestKind을 매칭해주세요.",
+        "일정 생성은 personal_schedule, 그룹 일정 생성은 group_schedule, 할 일은 todo, 리마인더(알림)은 reminder, 그 외 매칭이 안되는 요청은 unknown으로 설정해주세요.",
+        "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들어주세요.",
+        "reason 필드는 tool JSON에 값이 없더라도 생략하지 말고, 왜 이 kind/priority로 판단했는지 근거를 스스로 작성해주세요.",
+        "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다."
     ]
 
 
