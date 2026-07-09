@@ -154,12 +154,12 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
+
     kind: RequestKind = Field(
-        descrition="요청 종류를 나타냅니다. personal_schedule(개인 일정)," 
+        description="요청 종류를 나타냅니다. personal_schedule(개인 일정)," 
         "group_schedule(그룹 일정), todo(할 일), reminder(상기시키기), unknown(분류 불가) 중 하나여야만 합니다."
     )
-    # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
+
     title: str | None = Field(
         default=None,
         description="일정/할 일/상기시키기의 제목입니다. 명확하지 않다면 None으로 둡시다."
@@ -181,13 +181,13 @@ class StructuredRequest(BaseModel):
     )
 
 
-    # TODO: members 필드를 list[str] 타입으로 선언하고 default_factory=list를 사용하세요.
+
     members: list[str] = Field(
         default_factory=list,
         description="함께 일정에 참여하거나 관련된 멤버들 목록입니다. 언급이 따로 없거나 모른다면 빈 list로 둡니다."
     )
 
-    # TODO: priority/reason 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
+
     priority: str | None = Field(
         default=None,
         description="할 일 우선순위나 중요도를 나타냅니다. 명확하지 않다면 None으로 둡시다."
@@ -198,76 +198,58 @@ class StructuredRequest(BaseModel):
         description="이 요청을 해당하는 kind와 필드들의 값으로 분류한 이유를 간단히 설명합니다."
     )
 
-    # TODO: original_text 필드를 str 타입으로 선언하고 기본값은 ""로 두세요.
+
     original_text: str = Field(
         default="",
         description="사용자가 입력한 원문 요청입니다."
     )
-    # TODO: 각 필드에는 LLM structured output이 이해할 수 있도록 한국어 description을 달아주세요.
-    ...
+
+    
 
 
 class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 메인과제 스키마입니다."""
 
-    # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
     requests: list[StructuredRequest] = Field(
         default_factory=list,
         description="자연어 요청을 구조화한 StructuredRequest 목록입니다. 요청이 하나뿐이어도 list 형태를 유지합니다."
     )
 
-    # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
     base_date: str = Field(
         default_factory=current_app_date_iso,
         description="상대 날짜 해석 기준일입니다. current_app_date_iso()를 사용해 현재 날짜를 기준으로 합니다."
     )
 
-    # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
-    ...
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
 
-    # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
-    # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
-    # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
-    ...
+
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
-    # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
-    # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
-    ...
+
 
 
 @tool
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
-    # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
-    # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
-    # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    ...
 
 
 def week02_tools() -> list[Any]:
     """Week 2 agent에 Week 1 도구를 노출해 tool JSON을 structured_response 근거로 씁니다."""
 
-    # TODO: Week 1에서 구현한 tool 목록을 그대로 반환하세요.
     return week01_tools()
-    ...
+
 
 
 def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
 
-    # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
-    # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
-    # TODO: personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채우도록 지시하세요.
     return join_system_prompt(
         [
             *week02_prompt_parts(),
@@ -276,7 +258,7 @@ def week02_system_prompt() -> str:
                 "그 외에 임의로 답하지 않습니다."
             ),
             (
-                "만약 들어온 요청이 하나뿐이어도 StructuredRequestBatch의 requests 목록에는 StrucutredRequest 객체"
+                "만약 들어온 요청이 하나뿐이어도 StructuredRequestBatch의 requests 목록에는 StructuredRequest 객체"
                 "하나를 담아 리스트 형태를 유지하도록 합니다."
             ),
             (
