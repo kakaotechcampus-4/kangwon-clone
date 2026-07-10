@@ -159,7 +159,8 @@ class StructuredRequest(BaseModel):
     date: str | None = Field(default=None, description="요청 날짜. YYYY-MM-DD 형식으로 나타낸다.")
     start_time: str | None = Field(default=None, description="요청 시작 시간. HH:MM 형식으로 나타낸다.")
     end_time: str | None = Field(default=None, description="요청 종료 시간. HH:MM 형식으로 나타낸다.")
-    members: list[str] = Field(default_factory=list, description="해당 요청 스케줄에 참여하는 멤버 목록.")
+    members: list[str] = Field(default_factory=list, description="해당 요청 스케줄에 참여하는 멤버 목록.\
+                                                        members 필드에는 'OO랑', 'OO와', 'OO하고' 처럼 언급된 사람 이름을 모두 포함할 것. 모르면 빈 list로 둔다.")
     priority: str | None = Field(default=None, description="해당 일정의 우선순위.")
     reason: str | None = Field(default=None, description="해당 요청을 구조화한 판단 근거를 나타낸다. \
                                                         원문을 그대로 옮기지 말고, kind/날짜/우선순위 등을 어떻게 판단했는지 한 문장으로 간결하게 요약할 것.")
@@ -231,10 +232,7 @@ def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
 
     now_prompt = f"현재 앱 날짜는 {current_app_date_iso()}입니다. 상대 날짜 해석 기준으로 사용하세요."
-    field_prompt = (
-        "자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화하세요. "
-        "members 필드에는 \"OO랑\", \"OO와\", \"OO하고\" 처럼 언급된 사람 이름을 모두 포함하세요."
-    )
+    field_prompt = "자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화하세요. "
     payload_prompt = f"Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 StructuredRequest 필드를 채우세요."
     week02_prompt = f"Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다."
     return [
