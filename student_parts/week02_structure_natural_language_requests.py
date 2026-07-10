@@ -154,11 +154,20 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="일정 종류, 판단이 어려운 경우 unknown.")
-    title: str | None = Field(default=None, description="일정 제목.")
-    date: str | None = Field(default=None, description="일정 날짜. YYYY-MM-DD 형식, 불확실한 경우 None.")
-    start_time: str | None = Field(default=None, description="시작 시간. HH:MM, 불확실한 경우 None.")
-    end_time: str | None = Field(default=None, description="종료 시간. HH:MM, 불확실한 경우 None.")
+    kind: RequestKind = Field(
+        description=(
+            "사용자 요청의 종류. "
+            "personal_schedule: 특정 날짜/시간에 나 혼자 참석하는 일정 생성 (예시: '오후 1시에 회의 잡아줘'). "
+            "group_schedule: 다른 참석자와 함께하는 일정 생성 (예시: '철수랑 회의 잡아줘'). "
+            "todo: 완료해야 할 작업 등록, 시간 블록이 아님 (예시: '회의 자료 준비해야 돼'). "
+            "reminder: 특정 시점에 알림 발송 요청, 새 일정을 만들지 않음 (예시: '회의 전에 알려줘'). "
+            "unknown: 어떤 요청에도 확실히 속하지 않을 때."
+        )
+    )
+    title: str | None = Field(default=None, description="사용자 요청 내용을 간결한 제목으로 정리.")
+    date: str | None = Field(default=None, description="요청에 해당하는 날짜. YYYY-MM-DD 형식, '내일'처럼 오늘을 기준으로 계산하여 확정되는 상대 표현은 계산해서 채운다. '다음 주 중'처럼 범위만 주어지면 None.")
+    start_time: str | None = Field(default=None, description="시작 시간. HH:MM 형식, 정확한 시각이 명시된 경우에만 채운다. '오후', '점심쯤', '저녁에'처럼 범위만 언급되면 임의 시각으로 채우지 말고 None.")
+    end_time: str | None = Field(default=None, description="종료 시간. HH:MM 형식, 불확실한 경우 None.")
     members: list[str] = Field(default_factory=list, description="일정에 참가하는 참석자 이름.")
     priority: str | None = Field(default=None, description="할 일 우선순위.")
     reason: str | None = Field(default=None, description="판단 근거.")
@@ -213,7 +222,6 @@ def week02_system_prompt() -> str:
         "최종 답변은 StructuredRequestBatch 형식으로 한다. 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담는다.",
         "personal_create_schedule tool을 호출한 결과 JSON의 created_schedule 값을 읽어 StructuredRequest 필드를 채운다."
     ])
-    ...
 
 
 def week02_prompt_parts() -> list[str]:
@@ -222,8 +230,14 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         f"너는 사용자의 요청을 구조화하는 agent이다. 현재 날짜는 {current_app_date_iso()}이며 이를 기준으로 상대 날짜를 계산한다. "
-        "사용자의 자연어 요청을 kind/title/date/start_time/end_time/members/priority/reason/original_text 필드로 구조화한다. 원문에 없는 정보는 지어내지 않는다. "
+        "tool 호출은 일정(개인/단체) 생성 요청일 때만 한다. "
+        "todo나 reminder 요청은 새 일정을 만드는 것이 아니므로 tool을 호출하지 않고 원문에서 직접 StructuredRequest로 구조화한다. "
         "입력으로 Week 1 tool 결과 JSON을 받은 경우 tool을 다시 호출하지 않고, payload를 읽어 StructuredRequest 필드를 채운다. "
+        "사용자의 자연어 요청을 kind/title/date/start_time/end_time/members/priority/reason/original_text 필드로 구조화한다. 원문에 없는 정보는 지어내지 않는다. "
+        "StructuredRequest의 date/start_time/end_time은 tool payload가 아니라 사용자 원문을 기준으로 채운다. "
+        "tool 호출 시 필수 인자 때문에 임시로 채운 시각이 payload에 있어도, 원문에 정확한 시각이 없으면 해당 필드는 None으로 채운다. "
+        "kind의 개인/단체 구분은 members 목록이 아니라 원문에 나 이외의 참석자 언급이 있는지로 판단한다. "
+        "'팀원이랑', '친구들이랑'처럼 이름을 특정할 수 없는 집단 언급이어도 참석자 언급이므로 group_schedule이다. members에는 원문에서 이름이 특정된 참석자만 담는다. "
         "SQLite 저장, RAG, 외부 멤버 일정 조율은 하지 않는다."
     ]
 
