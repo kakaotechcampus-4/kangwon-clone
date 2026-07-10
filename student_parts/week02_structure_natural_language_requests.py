@@ -233,8 +233,8 @@ def week02_prompt_parts() -> list[str]:
 
     now_prompt = f"현재 앱 날짜는 {current_app_date_iso()}입니다. 상대 날짜 해석 기준으로 사용하세요."
     field_prompt = "자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화하세요. "
-    payload_prompt = f"Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 StructuredRequest 필드를 채우세요."
-    week02_prompt = f"Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다."
+    payload_prompt = "Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 StructuredRequest 필드를 채우세요."
+    week02_prompt = "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다."
     return [
         *week01_prompt_parts(),
         now_prompt,
