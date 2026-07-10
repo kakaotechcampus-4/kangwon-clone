@@ -147,10 +147,17 @@ def extract_structured_request(text: str) -> StructuredRequest:
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
-    # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
-    # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
-    # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    ...
+    structured_request = extract_structured_request(query)
+
+    return json.dumps(
+        {
+            "ok": True,
+            "tool_name": "extract_schedule_request",
+            "base_date": current_app_date_iso(), # StructuredRequest엔 base_date 필드가 없고, LLM에 다시 묻지 않고 직접 계산하여 할루시네이션을 방지함.
+            "structured_request": structured_request.model_dump(),
+        },
+        ensure_ascii=False,
+    )
 
 
 def week02_tools() -> list[Any]:
@@ -176,7 +183,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         f"너는 자연어 요청을 구조화하는 agent야. 오늘의 날짜는 {current_app_date_iso()}이야. 상대 날짜 표현은 반드시 이 날짜를 기준으로 계산해.",
-        "일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 분류해.",  
+        "일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 분류해.",
         "Week 2에서는 SQLite 저장, RAG 검색, 외부 멤버 일정 조율을 하지 않아.",
         "출력에는 유효한 JSON 객체 하나만 포함하고, 인사말이나 설명 등 다른 텍스트는 앞뒤에 절대 붙이지 마."
     ]
