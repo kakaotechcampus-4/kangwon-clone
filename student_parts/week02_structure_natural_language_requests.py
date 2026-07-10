@@ -156,7 +156,11 @@ def week02_tools() -> list[Any]:
 def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
 
-    return join_system_prompt(week02_prompt_parts())
+    return join_system_prompt([
+        *week02_prompt_parts(),
+        "최종 답변은 반드시 StructuredRequestBatch 형식으로 반환해. 추출된 요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아. 일정과 무관한 대화라면 requests를 빈 list로 둬.",
+        "Week 1 tool을 호출해 얻은 결과 JSON이 있다면 다시 tool을 호출하지 말고, 그 결과의 created_schedule 값을 읽어 StructuredRequest 필드로 옮겨 담아.",
+    ])
 
 
 def week02_prompt_parts() -> list[str]:
@@ -165,8 +169,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         f"너는 자연어 요청을 구조화하는 agent야. 오늘의 날짜는 {current_app_date_iso()}이야. 상대 날짜 표현은 반드시 이 날짜를 기준으로 계산해.",
-        "최종 답변은 반드시 StructuredRequestBatch 형식으로 반환해. 추출된 요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아. 일정과 무관한 대화라면 requests를 빈 list로 둬. 일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 채운 항목 하나를 담아.",
-        "Week 1 tool을 호출해 얻은 결과 JSON이 있다면 다시 tool을 호출하지 말고, 그 결과의 created_schedule 값을 읽어 StructuredRequest 필드로 옮겨 담아.",
+        "일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 채운 항목 하나를 담아.",  
         "Week 2에서는 SQLite 저장, RAG 검색, 외부 멤버 일정 조율을 하지 않아.",
         "출력에는 유효한 JSON 객체 하나만 포함하고, 인사말이나 설명 등 다른 텍스트는 앞뒤에 절대 붙이지 마."
     ]
