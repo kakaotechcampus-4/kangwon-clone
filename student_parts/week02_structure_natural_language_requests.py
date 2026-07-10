@@ -249,7 +249,11 @@ def week02_prompt_parts() -> list[str]:
         "그 외에는 personal_schedule/group_schedule/todo/reminder 중 해당하는 kind로 분류하세요. "
         "requests를 빈 배열로 두지 마세요.",
         "Week 2에서는 정보가 부족해도 사용자에게 되묻지 말고, "
-        "확실하지 않은 필드는 None 또는 빈 값으로 남긴 채로 StructuredRequest를 만드세요.",
+        "확실하지 않은 필드는 None 또는 빈 값으로 남긴 채로 StructuredRequest를 만드세요. "
+        "다만 사용자 메시지에 일정/할 일/리마인더로 해석할 실질적 내용이 전혀 없다면 "
+        "(예: 빈 문자열, 따옴표만 있는 입력, 의미 없는 문자열) kind=\"unknown\"으로 두고, "
+        "reason 필드에 '요청에 필요한 정보(날짜/시간/내용 등)를 포함해 다시 말씀해주세요'와 "
+        "같은 안내 문구를 담으세요. 이 경우에도 JSON 객체 형식은 그대로 유지합니다.",
         "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다.",
         "반드시 JSON 객체만 출력하고 그 외 텍스트/설명/코드블록을 붙이지 마세요.",
     ]
