@@ -219,10 +219,13 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
 
     # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
+    if isinstance(value, StructuredRequest):
+        return value
     # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
+    if isinstance(value, dict):
+        return StructuredRequest.model_validate(value)
     # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
-    ...
-
+    raise RuntimeError(f"Unexpected value type: {type(value)}")
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
@@ -230,8 +233,12 @@ def extract_structured_request(text: str) -> StructuredRequest:
     # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
     # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
     # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
-    ...
-
+    model = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    result = model.invoke([
+        {"role": "system", "content": join_system_prompt(week02_prompt_parts())},
+        {"role": "user", "content": text}
+    ])
+    return _coerce_structured_request(result)
 
 @tool
 def extract_schedule_request(query: str) -> str:
@@ -240,7 +247,15 @@ def extract_schedule_request(query: str) -> str:
     # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
     # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
     # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    ...
+    extracted_request = extract_structured_request(query)    
+    payload = {
+        "ok": True,
+        "tool_name": "extract_schedule_request",
+        "base_date": current_app_date_iso(),
+        "structured_request": extracted_request.model_dump(),
+    }
+    
+    return json.dumps(payload, ensure_ascii=False)
 
 
 def week02_tools() -> list[Any]:
@@ -266,7 +281,7 @@ def week02_system_prompt() -> str:
         "혹시 이미 personal_create_schedule이 호출되어 결과가 왔더라도, 원래 요청이 "
         "todo나 reminder로 해석된다면 kind는 personal_schedule이 아니라 todo나 "
         "reminder로 분류하세요.",
-        
+
         "Week 2에서는 정보가 부족해도 사용자에게 되묻지 말고, "
         "확실하지 않은 필드는 None 또는 빈 값으로 남긴 채로 StructuredRequest를 만드세요. "
         "다만 사용자 메시지에 일정/할 일/리마인더로 해석할 실질적 내용이 전혀 없다면 "
