@@ -282,7 +282,7 @@ def week02_system_prompt() -> str:
     response_rule = """
     * Week 2 최종 답변 규칙
     - 요청이 하나뿐이더라도 requests 목록에 StructuredRequest 하나를 담는다.
-    - 요청 스키마의 필드를 채울 때 personal_create_schedule tool 결과 JSON의 created_schedule을 참조한다.
+    - 요청 스키마의 필드를 채울 때 personal_create_schedule tool 결과 JSON의 created_schedule을 참조한다. (tool 결과의 `미정`같은 placeholder값은 특정 문자열이 아닌 지정되지 않은, 즉 불확실한 값으로 판단한다.) 
     """
     return join_system_prompt([
         *week02_prompt_parts(),
