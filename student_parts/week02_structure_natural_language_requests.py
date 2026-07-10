@@ -196,13 +196,13 @@ def extract_structured_request(text: str) -> StructuredRequest:
 
     structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
     system_prompt = join_system_prompt(week02_prompt_parts())
-    response = structured_llm.invoke(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": text}])
+    response = structured_llm.invoke([{"role": "system", "content": system_prompt}, {"role": "user", "content": text}])
 
     return _coerce_structured_request(response) 
 
 
 @tool
-def extract_schedule_request(query: str) -> str:
+def extract_schedule_request(query: str) -> str: 
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
     # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
@@ -245,7 +245,7 @@ def week02_prompt_parts() -> list[str]:
         "주어진 자연어 요청을 StructuredRequestBatch로 구조화하는 Week 2 agent 역할을 수행합니다.",
         f"현재 날짜는 {current_app_date_iso()}입니다. '이번 주 목요일', '다음 주 월요일' 같은 상대적 날짜 표현은 이 날짜를 기준으로 계산하세요.",
         "자연어 요청을 읽고, StructuredRequest 필드로 구조화하세요.",
-        "날짜,시간,참석자는 각각 date, start_time 및 end_time, attendees이며, 명확하지 않으면 None 또는 빈 리스트로 두고 추측하지 마세요.",
+        "날짜,시간,참석자는 각각 date, start_time 및 end_time, members이며, 명확하지 않으면 None 또는 빈 리스트로 두고 추측하지 마세요.",
         "start_time과 end_time은 반드시 HH:MM 숫자 형식만 허용합니다. '저녁', '오전', '미정' 같은 텍스트는 HH:MM으로 표현할 수 없으므로 None으로 처리하세요.",
         "'~해야겠다', '~해야지', '~할 것 같아' 같은 의지·메모 표현은 일정 생성 요청이 아닙니다. personal_create_schedule tool을 호출하지 말고 kind=todo로 바로 구조화하세요.",
         "요청 종류를 파악할 수 없으면 kind='unknown'으로 처리하세요.",
