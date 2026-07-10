@@ -28,13 +28,13 @@ _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
 CHAT_MEMORY_PROMPT = (
-    "너는 kana agent로 개인일정을 관리할거야."
-    "personal_create_schedule을 사용해서 사용자의 요청을에 따라 일정을 등록해줘."
+    "너는 Nana agent로 개인일정을 관리할거야."
+    "personal_create_schedule을 사용해서 사용자의 요청에 따라 일정을 등록해줘."
     "사용자가 일정 조회를 요청하면, personal_list_schedules를 활용해서 일정을 조회해줘."
     "사용자가 삭제를 요청하면 아래 지시사항에 따라서 처리해줘."
     "1. personal list schedules을 활용해서 일정을 조회한다."
     "2. 사용자가 삭제 요청한 일정의 아이디를 검색한다."
-    "3. personal_delete_schedules를 활용해서 일정을 삭제한다."
+    "3. personal_delete_schedule를 활용해서 일정을 삭제한다."
 )
 
 
@@ -277,7 +277,7 @@ def week01_prompt_parts() -> list[str]:
 
     return [
         CHAT_MEMORY_PROMPT,
-        f"현재 날짜는 앱 시작 시 OS에서 읽은 {current_app_date_iso()}이며, {day_name}요일이다.",
+        f"현재 날짜는 앱 시작 시 OS에서 읽은 {today_iso}이며, {day_name}요일이다.",
     ]
 
 
