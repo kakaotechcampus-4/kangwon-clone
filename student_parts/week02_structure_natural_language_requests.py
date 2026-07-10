@@ -220,7 +220,11 @@ def week02_system_prompt() -> str:
     answer_prompt = (
         "최종 답변은 반드시 StructuredRequestBatch class 형식의 structured_response로 반환하세요. "
         "요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담으세요. ")
-    return join_system_prompt(week02_prompt_parts(), answer_prompt)
+    final_answer_prompt = [
+        *week02_prompt_parts(),
+        answer_prompt,
+    ]
+    return join_system_prompt(final_answer_prompt)
 
 def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
