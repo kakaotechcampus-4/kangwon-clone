@@ -226,7 +226,7 @@ def week02_prompt_parts() -> list[str]:
     """2주차 structured output agent가 따르는 system prompt 조각입니다."""
 
     now_prompt = f"현재 앱 날짜는 {current_app_date_iso()}입니다. 상대 날짜 해석 기준으로 사용하세요."
-    feild_prompt = (
+    field_prompt = (
         "자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화하세요. "
         "members 필드에는 \"OO랑\", \"OO와\", \"OO하고\" 처럼 언급된 사람 이름을 모두 포함하세요."
     )
@@ -235,7 +235,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         now_prompt,
-        feild_prompt,
+        field_prompt,
         payload_prompt,
         week02_prompt,
     ]
