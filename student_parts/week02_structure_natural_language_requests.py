@@ -178,11 +178,9 @@ def week02_system_prompt() -> str:
 
         # TODO: join_system_prompt(...)로 week02_prompt_parts()와 Week 2 structured_response 최종 답변 규칙을 합치세요.
         (
-            "가장 중요한 규칙: 도구 호출이 끝난 뒤에는 절대 자연어 문장으로 답하지 않는다. "
-            "'등록했습니다', '잡아드렸습니다' 같은 대화형 답변을 하지 말고, "
-            "모든 요청의 최종 답변은 예외 없이 StructuredRequestBatch 구조(structured_response)로만 생성한다. "
-            "personal_create_schedule을 호출했다면 그 결과 JSON의 created_schedule을 읽어 "
-            "StructuredRequest 필드를 채운 StructuredRequestBatch를 최종 답변으로 낸다."
+            "가장 중요한 규칙: 도구 호출이 끝난 뒤에도 '등록했습니다', '잡아드렸습니다' 같은 "
+            "대화형 자연어로 답하지 않고, 최종 답변은 예외 없이 "
+            "StructuredRequestBatch 구조(structured_response)로만 생성한다."
         ),
 
         # TODO: StructuredRequestBatch에는 요청이 하나뿐이어도 requests 목록에 StructuredRequest 하나를 담도록 지시하세요.
@@ -220,8 +218,12 @@ def week02_prompt_parts() -> list[str]:
         (
             "사용자의 한국어 자연어 요청 또는 Week 1 tool 결과 JSON을 읽어 "
             "kind/title/date/start_time/end_time/members/priority/reason/original_text 필드로 구조화한다. "
-            "kind는 personal_schedule, group_schedule, todo, reminder, unknown 중 하나로 설정한다. "
-            "date/start_time/end_time은 확실할 때만 YYYY-MM-DD, HH:MM 형식으로 채우며, 확실하지 않으면 None으로 둔다."
+            "kind는 위에서부터 먼저 맞는 것: "
+            "reminder('알려줘/리마인드/까먹지 않게') > group_schedule(나 외 사람 함께, members 채움) > "
+            "personal_schedule(나 혼자, 약속된 시각이 있는 일정) > "
+            "todo('끝낼 일'이 본질. '~까지/마감'은 date(마감일)로만 넣고 start_time은 만들지 않음. '급하게/중요'는 priority) > "
+            "unknown(그 외). "
+            "date/start_time은 확실할 때만 YYYY-MM-DD·HH:MM로 채우고, 확실하지 않으면 None으로 둔다. 없는 시간을 지어내지 않는다."
         ),
 
         # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
