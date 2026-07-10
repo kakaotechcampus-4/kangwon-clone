@@ -122,23 +122,25 @@ class StructuredRequestBatch(BaseModel):
 def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
 
-    # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
     if isinstance(value, StructuredRequest):
         return value
-    # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
     if isinstance(value, dict):
         return StructuredRequest.model_validate(value)
-    # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
     raise RuntimeError(f"예상하지 못한 structured output 형태입니다: {type(value)!r}")
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
-    # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
-    # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
-    ...
+    structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+
+    # 배치가 아니라 단일 StructuredRequest만 추출하기에, 공통 규칙인 week02_prompt_parts가 사용됨.
+    result = structured_llm.invoke([
+        {"role": "system", "content": join_system_prompt(week02_prompt_parts())},
+        {"role": "user", "content": text}
+    ])
+
+    return _coerce_structured_request(result)
 
 
 @tool
@@ -160,6 +162,7 @@ def week02_tools() -> list[Any]:
 def week02_system_prompt() -> str:
     """2주차 agent가 따르는 시스템 프롬프트입니다."""
 
+    # StructuredRequestBatch를 반환하는 이 agent에서만 유효한 프롬프트들을 prompt_parts에서 분리함.
     return join_system_prompt([
         *week02_prompt_parts(),
         "최종 답변은 반드시 StructuredRequestBatch 형식으로 반환해. 추출된 요청이 하나뿐이어도 requests 목록 안에 StructuredRequest 하나를 담아. 일정과 무관한 대화라면 requests를 빈 list로 둬.",
@@ -173,7 +176,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         f"너는 자연어 요청을 구조화하는 agent야. 오늘의 날짜는 {current_app_date_iso()}이야. 상대 날짜 표현은 반드시 이 날짜를 기준으로 계산해.",
-        "일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 채운 항목 하나를 담아.",  
+        "일정 관련 의도는 있어 보이지만 kind를 확신할 수 없으면 kind를 unknown으로 분류해.",  
         "Week 2에서는 SQLite 저장, RAG 검색, 외부 멤버 일정 조율을 하지 않아.",
         "출력에는 유효한 JSON 객체 하나만 포함하고, 인사말이나 설명 등 다른 텍스트는 앞뒤에 절대 붙이지 마."
     ]
