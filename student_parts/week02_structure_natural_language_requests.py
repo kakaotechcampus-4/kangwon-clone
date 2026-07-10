@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Literal
 
 from langchain.agents import create_agent
 from langchain.tools import tool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from fixed.config import CONFIG
 from fixed.llm import chat_model
@@ -154,7 +155,16 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="요청 종류. personal_schedule/group_schedule/todo/reminder/unknown 중 하나.")
+    kind: RequestKind = Field(
+        description=(
+            "요청 종류 판단 기준: "
+            "personal_schedule=날짜/시간이 있는 개인 약속(회의, 병원 예약 등), "
+            "group_schedule=여러 사람과 시간 조율이 필요한 일정, "
+            "todo=시간이 정해지지 않은 해야 할 일(청소, 보고서 작성 등), "
+            "reminder=특정 시점에 알려달라는 알림 요청, "
+            "unknown=위 네 가지로 분류하기 애매한 요청."
+        )
+    )
     title: str | None = Field(default=None, description="일정/할 일 제목. 확실하지 않으면 None.")
     date: str | None = Field(default=None, description="YYYY-MM-DD 형식의 날짜. 확실하지 않으면 None.")
     start_time: str | None = Field(default=None, description="HH:MM 형식의 시작 시간. 확실하지 않으면 None.")
@@ -163,6 +173,15 @@ class StructuredRequest(BaseModel):
     priority: str | None = Field(default=None, description="할 일의 우선순위. 확실하지 않으면 None.")
     reason: str | None = Field(default=None, description="요청을 구조화한 판단 근거.")
     original_text: str = Field(default="", description="구조화 대상이 된 원문 텍스트나 JSON 문자열.")
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def _normalize_time(cls, value: str | None) -> str | None:
+        """HH:MM 형식이 아니면 None으로 정규화합니다."""
+
+        if not value or not re.fullmatch(r"([01]\d|2[0-3]):([0-5]\d)", value):
+            return None
+        return value
 
 
 class StructuredRequestBatch(BaseModel):
@@ -234,7 +253,25 @@ def week02_prompt_parts() -> list[str]:
 Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워.
 요청이 하나여도 requests 리스트에 담아 반환해.
 Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않아.
-종료 시간을 모르면 반드시 None으로 두고 '미정' 같은 임의 문자열을 넣지 마.
+시작 시간과 종료 시간을 모르면 반드시 None으로 두고 '미정' 같은 임의 문자열을 넣지 마.
+날짜가 문장에 실제로 언급되지 않았으면(오늘/내일/요일 등 어떤 표현도 없으면)
+오늘 날짜로 추측해서 채우지 말고 date를 반드시 None으로 둬.
+
+예시:
+- 입력: "다음 주 목요일 오후 3시에 민영이랑 회의 잡아줘"
+  → kind=personal_schedule, title=회의, date=2026-07-16, start_time=15:00, end_time=None, members=[민영]
+- 입력: "금요일 회식"
+  → kind=personal_schedule, title=회식, date=돌아오는 금요일 날짜, start_time=None, end_time=None, members=[]
+  (시간이 언급되지 않았으면 절대 추측하지 말고 start_time/end_time을 None으로 두기)
+- 입력: "다음 주 화요일 오후 3시에 철수랑 회의 잡아줘 / 토요일에 집 청소하기"
+  → requests에 StructuredRequest 2개를 담는다. 첫 번째는 kind=personal_schedule(회의, start_time=15:00),
+    두 번째는 kind=todo(집 청소, date=돌아오는 토요일 날짜, start_time=None)로 구조화한다.
+- 입력: "7시에 회의 잡아줘"
+  → kind=personal_schedule, title=회의, date=None, start_time=19:00, end_time=None
+  (날짜 표현이 전혀 없으므로 오늘로 추측하지 않는다)
+- 입력: "다음 주 수요일에 팀원들이랑 시간 맞춰서 회의 잡아줘"
+  → kind=group_schedule, title=회의, date=돌아오는 다음 주 수요일 날짜, start_time=None, end_time=None
+  (나 혼자 참석하는 일정이 아니라 여러 사람과 시간을 맞춰야 하므로 personal_schedule이 아니라 group_schedule로 분류한다)
         """,
     ]
 
