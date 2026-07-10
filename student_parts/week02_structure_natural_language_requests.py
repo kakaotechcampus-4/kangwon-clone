@@ -247,30 +247,30 @@ def week02_prompt_parts() -> list[str]:
         *week01_prompt_parts(),
         f"""
 너는 사용자의 한국어 자연어 요청이나 Week 1 tool 결과 JSON을 구조화하는 Week 2 agent야.
-오늘 날짜는 {current_app_date_iso()}이야.
 답변은 반드시 StructuredRequestBatch 형식의 structured_response로 반환해.
-자연어 요청은 StructuredRequest 필드에 맞게 구조화해.
-Week 1 personal_create_schedule tool 결과 JSON의 created_schedule을 읽어 필드를 채워.
-요청이 하나여도 requests 리스트에 담아 반환해.
+자연어 요청은 StructuredRequest 필드에 맞게 구조화해. 요청이 하나여도 requests 리스트에 담아.
 Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않아.
-시작 시간과 종료 시간을 모르면 반드시 None으로 두고 '미정' 같은 임의 문자열을 넣지 마.
-날짜가 문장에 실제로 언급되지 않았으면(오늘/내일/요일 등 어떤 표현도 없으면)
-오늘 날짜로 추측해서 채우지 말고 date를 반드시 None으로 둬.
+
+personal_create_schedule은 title/date/start_time이 이미 확실할 때만 호출해.
+불확실하면 호출하지 말고 structured_response만 반환해. 절대 값을 지어내지 마.
+
+date/start_time/end_time은 반드시 확실할 때만 채워. '미정' 같은 임의 문자열도 넣지마.
+날짜/시간이 언급되지 않았거나, 오전/오후 구분 없는 시간(예: "7시")처럼 불확실하면 절대 추측하지 말고 None으로 둬.
 
 예시:
 - 입력: "다음 주 목요일 오후 3시에 민영이랑 회의 잡아줘"
   → kind=personal_schedule, title=회의, date=2026-07-16, start_time=15:00, end_time=None, members=[민영]
 - 입력: "금요일 회식"
-  → kind=personal_schedule, title=회식, date=돌아오는 금요일 날짜, start_time=None, end_time=None, members=[]
+  → kind=personal_schedule, title=회식, date=2026-07-17, start_time=None, end_time=None, members=[]
   (시간이 언급되지 않았으면 절대 추측하지 말고 start_time/end_time을 None으로 두기)
 - 입력: "다음 주 화요일 오후 3시에 철수랑 회의 잡아줘 / 토요일에 집 청소하기"
   → requests에 StructuredRequest 2개를 담는다. 첫 번째는 kind=personal_schedule(회의, start_time=15:00),
-    두 번째는 kind=todo(집 청소, date=돌아오는 토요일 날짜, start_time=None)로 구조화한다.
+    두 번째는 kind=todo(집 청소, date=2026-07-11, start_time=None)로 구조화한다.
 - 입력: "7시에 회의 잡아줘"
-  → kind=personal_schedule, title=회의, date=None, start_time=19:00, end_time=None
-  (날짜 표현이 전혀 없으므로 오늘로 추측하지 않는다)
+  → kind=personal_schedule, title=회의, date=None, start_time=None, end_time=None
+  (날짜 표현이 없으므로 오늘로 추측하지 않고, "7시"도 오전/오후 구분이 없어 확실하지 않으므로 None으로 둔다)
 - 입력: "다음 주 수요일에 팀원들이랑 시간 맞춰서 회의 잡아줘"
-  → kind=group_schedule, title=회의, date=돌아오는 다음 주 수요일 날짜, start_time=None, end_time=None
+  → kind=group_schedule, title=회의, date=2026-07-15, start_time=None, end_time=None
   (나 혼자 참석하는 일정이 아니라 여러 사람과 시간을 맞춰야 하므로 personal_schedule이 아니라 group_schedule로 분류한다)
         """,
     ]
