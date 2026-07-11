@@ -4,6 +4,7 @@ import json
 from typing import Any, Literal
 
 from langchain.agents import create_agent
+from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import tool
 from pydantic import BaseModel, Field
 
@@ -242,7 +243,8 @@ def week02_system_prompt() -> str:
         *week02_prompt_parts(),
         "최종 답변은 무조건 StructuredRequestBatch 형식의 structured_response로 반환해줘."
         "요청이 하나여도 requests 리스트에 담고, 한 문장에 여러 의도가 섞여 있으면 나눠서 담아줘.",
-        "personal_create_schedule을 호출했으면 결과 JSON의 created_schedule을 읽어서 title/date/start_time/end_time/members 필드를 채워줘.",
+        "personal_create_schedule을 호출했으면 결과 JSON의 created_schedule을 읽어서 title/date/start_time/end_time 필드를 채워줘."
+        "created_schedule의 attendees 값은 StructuredRequest의 members 필드에 그대로 옮겨 담아줘.",
     ])
 
 
@@ -260,7 +262,13 @@ def week02_prompt_parts() -> list[str]:
         "자연어 요청을 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)에 맞춰서 구조화해줘."
         "확실하지 않은 값은 억지로 만들지 말고 None이나 빈 리스트로 둬."
         "date는 YYYY-MM-DD, 시간은 HH:MM 형식으로 써줘.",
+        "'오후', '점심쯤', '3시쯤'처럼 시간 표현이 조금이라도 모호하면 start_time/end_time을 추측해서 채우지 말고 None으로 둬."
+        "대신 원래 표현이 뭐였는지, 왜 확정하지 않았는지를 reason에 남겨줘.",
         "Week 1 tool 결과 JSON을 받았으면 tool을 다시 호출하지 말고 payload를 읽어서 structured_response로 만들어줘.",
+        "tool 호출 규칙: 개인 일정을 새로 만들어달라는 요청(kind=personal_schedule)일 때만 personal_create_schedule을 호출해."
+        "할 일(todo), 알림(reminder), 일정과 무관한 요청(unknown)은 어떤 tool도 호출하지 말고 바로 구조화만 해줘."
+        "1주차의 일정 등록 지시보다 이 규칙이 우선이야.",
+        "created_schedule의 start_time이나 end_time 값이 '미정'이면 그대로 옮기지 말고 None으로 바꿔줘.",
         "2주차에서는 SQLite 저장, RAG, 외부 멤버 일정 조율은 하지 않는다.",
     ]
 
@@ -280,7 +288,7 @@ def build_week02_agent() -> object:
         _WEEK02_AGENT = create_agent(
             model=chat_model(),
             tools=week02_tools(),
-            response_format=StructuredRequestBatch,
+            response_format=ToolStrategy(StructuredRequestBatch),
             system_prompt=week02_system_prompt(),
         )
     return _WEEK02_AGENT
