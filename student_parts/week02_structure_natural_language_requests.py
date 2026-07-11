@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from langchain.agents import create_agent
 from langchain.tools import tool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from fixed.config import CONFIG
 from fixed.llm import chat_model
@@ -172,6 +172,23 @@ class StructuredRequest(BaseModel):
     reason: str | None = Field(default=None, description="이 kind와 필드 값으로 판단한 근거를 짧게 설명해줘")
     original_text: str = Field(default="", description="사용자가 입력한 원문 그대로.")
 
+    @model_validator(mode="after")
+    def _normalize(self) -> "StructuredRequest":
+        """LLM이 지어낸 플레이스홀더 값과 kind/members 불일치를 코드로 강제 교정합니다."""
+
+        placeholder_values = {"미정", "TBD", "unknown", ""}
+        if self.start_time in placeholder_values:
+            self.start_time = None
+        if self.end_time in placeholder_values:
+            self.end_time = None
+
+        if self.members and self.kind == "personal_schedule":
+            self.kind = "group_schedule"
+        elif not self.members and self.kind == "group_schedule":
+            self.kind = "personal_schedule"
+
+        return self
+
 
 #2. 위 StructuredRequest를 여러개 모아담음.response_format에 실제로 연결
 class StructuredRequestBatch(BaseModel):
@@ -186,33 +203,48 @@ class StructuredRequestBatch(BaseModel):
         description="'내일', '다음 주 화요일' 같은 상대 날짜를 해석할 때 기준이 되는 오늘 날짜(YYYY-MM-DD).",
     )
 
-
+#심화1. 검수 담당
 def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
 
-    # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
-    # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
-    # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
-    ...
+    if isinstance(value, StructuredRequest):
+        return value
+    elif isinstance(value, dict):
+        return StructuredRequest.model_validate(value)
+    else:
+        raise RuntimeError(f"예상치 못한 타입입니다: {type(value)}")
 
-
+#심화2. agent 없이 LLM 한번만 호출, 나온 결과 _coerce_structured_request에서 검수
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
-    # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
-    # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
-    ...
+    structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
 
+    result = structured_llm.invoke(
+        [
+            {"role": "system", "content": join_system_prompt(week02_prompt_parts())},
+            {"role": "user", "content": text},
+        ]
+    )
 
+    return _coerce_structured_request(result)
+
+#심화3. tool 버튼으로 감싸기, extract_structured_request 결과 붙여서 json 반환
+#-> week3 agent가 이 tool을 호출해서 씀
 @tool
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
-    # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
-    # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
-    # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    ...
+    structured_request = extract_structured_request(query)
+
+    payload = {
+        "ok": True,
+        "tool_name": "extract_schedule_request",
+        "base_date": current_app_date_iso(),
+        "structured_request": structured_request.model_dump(),
+    }
+
+    return json.dumps(payload, ensure_ascii=False)
 
 #3. agent가 쓸 수 있는 도구 목록을 알려줌. week1 일정생성tool 재사용
 def week02_tools() -> list[Any]:
@@ -230,21 +262,21 @@ def week02_system_prompt() -> str:
       오직 StructuredRequestBatch JSON 하나여야 한다. requests는 요청이 하나여도 리스트로 유지한다.
 
     [분류]
-    - members가 있으면 group_schedule, 없으면 personal_schedule (members 있는데 personal_schedule로 두는 모순 금지).
+    - members가 있으면 group_schedule, 없으면 personal_schedule.
     - 특정 시각의 약속이 아니라 처리할 일 자체가 핵심이면 todo (예: "발표 자료 마무리해야 해").
     - "OO 몇 분/시간 전에 알려줘"는 reminder. 애매하면 unknown.
     - 한 문장에 요청이 여러 개 섞여 있으면 각각 별도 StructuredRequest로 나눈다.
 
     [tool 호출]
-    - title과 date가 확실한 personal_schedule/group_schedule 생성 요청만 personal_create_schedule을
-      먼저 호출해 실제로 저장한 뒤, 그 결과로 필드를 채운다. todo/reminder/unknown에는 create tool을 쓰지 않는다.
+    - personal_schedule/group_schedule 생성 요청이고 title/date/start_time이 셋 다 확실하면
+      personal_create_schedule을 호출해 실제로 저장한 뒤, 그 결과로 필드를 채운다.
+      하나라도 확실하지 않아 값을 지어내야 한다면 tool을 호출하지 말고 구조화만 한다.
+    - todo/reminder/unknown에는 create tool을 쓰지 않는다.
     - 조회 요청은 personal_list_schedules, 삭제 요청은 조회 후 personal_delete_schedule을 호출한다.
-    - tool 호출용으로(필수 인자라 어쩔 수 없이) 채운 값이라도, 사용자가 말하지 않았다면
-      structured_response 필드에는 옮기지 말고 None으로 둔다.
 
     [필드 값]
     - date/start_time/end_time: 시각을 알 수 있으면(자연어 표현이라도 변환 가능하면 포함, 예: "오후 6시"->"18:00")
-      HH:MM/YYYY-MM-DD로 채우고, 시각 자체를 짐작할 수 없을 때만 None으로 둔다. "미정" 같은 기본값을 지어내지 않는다.
+      HH:MM/YYYY-MM-DD로 채우고, 시각 자체를 짐작할 수 없을 때만 None으로 둔다.
     - 비운 필드가 있으면 이유를 reason에 짧게 남긴다. "팀 회의"의 "팀"처럼 제목 속 일반 명사는 members에 넣지 않는다.
 
     예시:
