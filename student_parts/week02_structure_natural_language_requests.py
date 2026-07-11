@@ -190,7 +190,7 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
     if isinstance(value, dict):
         return StructuredRequest.model_validate(value)
 
-    raise RuntimeError("output 결과가 예상한 구조가 아닙니다.")
+    raise RuntimeError(f"output이 StructuredRequest 형식이 아닙니다. type={type(value).__name__}")
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
@@ -209,13 +209,19 @@ def extract_structured_request(text: str) -> StructuredRequest:
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
-    structured_request = extract_structured_request(query)
     result = {
         "ok": True,
         "tool_name": "extract_schedule_request",
         "base_date": current_app_date_iso(),
-        "structured_request": structured_request.model_dump()
+        "error": None,
+        "structured_request": None,
     }
+
+    try:
+        result["structured_request"] = extract_structured_request(query).model_dump()
+    except Exception as e:
+        result["ok"] = False
+        result["error"] = str(e)
 
     return json.dumps(result, ensure_ascii=False)
 
