@@ -99,7 +99,7 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="personal_schedule: 나 혼자서 하는 일정, group_schedule: 2명 이상이 같이 하는 일정, todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들.")
+    kind: RequestKind = Field(description="personal_schedule: 나 혼자서 하는 일정(누군가와 같이 해야하는 일정이라면 혼자하는 일정이 아니기 때문에 personal_schedule이 아니고 group_schedule임), group_schedule: 2명 이상이 같이 하는 일정(누군가와 함께 하는 일정은 따로 명시되어있지 않는 한 나도 참석하는 일정임), todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들.")
     title: str | None = Field(default=None, description="일정 또는 할 일의 제목. 확실하지 않으면 None으로 둔다.")
     date: str | None = Field(default=None, description="일정 날짜. 확실할 때만 YYYY-MM-DD 형식으로 채우고, 모르면 None으로 둔다.")
     start_time: str | None = Field(default=None, description="시작 시각. 확실할 때만 HH:MM 형식으로 채우고, 모르면 None으로 둔다.")
