@@ -157,8 +157,14 @@ class StructuredRequest(BaseModel):
     kind: RequestKind = Field(description="요청 종류. personal_schedule, group_schedule, todo, reminder, unknown 중 하나입니다.")
     title: str | None = Field(default=None, description="요청 제목. 하나의 일정의 주제를 나타낸다.")
     date: str | None = Field(default=None, description="요청 날짜. YYYY-MM-DD 형식으로 나타낸다.")
-    start_time: str | None = Field(default=None, description="요청 시작 시간. HH:MM 형식으로 나타낸다.")
-    end_time: str | None = Field(default=None, description="요청 종료 시간. HH:MM 형식으로 나타낸다.")
+    start_time: str | None = Field(default=None, description="요청 시작 시간. HH:MM 형식으로 나타낸다. \
+                                                                미정, 몰라, 정해지지 않았어 등 원문에 시간을 모른다는 표현이 있으면, \
+                                                                그 단어를 이 필드 값으로 옮기지 말고\
+                                                                반드시 필드 값 자체를 null로 남긴다. (예: '시간은 미정이야' → start_time: null, '미정'이라는 문자열 금지)")
+    end_time: str | None = Field(default=None, description="요청 종료 시간. HH:MM 형식으로 나타낸다. \
+                                                                미정, 몰라, 정해지지 않았어 등 원문에 시간을 모른다는 표현이 있으면, \
+                                                                그 단어를 이 필드 값으로 옮기지 말고\
+                                                                반드시 필드 값 자체를 null로 남긴다. (예: '시간은 미정이야' → end_time: null, '미정'이라는 문자열 금지)")
     members: list[str] = Field(default_factory=list, description="해당 요청 스케줄에 참여하는 멤버 목록.\
                                                         members 필드에는 'OO랑', 'OO와', 'OO하고' 처럼 언급된 사람 이름을 모두 포함할 것. 모르면 빈 list로 둔다.")
     priority: str | None = Field(default=None, description="해당 일정의 우선순위.")
