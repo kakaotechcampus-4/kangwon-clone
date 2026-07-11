@@ -100,7 +100,7 @@ class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
     # TODO: kind 필드를 RequestKind 타입으로 선언하고 Field(description=...)를 붙이세요.
-    kind: RequestKind = Field(description="저장 payload 기준")
+    kind: RequestKind = Field(description="personal_schedule: 나 혼자서 하는 일정, group_schedule: 2명 이상이 같이 하는 일정, todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들.")
     # TODO: title/date/start_time/end_time 필드를 str | None 타입으로 선언하고 기본값은 None으로 두세요.
     title: str | None = Field(default=None, description="일정 또는 할 일의 제목. 확실하지 않으면 None으로 둔다.")
     date: str | None = Field(default=None, description="일정 날짜. 확실할 때만 YYYY-MM-DD 형식으로 채우고, 모르면 None으로 둔다.")
@@ -121,8 +121,11 @@ class StructuredRequestBatch(BaseModel):
     """여러 자연어 의도를 StructuredRequest 목록으로 나누는 2차 과제 스키마입니다."""
 
     # TODO: requests 필드를 list[StructuredRequest] 타입으로 선언하고 default_factory=list를 사용하세요.
+    requests: list[StructuredRequest] = Field(default_factory=list, description="StructuredRequest로 나눈 필드들을 list로 구조화 한 형태로 만든다.")
     # TODO: base_date 필드를 str 타입으로 선언하고 default_factory=current_app_date_iso를 사용하세요.
+    base_date: str = Field(default_factory=current_app_date_iso, description="오늘 날짜의 기준. 상대적인 날짜를 판단할 때 사용한 오늘의 기준 날짜.")
     # TODO: 각 필드에는 Week 2 구조화 결과와 상대 날짜 기준일을 설명하는 한국어 description을 달아주세요.
+
     ...
 
 
@@ -178,7 +181,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         # TODO: Week 2 요청 구조화 agent 역할과 현재 날짜(current_app_date_iso()) 기준을 추가하세요.
-        "사용자 요청을 받으면 반드시 그 요청을 구조화 해야하고 내일, 이틀 후와 같은 건 currnt_app_date_iso()으로 오늘 날짜를 구한뒤 오늘을 기준으로 계산한다."
+        f"사용자 요청을 받으면 반드시 그 요청을 구조화 해야하고 내일, 이틀 후와 같은 건 ${current_app_date_iso()}으로 오늘 날짜를 구한뒤 오늘을 기준으로 계산한다."
         # TODO: 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members 등)로 구조화하도록 지시하세요.
         "사용자 요청을 구조화 하는 규칙은 StrufcturedRequest 스키마에 정의된 필드들로 구조화 해야한다."
         # TODO: Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만들도록 지시하세요.
