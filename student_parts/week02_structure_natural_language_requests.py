@@ -161,7 +161,7 @@ class StructuredRequest(BaseModel):
     start_time: str | None = Field(default=None, description="일정 시작 시각(HH:MM) 형식. '~시에', '~시부터', '~시에 시작'처럼 시작 시각이 명시될 때만 채운다. "
                 "'~시에 끝', '~시까지'처럼 종료만 언급되면 시작 시각은 알 수 없으므로 None으로 둔다. ")
     end_time: str | None = Field(default=None, description="일정 종료 시각(HH:MM) 형식. '~시에 끝', '~시까지', '~시에 종료'처럼 종료 시각이 명시될 때만 채운다. "
-                "'~시에', '~시부터'처럼 종료만 언급되면 시작 시각은 알 수 없으므로 None으로 둔다. ")
+                "'~시에', '~시부터'처럼 시작만 언급되면 종료 시각은 알 수 없으므로 None으로 둔다. ")
     members: list[str] = Field(default_factory=list, description="참석자/관련 멤버 목록")
     priority: str | None = Field(default=None, description="일정이나 할 일의 긴급도,중요도 (예: 높음, 보통, 낮음) 해당 없으면 None")
     reason: str | None = Field(default=None, description="일정을 잡는 이유나 목적, 배경 (예: '상 탄 기념', '프로젝트 마감'). 없으면 None")
@@ -178,30 +178,25 @@ class StructuredRequestBatch(BaseModel):
 def _coerce_structured_request(value: Any) -> StructuredRequest:
     """LangChain structured output 결과를 StructuredRequest로 정규화합니다."""
 
-    # TODO: value가 이미 StructuredRequest이면 그대로 반환하세요.
     if isinstance(value, StructuredRequest):
         return value
-    # TODO: value가 dict이면 StructuredRequest.model_validate(...)로 검증해 반환하세요.
     if isinstance(value, dict):
         return StructuredRequest.model_validate(value)
-    # TODO: 예상한 형태가 아니면 RuntimeError를 발생시켜 잘못된 LLM 응답을 조용히 통과시키지 마세요.
     else: 
         raise RuntimeError(f"Unexpected value type: {type(value)}")
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    # TODO: chat_model().with_structured_output(StructuredRequest, method="function_calling")로 structured LLM을 만드세요.
     structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
-    # TODO: system 메시지에는 join_system_prompt(week02_prompt_parts())를 넣고, user 메시지에는 text를 넣어 invoke하세요.
     system_prompt = join_system_prompt(week02_prompt_parts())
+    system_prompt += f"\n\n오늘 날짜는 {current_app_date_iso()}이다. '내일', '다음 주' 같은 상대 날짜는 이 날짜를 기준으로 계산하라." # bridge는 get_current_date tool을 못 쓰므로 오늘 날짜를 직접 주입하는 방식으로 수정
     response = structured_llm.invoke(
         [
             {"role": "system", "content": system_prompt}, # 지금까지 작성한 지침서
             {"role": "user", "content": text} # 처리할 사용자의 요청
         ]
     )
-    # TODO: LLM 결과를 _coerce_structured_request(...)로 정규화해 StructuredRequest 하나로 반환하세요.
     return _coerce_structured_request(response)
 
 
@@ -209,16 +204,13 @@ def extract_structured_request(text: str) -> StructuredRequest:
 def extract_schedule_request(query: str) -> str:
     """Week 3 이상 agent가 저장/조율 전에 호출하는 구조화 bridge tool입니다."""
 
-    # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
     structured_request = extract_structured_request(query)
-    # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
     result = {
         "ok": True,
         "tool_name": "extract_schedule_request",
         "base_date": current_app_date_iso(),
         "structured_request": structured_request.model_dump()
     }
-    # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -242,6 +234,7 @@ def week02_prompt_parts() -> list[str]:
         ## 2주차 구조화 지시
         - 너의 임무는 일정을 만드는 것이 아니라, 사용자의 자연어 요청을 StructuredRequestBatch 형식으로 구조화하는 것이다.
         - 상대적인 날짜를 계산해야 하면 get_current_date 도구로 오늘 날짜를 먼저 확인하고, 그 날짜를 기준으로 계산해서 date 필드를 YYYY-MM-DD 형식으로 채운다.
+        - 단, get_current_date 도구를 사용할 수 없는 환경에서는 프롬프트에 함께 제공된 "오늘 날짜" 정보를 기준으로 '내일', '다음 주' 등의 상대 날짜를 계산한다.
         - 자연어에서 kind/title/date/start_time/end_time/members 등을 뽑아 StructuredRequest 필드에 채운다. 확실하지 않은 값은 억지로 만들지 말고 None이나 빈 리스트로 둔다.
         - 개인 일정 생성 요청에서 personal_create_schedule tool을 호출해 결과를 받은 경우, 다시 tool을 호출하지 말고 그 created_schedule JSON을 읽어 StructuredRequest 필드를 채운다.
         - Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다.
