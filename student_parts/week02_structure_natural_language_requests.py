@@ -99,7 +99,7 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="personal_schedule: 나 혼자서 하는 일정(누군가와 같이 해야하는 일정이라면 혼자하는 일정이 아니기 때문에 personal_schedule이 아니고 group_schedule임), group_schedule: 2명 이상이 같이 하는 일정(누군가와 함께 하는 일정은 따로 명시되어있지 않는 한 나도 참석하는 일정임), todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들.")
+    kind: RequestKind = Field(description="personal_schedule: 나 혼자서 하는 일정(누군가와 같이 해야하는 일정이라면 혼자하는 일정이 아니기 때문에 personal_schedule이 아님), group_schedule: 2명 이상이 같이 하는 일정(누군가와 함께 하는 일정은 따로 명시되어있지 않는 한 나도 참석하는 일정이기 때문에 group_schedule임), todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들.")
     title: str | None = Field(default=None, description="일정 또는 할 일의 제목. 확실하지 않으면 None으로 둔다.")
     date: str | None = Field(default=None, description="일정 날짜. 확실할 때만 YYYY-MM-DD 형식으로 채우고, 모르면 None으로 둔다.")
     start_time: str | None = Field(default=None, description="시작 시각. 확실할 때만 HH:MM 형식으로 채우고, 모르면 None으로 둔다.")
@@ -161,6 +161,7 @@ def week02_prompt_parts() -> list[str]:
         *week01_prompt_parts(),
         f"사용자 요청을 받으면 반드시 그 요청을 구조화 해야하고 내일, 이틀 후와 같은 건 {current_app_date_iso()}으로 오늘 날짜를 구한뒤 오늘을 기준으로 계산한다.",
         "사용자 요청을 구조화 하는 규칙은 StrufcturedRequest 스키마에 정의된 필드들로 구조화 해야한다.",
+        "누군가와 하는 일정이라면 kind를 personal_schedule이 아닌 group_schedule로 처리해야한다. 예시 - 'bob과 일정 잡아줘' = group_schedule",
         "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response를 만든다.",
         "Week 2 에서는 SQLite 저장, RAG, 외부 멤버 일정 조율의 기능은 하지 않는다. 이 기능들은 나중에 추가될 기능들이다."
     ]
