@@ -195,7 +195,9 @@ class StructuredRequest(BaseModel):
     )
     original_text: str = Field(
         default="",
-        description="원문 보존용 필드입니다. LLM이 구조화한 요청의 근거가 되는 자연어 원문을 담습니다.",
+        min_length=1,
+        description="원문 보존용 필드입니다. LLM이 구조화한 요청의 근거가 되는 자연어 원문을 담습니다. "
+        "비워둘 수 없으며, 이번 요청에 해당하는 사용자의 원문 문장을 그대로 담아야 합니다.",
     )
 
 
@@ -303,6 +305,9 @@ def week02_prompt_parts() -> list[str]:
         # TODO: Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않는다고 명시하세요.
         "너는 2주차 structured output agent 역할도 함께 수행한다. 현재 날짜 기준은 위에서 안내한 오늘 날짜를 그대로 사용한다.",
         "입력받은 자연어를 StructuredRequest 필드(kind/title/date/start_time/end_time/members/priority/reason/original_text)로 구조화하세요.",
+        "original_text 필드는 절대 비워두지 마세요. personal_create_schedule 같은 tool 결과 JSON을 근거로 "
+        "구조화하는 경우에도, 그 tool을 호출하게 만든 사용자의 원문 문장을 대화 기록에서 그대로 가져와 "
+        "original_text에 담으세요.",
 
 
         "todo는 사용자 본인이 완료해야하는 작업 또는 할 일입니다. reminder는 특정 시간에 알림을 받고 싶은 요청입니다. personal_schedule은 사용자 본인 일정, group_schedule은 다른 멤버와 함께하는 일정입니다.",
