@@ -182,7 +182,7 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
     elif isinstance(value, dict):
         return StructuredRequest.model_validate(value)
     else:
-        raise RuntimeError("예상하지 못한 StructuredRequest 타입!")
+        raise RuntimeError(f"올바른 타입을 입력하세요.(StructuredRequest || dict) 현재 타입: {type(value).__name__}")
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
@@ -236,6 +236,9 @@ def week02_system_prompt() -> str:
             (
                 "personal_create_schedule tool 결과가 있다면 "
                 "created_schedule JSON을 읽어 StructuredRequest 필드를 채운다."
+            ),
+            (
+                "종료 시간이 명확하지 않거나 '미정', '없음', '정해지지 않았음'과 같이 확정되지 않은 경우 None을 사용한다."
             )
         ])
 
