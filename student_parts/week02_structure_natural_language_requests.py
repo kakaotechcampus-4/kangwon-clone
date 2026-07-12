@@ -183,20 +183,19 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
 
     if isinstance(value, StructuredRequest):
         return value
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         return StructuredRequest.model_validate(value)
-    else:
-        raise RuntimeError(f"value가 예상한 형태인 StructuredRequest, dict가 아닙니다.\n value_type : {type(value).__name__}")
+    raise RuntimeError(f"value가 예상한 형태인 StructuredRequest, dict가 아닙니다.\n value_type : {type(value).__name__}")
     #단순히 type(value)하면 형식이 이상하기 때문에 type(value).__name__형식으로 해야 깔끔하게 출력
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    structured_LLM = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    structured_llm = chat_model().with_structured_output(StructuredRequest, method="function_calling")
     system_message = join_system_prompt(week02_prompt_parts())
-    user_mseaage = text
-    message_list = [("system", system_message), ("user", user_mseaage)]
-    return _coerce_structured_request(structured_LLM.invoke(message_list))
+    user_message = text
+    message_list = [("system", system_message), ("user", user_message)]
+    return _coerce_structured_request(structured_llm.invoke(message_list))
     #.invoke(입력)은 Runnable 인터페이스의 핵심 메서드로, "이 Runnable에게 입력을 주고, 동기적으로 결과를 하나 받아온다"는 뜻
     
 
