@@ -160,7 +160,7 @@ def week02_prompt_parts() -> list[str]:
     return [
         *week01_prompt_parts(),
         f"사용자 요청을 받으면 반드시 그 요청을 구조화 해야하고 내일, 이틀 후와 같은 건 {current_app_date_iso()}으로 오늘 날짜를 구한뒤 오늘을 기준으로 계산한다.",
-        "사용자 요청을 구조화 하는 규칙은 StrufcturedRequest 스키마에 정의된 필드들로 구조화 해야한다.",
+        "사용자 요청을 구조화 하는 규칙은 StructuredRequest 스키마에 정의된 필드들로 구조화 해야한다.",
         "누군가와 하는 일정이라면 kind를 personal_schedule이 아닌 group_schedule로 처리해야한다. 예시 - 'bob과 일정 잡아줘' = group_schedule",
         "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response를 만든다.",
         "Week 2 에서는 SQLite 저장, RAG, 외부 멤버 일정 조율의 기능은 하지 않는다. 이 기능들은 나중에 추가될 기능들이다."
