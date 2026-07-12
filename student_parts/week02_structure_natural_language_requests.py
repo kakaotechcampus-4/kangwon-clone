@@ -161,7 +161,7 @@ class StructuredRequest(BaseModel):
     end_time: str | None = Field(default=None, description="종료 시간입니다. 반드시 `HH:MM` 형식으로 작성하세요. 종료 시간이 명확하지 않다면 기본값으로 설정하세요.")
     members: list[str] = Field(default_factory=list, description="일정에 참여하거나 관련된 사람들의 목록입니다. 없다면 빈 리스트로 반환하세요.")
     priority: str | None = Field(default=None, description="사용자의 요청, 마감일 등을 고려하여 우선순위를 설정하세요. '낮음', '중간', '높음' 으로 분류하세요.")
-    reason: str | None = Field(default=None, description="사용자의 요청에서 어떤 맥락을 근거로 kind 또는 priority 판단하였는지 근거를 간단하게 작성하세요.")
+    reason: str | None = Field(default=None, description="사용자의 요청에서 어떤 맥락을 근거로 priority를 판단하였는지 근거를 간단하게 작성하세요.")
     original_text: str = Field(default="", description="사용자가 요청한 원문을 그대로 저장합니다.")
 
 
