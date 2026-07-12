@@ -110,19 +110,19 @@ class StructuredRequest(BaseModel):
     priority: Literal["low", "high"] | None = Field(
         default=None,
         description=(
-            "할 일(todo)이나 알림(reminder)의 우선순위. "
-            "'급해', '꼭', '중요한', '빨리' 등 긴급함을 드러내는 표현이 있으면 high, "
-            "'여유 있게', '천천히' 등 느슨함을 드러내는 표현이 있으면 low. "
-            "명시적 표현이 없으면 None. "
-            "personal_schedule/group_schedule은 시각으로 순서가 이미 정해지므로 보통 None이다."
+            "사용자가 명시적으로 표현한 우선순위. "
+            "'급한', '중요한', '꼭', '우선적으로' 등이 있으면 high, "
+            "'가볍게', '시간 되면' 등이 있으면 low. "
+            "kind와 무관하게, 명시적 표현이 없으면 None."
         ),
     )
     reason: str | None = Field(
         default=None,
         description=(
-            "이 요청을 해당 kind로 분류한 근거, 또는 date/start_time 등 일부 필드를 "
-            "None으로 남긴 이유(모호한 표현 등)를 한 문장으로 설명. "
-            "분류와 필드 모두 명확하면 None."
+            "디버깅 참고용 설명 필드. kind 분류 근거를 우선 짧게 적고, "
+            "모호해서 None으로 둔 주요 필드가 있다면 그 이유도 함께 적는다. "
+            "명확한 요청이면 한 문장으로 제한한다. "
+            "이 필드는 저장/실행 로직에서 사용되지 않는, 사람이 참고하는 설명용 필드다."
         ),
     )
     original_text: str = Field(default="", description="사용자가 입력한 원문 텍스트 보존용 필드.")
@@ -237,16 +237,16 @@ def week02_prompt_parts() -> list[str]:
         "이런 경우 reason 필드에 '참석자가 구체적으로 명시되지 않음(예: 팀원)'과 같이 어떤 표현 때문에 "
         "members를 비워뒀는지 남긴다. original_text에는 원문이 그대로 보존되므로 정보 손실은 아니다.",
 
-        # priority: 명시적 표현이 있을 때만 todo/reminder에 채우고, schedule류는 항상 None
-        # (주의) '급한'/'천천히' 같은 표현이 있다는 사실 자체가 kind 판단에 영향을 주면 안 됨
-        # → "급한 회의가 내일 잡혔어"가 kind='unknown'으로 잘못 분류되던 버그를 막기 위한 방어 규칙 포함
-        "priority는 사용자가 명시적으로 표현한 긴급함/느슨함(예: '급해', '꼭', '중요한', '빨리' → high, "
-        "'여유 있게', '천천히', '급한 건 아니고' → low)에 따라서만 todo/reminder에 채운다. "
-        "명시적인 표현이 전혀 없다면 마감 기한이 임박하더라도 긴급도를 추측하지 말고 None으로 둔다. "
-        "personal_schedule/group_schedule은 이미 시각으로 순서가 정해지므로 이 표현이 있어도 항상 priority를 None으로 둔다. "
-        "긴급함/느슨함을 표현하는 단어가 문장에 있다는 사실은 priority 필드에만 영향을 주며, "
-        "kind, title, date 등 다른 필드를 채우거나 요청 자체를 분류하는 데는 절대 영향을 주지 않는다. "
-        "이런 단어가 있다고 요청을 처리하기 애매하다고 판단하거나 kind='unknown'으로 분류하지 마라.",
+        # priority: kind와 무관하게 사용자가 명시적으로 우선순위를 표현했을 때만 채운다.
+        # (멘토 피드백 반영) 이전엔 schedule류는 항상 None으로 강제했는데,
+        # "시각 순서가 정해지는 것"과 "긴급/중요함"은 별개 문제라는 피드백을 받아
+        # kind 제한 없이 명시적 표현 기준으로 통일. unknown만 예외로 항상 None.
+        "priority는 사용자가 명시적으로 우선순위를 표현했을 때만 채운다. "
+        "'급한', '중요한', '꼭', '우선적으로' 같은 표현이 있으면 high, "
+        "'가볍게', '시간 되면', '나중에 해도 되는' 같은 표현이 있으면 low로 채운다. "
+        "personal_schedule/group_schedule/todo/reminder 중 어떤 kind든 이 규칙이 동일하게 적용된다. "
+        "kind='unknown'은 일정/할 일 자체가 아니므로 priority는 항상 None이다. "
+        "명시적 표현이 없으면 항상 None으로 둔다.",
 
         # 모호한 시간/날짜 표현: 임의로 특정 값 추측하지 말고 None + reason에 근거 남기기
         "사용자가 '오후', '아침', '점심쯤', '다음 주 중에'처럼 구체적이지 않은 시간/날짜 표현을 썼다면, "
