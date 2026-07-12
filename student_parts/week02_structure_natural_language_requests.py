@@ -155,7 +155,7 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
     kind: RequestKind = Field(description="사용자의 요청을 가장 적절한 종류로 분류합니다.")
-    title: str | None = Field(default=None, description="요청의 제목입니다. 사용자가 명시적으로 제목을 적지 않았다면 10자 내외로 요약하여 작성하세요.")
+    title: str | None = Field(description="요청의 제목입니다. 사용자가 명시적으로 제목을 적지 않았다면 10자 내외로 요약하여 작성하세요.")
     date: str | None = Field(default=None, description="일정이나 대상의 날짜입니다. 반드시 `YYYY-MM-DD` 형식으로 작성하고, 상대적 날짜 요청은 절대 날짜를 기준으로 계산하세요.")
     start_time: str | None = Field(default=None, description="시작 시간입니다. 반드시 `HH:MM` 형식으로 작성하세요.")
     end_time: str | None = Field(default=None, description="종료 시간입니다. 반드시 `HH:MM` 형식으로 작성하세요. 종료 시간이 명확하지 않다면 기본값으로 설정하세요.")
