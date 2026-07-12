@@ -159,7 +159,7 @@ def _current_session_schedules() -> list[dict[str, Any]]:
     session_id = current_session_scope()
     return [schedule for schedule in PERSONAL_SCHEDULES if _schedule_scope(schedule) == session_id]
 
-def _check_schedule_date(result, date_from: str | None, date_to: str | None) -> list[dict[str, Any]]:
+def _filter_schedules_by_date(result, date_from: str | None, date_to: str | None) -> list[dict[str, Any]]:
     if date_from is not None:
         result = [s for s in result if s["date"] >= date_from]
     if date_to is not None:
@@ -204,7 +204,7 @@ def personal_list_schedules(
 ) -> str:
     """선택한 시작일과 종료일 범위에 포함되는 개인 일정을 조회합니다."""
     result = _current_session_schedules()
-    result = _check_schedule_date(result, date_from, date_to)
+    result = _filter_schedules_by_date(result, date_from, date_to)
     return _json(
         {
             "ok": True,
