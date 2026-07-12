@@ -191,7 +191,7 @@ class StructuredRequest(BaseModel):
         default=None, description="할 일 우선순위입니다. 모르면 None으로 둡니다."
     )
     reason: str | None = Field(
-        default=None, description="요청 판단 근거입니다. 모르면 None으로 둡니다."
+        default=None, description="요청 판단 근거입니다. kind의 분류 기준에 대한 설명을 한 문장으로 적어주세요."
     )
     original_text: str = Field(
         default="",
@@ -249,9 +249,10 @@ def extract_schedule_request(query: str) -> str:
     # TODO: extract_structured_request(query)를 호출해 자연어 또는 Week 1 JSON payload를 구조화하세요.
     # TODO: ok/tool_name/base_date/structured_request 키를 가진 dict를 만들고 structured_request에는 model_dump() 결과를 넣으세요.
     # TODO: json.dumps(..., ensure_ascii=False)로 JSON 문자열을 반환하세요.
-    extracted_request = extract_structured_request(query)    
+    extracted_request = extract_structured_request(query)
+    can_save = extracted_request.kind != "unknown"
     payload = {
-        "ok": True,
+        "ok": can_save,
         "tool_name": "extract_schedule_request",
         "base_date": current_app_date_iso(),
         "structured_request": extracted_request.model_dump(),
@@ -316,6 +317,7 @@ def week02_prompt_parts() -> list[str]:
         '"내일까지 보고서 제출해야 해" → kind=todo, title="보고서 제출", date=내일. '
         '"3시에 회의 있다고 알려줘" → kind=reminder, start_time=15:00. '
         '"철수랑 팀 회식 잡아줘" → kind=group_schedule.',
+        
 
 
         "Week 1 tool JSON을 받은 경우 다시 tool을 호출하지 않고 payload를 읽어 structured_response로 만드세요.",
@@ -329,6 +331,7 @@ def week02_prompt_parts() -> list[str]:
         "requests를 빈 배열로 두지 마세요.",
         "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않습니다.",
         "반드시 JSON 객체만 출력하고 그 외 텍스트/설명/코드블록을 붙이지 마세요.",
+        "kind 분류가 애매하거나 여러 kind 후보가 있었다면(예: todo와 reminder가 동시에 해당될 수 있는 경우) reason 필드에 어떤 근거로 이 kind를 선택했는지 한 문장으로 남기세요",
     ]
 
 
