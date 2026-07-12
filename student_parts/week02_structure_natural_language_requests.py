@@ -154,7 +154,18 @@ _WEEK02_AGENT: Any | None = None
 class StructuredRequest(BaseModel):
     """LLM structured output으로 추출되는 2주차 요청 스키마입니다."""
 
-    kind: RequestKind = Field(description="요청 종류")
+    kind: RequestKind = Field(
+        description=(
+            "요청 종류를 나타내는 필드. "
+            "personal_schedule은 정확한 시작 시각이 있고 참석자 없이 나 혼자만 관련된 일정, "
+            "group_schedule은 정확한 시작 시각이 있고 나를 포함한 여러 사람이 함께하는 모임이나 회의, "
+            "todo는 정확한 시작 시각 없이 마감 기한만 있는 해야 할 일(예: '~까지 제출해야 해', '~를 해야 한다'), "
+            "reminder는 특정 시점에 schedule이나 todo 등 이미 존재하거나 예정된 무언가를 상기시켜 달라는 요청, "
+            "unknown은 사용자의 요청이 무엇을 원하는지 명확히 알 수 없는 경우. "
+            "예를 들어 '뭐 좀 해야하는데,,'처럼 구체적인 대상이나 목적이 드러나지 않은 모호한 문장이면, "
+            "위 네 가지 중 하나로 추측해서 채우지 말고 반드시 unknown으로 분류할 것."
+        )
+    )
     title: str | None = Field(default=None, description="제목")
     date: str | None = Field(default=None, description="YYYY-MM-DD")
     start_time: str | None = Field(default=None, description="HH:MM")
@@ -226,7 +237,11 @@ def week02_prompt_parts() -> list[str]:
         "자연어를 StructuredRequest의 각 필드에 맞게 구조화할 거야. 확실하지 않으면 값을 억지로 만들지 말고 각 필드의 description에 적어 놓은 기본값으로 작성해. 또한 각 필드의 형식이나 의미는 description을 참고해.",
         "한 문장에 여러 요청이 섞여 있으면 각각을 별도의 StructuredRequest로 나눠서 requests 목록에 담아.",
         "사용자가 실제로 입력한 문장은 original_text 필드에 그대로 보존해.",
-        "이미 Week 1 tool이 호출되어 personal_create_schedule 등의 결과 JSON(created_schedule)이 주어진 경우에는 다시 tool을 호출하지 말고, 그 JSON의 값을 읽어서 StructuredRequest 필드로 옮겨 담아.",        
+        "tool 호출 규칙(절대적, 예외 없음): 일정 조회(personal_list_schedules)나 일정 삭제(personal_delete_schedule) 요청이 담긴 메시지가 오면, 예외 없이 항상 그 tool을 새로 호출해야 한다. 이전 대화에서 같은 tool을 호출한 적이 있는지, 결과가 기억나는지는 절대 고려하지 마라. 대화 기록에 남은 이전 tool 결과나 이전 StructuredRequest 값을 근거로 이번 메시지의 답을 만드는 것은 절대 금지된다. tool을 호출하지 않고 기억이나 추측으로 title, date, start_time 등을 채우면 안 된다.",
+        "personal_create_schedule tool을 호출했다면, 결과 JSON의 created_schedule을 읽어서 StructuredRequest 필드로 옮겨 담아.",
+        "personal_list_schedules tool을 호출해 여러 일정을 조회했다면, 그 결과 JSON의 schedules 배열에 있는 각 일정을 하나씩 StructuredRequest로 만들어서 requests 목록에 빠짐없이 담아. 배열이 비어있으면 requests도 빈 목록으로 둬.",
+        "personal_delete_schedule tool을 호출했다면, 그 결과(성공 여부와 무관하게)를 바탕으로 StructuredRequest를 만들어 requests에 담아. reason 필드에 삭제 성공 여부와 그 이유를 기록해.",
+        "어떤 tool을 호출했든, 그 결과를 반드시 하나 이상의 StructuredRequest로 구조화해서 requests에 담아야 해. tool 결과를 어떻게 담아야 할지 애매해도 절대 requests를 빈 목록으로 두지 마. 단, tool을 아예 호출하지 않은 경우(예: unknown으로 분류되는 애매한 요청)에는 예외로 한다.",
         "Week 2에서는 SQLite 저장, RAG, 외부 멤버 일정 조율을 하지 않을거야.",
     ]
 
