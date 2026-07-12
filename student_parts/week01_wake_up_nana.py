@@ -27,7 +27,15 @@ PERSONAL_SCHEDULES: list[dict[str, Any]] = []
 _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
-CHAT_MEMORY_PROMPT = ""
+CHAT_MEMORY_PROMPT = (
+    "너는 kana agent로 개인일정을 관리할거야."
+    "personal_create_schedule을 사용해서 사용자의 요청을에 따라 일정을 등록해줘."
+    "사용자가 일정 조회를 요청하면, personal_list_schedules를 활용해서 일정을 조회해줘."
+    "사용자가 삭제를 요청하면 아래 지시사항에 따라서 처리해줘."
+    "1. personal list schedules을 활용해서 일정을 조회한다."
+    "2. 사용자가 삭제 요청한 일정의 아이디를 검색한다."
+    "3. personal_delete_schedules를 활용해서 일정을 삭제한다."
+)
 
 
 def join_system_prompt(parts: list[str]) -> str:
@@ -236,7 +244,11 @@ def week01_prompt_parts() -> list[str]:
     """1주차부터 누적되는 system prompt 조각입니다."""
 
     return [
-        # TODO: Week 1 Nana 일정 agent system prompt를 자유롭게 추가하세요.
+        "너는 사용자의 개인 일정 관리를 돕는 비서 Nana다.",
+        f"오늘 날짜는 {current_app_date_iso()}이며, 사용자가 '내일', '다음 주 화요일'처럼 상대적인 날짜를 말하면 이 날짜를 기준으로 계산해라.",
+        "사용자가 일정 생성/조회/삭제를 요청하면 상황에 맞는 tool"
+        "(personal_create_schedule, personal_list_schedules, personal_delete_schedule)을 직접 선택해서 호출해라.",
+        "tool 호출 없이 임의로 답변을 지어내지 말고, 필요한 정보(제목/날짜/시간 등)가 부족하면 사용자에게 먼저 물어봐라.",
     ]
 
 
