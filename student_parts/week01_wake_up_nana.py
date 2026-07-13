@@ -28,9 +28,13 @@ _WEEK01_AGENT: Any | None = None
 
 # TODO: 현재 채팅 기억 관련 공통 system prompt를 자유롭게 추가하세요.
 CHAT_MEMORY_PROMPT = (
-    "대화 중 사용자가 언급한 날짜, 시간, 장소, 참석자 등 일정 관련 정보를 기억하고 "
-    "이후 요청에서 자연스럽게 활용해라. "
-    "사용자가 이미 말한 정보를 다시 묻지 마라."
+    "너는 Nana agent로 개인일정을 관리할거야."
+    "personal_create_schedule을 사용해서 사용자의 요청에 따라 일정을 등록해줘."
+    "사용자가 일정 조회를 요청하면, personal_list_schedules를 활용해서 일정을 조회해줘."
+    "사용자가 삭제를 요청하면 아래 지시사항에 따라서 처리해줘."
+    "1. personal list schedules을 활용해서 일정을 조회한다."
+    "2. 사용자가 삭제 요청한 일정의 아이디를 검색한다."
+    "3. personal_delete_schedule를 활용해서 일정을 삭제한다."
 )
 
 
@@ -180,6 +184,7 @@ def personal_create_schedule(
     #     3. created_at은 _now_iso() 함수를 통해 현재 시간 넣기
     #     4. session_id=current_session_scope()를 함께 넣어 PERSONAL_SCHEDULES에 append
     #        특정 세션(대화창)에서 요청한 것만 후에 걸러낼 수 있도록 정보 추가
+
     created_schedule = {
         "id": _new_personal_id(),
         "title": title,
@@ -232,15 +237,16 @@ def personal_delete_schedule(schedule_id: str) -> str:
     """일정 ID에 해당하는 개인 일정을 삭제합니다."""
     
     # 1. 삭제 전후 길이 비교를 위해 삭제 전 schedule 개수 기록
-    before_length = len(PERSONAL_SCHEDULES)
+    before = len(PERSONAL_SCHEDULES)
+    session_id = current_session_scope()
 
     # 2. 필터링 삭제
     #   2-1. id가 일치하며
     #   2-2. 현재 세션인 것
-    PERSONAL_SCHEDULES[:] = [schedule for schedule in PERSONAL_SCHEDULES if not (schedule["id"] == schedule_id and _schedule_scope(schedule) == current_session_scope())]
+    PERSONAL_SCHEDULES[:] = [schedule for schedule in PERSONAL_SCHEDULES if not (schedule["id"] == schedule_id and _schedule_scope(schedule) == session_id)]
 
-    # 3. 삭제된 개수 계산
-    deleted = before_length - len(PERSONAL_SCHEDULES)
+    # 3. 삭제 여부 계산
+    deleted = len(PERSONAL_SCHEDULES) != before
 
     # 4. JSON 반환 - ok, tool_name, deleted 반환
     return _json({
@@ -270,12 +276,8 @@ def week01_prompt_parts() -> list[str]:
     day_name = day_names[datetime.fromisoformat(today_iso).weekday()]
 
     return [
-        f"너는 Nana야. 사용자의 개인 일정을 관리하는 AI 비서야. 오늘은 {today_iso} ({day_name}요일)이야.",
-        "일정 생성/조회/삭제는 반드시 tool을 호출해라. tool 없이 직접 답변하지 마라. ",
-        "날짜 계산 시 오늘 요일 기준으로 며칠 후인지 순서대로 계산해라.",
-        "반복 일정은 날짜마다 personal_create_schedule을 개별 호출해서 생성해라.",
-        "시작일이 불명확할 때만 사용자에게 확인해라.",
         CHAT_MEMORY_PROMPT,
+        f"현재 날짜는 앱 시작 시 OS에서 읽은 {today_iso}이며, {day_name}요일이다.",
     ]
 
 
