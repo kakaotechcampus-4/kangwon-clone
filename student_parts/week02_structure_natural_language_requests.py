@@ -176,18 +176,17 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
 
     if isinstance(value, StructuredRequest):
         return value
-    elif isinstance(value,dict):
+    if isinstance(value,dict):
         return StructuredRequest.model_validate(value)
-    else:
-        raise RuntimeError("예상한 형태가 아닙니다.")
+    raise RuntimeError(f"예상한 형태가 아닙니다. (들어온 타입: {type(value).__name__})")
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """Week 3 이상에서 agent를 새로 띄우지 않고 자연어를 StructuredRequest로 바꿉니다."""
 
-    structured_LLM = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    structured_chat_model = chat_model().with_structured_output(StructuredRequest, method="function_calling")
     system_prompt = join_system_prompt(week02_prompt_parts())
-    result = structured_LLM.invoke([
+    result = structured_chat_model.invoke([
         ("system",system_prompt),
         ("user",text)
     ])
