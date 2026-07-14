@@ -36,8 +36,8 @@ SQLITE_MEMORY_PROMPT = "당신은 이제 대화가 끝나도 사라지지 않는
 
 # TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
 WEEK03_TOOL_CALL_PROMPT = "새로운 일정이나 요청을 저장할 때는 아래와 같은 순서를 따르세요." \
-"1. 사용자의 자연어 요청을 extract_schedule_request(...)로 구조화합니다." \
-"2. 구조화된 결과를 그대로 save_structured_request(...)로 SQLite에 저장합니다." \
+"1. 사용자의 자연어 요청을 extract_schedule_request로 구조화합니다." \
+"2. 구조화된 결과를 그대로 save_structured_request로 SQLite에 저장합니다." \
 "3. 사용자에게 무엇이 저장되었는지 간단히 확인해주세요." \
 "조회할 때는 구조화 단계 거치지 말고 personal_list_saved_schedules로 일정을 확인하고" \
 "list_saved_requests/get_saved_request를 호출하세요" \
@@ -468,9 +468,20 @@ def week03_prompt_parts() -> list[str]:
     return [
         *week02_prompt_parts(),
         # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
+        (
+            "Week 2에서 구조화된 요청을 SQLite에 저장하고, 새 대화에서도 유지되도록 하는 규칙을 따르세요."
+        ),
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        (
+            f"오늘 날짜는 {current_app_date_iso()}입니다. "
+            "Week 3 agent는 Week 1~3 tool을 모두 사용할 수 있습니다. 아래와 같은 기준을 따르세요."
+            "새로운 일정/요청을 저장할 때는 extract_schedule_request에서 save_structured_request 순서를 따르고, "
+            "이미 저장된 내용을 조회/수정/삭제 할때는 personal_list_saved_schedules, "
+            "personal_update_saved_schedule, personal_delete_saved_schedules를 사용하세요. "
+            "이번 주차 범위는 구조화된 자연어 요청을 SQLite에 저장하고, 새 대화에서도 유지되도록 하는 것입니다. "
+        ),
     ]
 
 
@@ -482,7 +493,11 @@ def build_week03_agent() -> object:
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
         # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+        )
     return _WEEK03_AGENT
 
 
