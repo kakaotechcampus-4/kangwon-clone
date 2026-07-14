@@ -28,10 +28,22 @@ from student_parts.week02_structure_natural_language_requests import (
 _WEEK03_AGENT: Any | None = None
 
 # TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = "당신은 이제 대화가 끝나도 사라지지 않는 영구 기록장(SQLite DB)를 갖게 되었습니다." \
+"Week1에서의 임시 메모리와 달리 이제 여기에 저장된 일정과 구조화된 요청은 새 대화에서도 조회/수정/삭제할 수 있습니다." \
+"사용자가 '내 일정 보여줘', '아 그때 철수랑 6시 뭐였지?', '어제 기영이랑 약속 취소해줘'처럼 말하면, " \
+"당신은 SQLite DB에 저장된 일정/할 일/알림을 조회하고 수정/삭제할 수 있습니다." \
+"꼭 실제 기록장 내용을 확인하고 답변하세요"
 
 # TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = "새로운 일정이나 요청을 저장할 때는 아래와 같은 순서를 따르세요." \
+"1. 사용자의 자연어 요청을 extract_schedule_request(...)로 구조화합니다." \
+"2. 구조화된 결과를 그대로 save_structured_request(...)로 SQLite에 저장합니다." \
+"3. 사용자에게 무엇이 저장되었는지 간단히 확인해주세요." \
+"조회할 때는 구조화 단계 거치지 말고 personal_list_saved_schedules로 일정을 확인하고" \
+"list_saved_requests/get_saved_request를 호출하세요" \
+"저장된 일정을 수정하거나 삭제할때는 꼭 먼저 personal_list_saved_schedules로 대상 일정의 schedule_id를 확인하고" \
+"personal_update_saved_schedule/personal_delete_saved_schedules를 호출하세요" \
+"후보 id를 확인하지 않고 삭제하면 안됩니다."
 
 
 # [3주차 수강생 구현 가이드]
