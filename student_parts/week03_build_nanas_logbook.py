@@ -235,6 +235,20 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+        
+        # 실제 필드를 직접 담은 입력 / 한 겹 감싼 wrapper 인지 구분
+        # wrapper는 dict이고, 안쪽에 실제 필드 dict를 품음 (값이 dict일 때만 진짜 wrapper로 판단).
+        if isinstance(value, dict):
+
+            # 1. extract_schedule_request 출력 형태 {"structured_request": {...}} -> 안쪽 dict가 실제 필드
+            if isinstance(value.get("structured_request"), dict):
+                return value["structured_request"]
+
+            # 2. 예전 helper/trace의 {"payload": {...}} 형태 -> 동일하게 안쪽 dict 꺼내기
+            if isinstance(value.get("payload"), dict):
+                return value["payload"]
+        
+        # 3. wrapper가 아니면(평범한 필드 dict 또는 non-dict) 그대로 통과 -> Pydantic 필드 스키마가 검증
         return value
 
 
