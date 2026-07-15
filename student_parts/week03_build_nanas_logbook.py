@@ -27,11 +27,11 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = "'일정, 할 일, 알림' 에 대한 데이터들이 SQLite에 저장되어있다. 일정에 대한 질문을 받으면 추측하거나 아무 내용이나 답하지 않고 SQLite를 통해 조회를 한 후 진행한다."
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """저장 요청이 올 경우 : 1. extract_schedule_request를 먼저 호출하여 사용자 요청을 구조화 2. 구조화 결과를 save_structured_request의 kind/title/date/start_time/end_time/members/priority/reason/original_text 에 인자로 전달한다.
+조회 요청이 올 경우 : 1. 바로 personal_list_saved_schedules 을 사용한다.
+삭제 요청이 올 경우 : 1. personal_list_saved_schedules로 조회를 한다 2. 조회에 성공하면 해당하는 tool을 호출한다."""
 
 
 # [3주차 수강생 구현 가이드]
@@ -209,7 +209,7 @@ def tool_result(tool_name: str, *, ok: bool = True, **payload: Any) -> dict[str,
     return {"ok": ok, "tool_name": tool_name, **payload}
 
 
-class SaveStructuredRequestInput(StructuredRequest):
+class SaveStructuredRequestInput(StructuredRequest):        ### 추가 과제
     """SQLite 저장 직전에 검증하는 Week 3 입력 스키마입니다."""
 
     kind: RequestKind = Field(default="unknown", description="분류된 요청 종류")
@@ -222,18 +222,18 @@ class SaveStructuredRequestInput(StructuredRequest):
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
 
-        
+
         return value
 
 
-def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:
+def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:        ### 추가 과제
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
     # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
     ...
 
 
-def save_structured_request_payload(
+def save_structured_request_payload(        ### 추가 과제
     request: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str,
     *,
     store: AppSQLiteStore | None = None,
@@ -289,7 +289,7 @@ class SavedScheduleDeleteInput(BaseModel):
     delete_all: bool = False
 
 
-def _delete_saved_schedules(
+def _delete_saved_schedules(        ### 추가 과제
     *,
     store: AppSQLiteStore,
     schedule_ids: list[str] | None = None,
@@ -306,7 +306,7 @@ def _delete_saved_schedules(
     ...
 
 
-def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
+def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:        ### 추가 과제
     """Week 1 임시 일정 dict를 Week 3 저장 입력으로 변환합니다."""
 
     # TODO: Week 1 schedule의 attendees/id를 Week 3 members/source_schedule_id에 맞춰 변환하세요.
@@ -393,7 +393,7 @@ def personal_list_saved_schedules(
 
 
 
-def delete_saved_schedules_dict(
+def delete_saved_schedules_dict(        ### 추가 과제
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
@@ -468,7 +468,6 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
@@ -482,8 +481,11 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+        )
     return _WEEK03_AGENT
 
 
