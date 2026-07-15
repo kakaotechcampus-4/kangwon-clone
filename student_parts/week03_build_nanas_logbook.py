@@ -65,17 +65,17 @@ WEEK03_TOOL_CALL_PROMPT = ""
 #     agent가 일반적으로 호출하는 경로는 @tool(args_schema=...)가 붙은 tool 함수입니다.
 #
 # 메인과제 구현 대상
-#   1. save_structured_request
+#   1. save_structured_request  --- 완료
 #      - @tool(args_schema=SaveStructuredRequestInput)으로 Week 2 구조화 결과를 검증합니다.
 #      - tool 본문에서는 Pydantic class를 다시 만들지 말고, 함수 인자로 들어온 값을 바로 저장 dict로 정리합니다.
 #      - 자연어 문자열이나 ok/tool_name/base_date wrapper를 직접 저장하지 않습니다.
 #
-#   2. list_saved_requests / get_saved_request
+#   2. list_saved_requests / get_saved_request  --- 완료
 #      - list는 kind/date_from/date_to 필터를 AppSQLiteStore.list_saved_requests(...)에 그대로 넘깁니다.
 #      - get은 request_id 하나로 단건 조회합니다.
 #      - 조회 결과가 없어도 예외를 던지지 말고 rows=[] 또는 row=None 형태를 유지합니다.
 #
-#   3. personal_list_saved_schedules
+#   3. personal_list_saved_schedules  ---
 #      - 저장된 일정 목록을 반환해 "내 일정 보여줘" 같은 조회 질문과 이후 수정/삭제 후보 확인에 씁니다.
 #      - 날짜가 명확한 조회는 date_from/date_to로 범위를 좁히고, 너무 많은 row가 들어가지 않게 limit을 사용합니다.
 #
@@ -221,6 +221,8 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+
+        
         return value
 
 
@@ -312,7 +314,7 @@ def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStr
 
 
 @tool("personal_create_schedule")
-def personal_create_schedule(
+def personal_create_schedule(       ### 추가 과제
     title: str,
     date: str,
     start_time: str,
@@ -341,9 +343,13 @@ def save_structured_request(
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
 
-    # TODO: 검증된 함수 인자를 저장 dict로 만들고 None 값을 제외한 뒤 SQLite에 저장하세요.
-    # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
-    ...
+    request = {"kind": kind, "title": title, "date": date, "start_time": start_time, "end_time": end_time, "members": members, "priority": priority, "reason": reason, "original_text": original_text, "source_schedule_id": source_schedule_id}
+
+    clean_request = {key: value for key, value in request.items() if value is not None}
+
+    saved = _store().save_structured_request(clean_request)
+
+    return json_payload(tool_result("save_structured_request", **saved))
 
 
 @tool(args_schema=SavedRequestListInput)
@@ -354,16 +360,19 @@ def list_saved_requests(
 ) -> str:
     """SQLite에 저장된 구조화 요청 목록을 조회합니다."""
 
-    # TODO: kind/date_from/date_to 필터로 저장 요청을 조회하고 rows를 JSON 문자열로 반환하세요.
-    ...
+    rows = _store().list_saved_requests(kind, date_from, date_to)
+
+    return json_payload(tool_result("list_saved_requests", rows=rows))
 
 
 @tool(args_schema=SavedRequestGetInput)
 def get_saved_request(request_id: str) -> str:
     """request_id로 구조화 요청 행 하나를 조회합니다."""
 
-    # TODO: request_id로 단건 조회하고, 결과가 없을 때도 row=None을 유지해 JSON 문자열로 반환하세요.
-    ...
+    row = None
+    row = _store().get_saved_request(request_id)
+
+    return json_payload(tool_result("get_saved_request", row=row))
 
 
 @tool(args_schema=SavedScheduleListInput)
@@ -375,9 +384,13 @@ def personal_list_saved_schedules(
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
 
-    # TODO: 기본 kind를 personal_schedule로 정하고 날짜/종류/limit 필터로 저장 일정을 조회하세요.
-    # TODO: filters와 schedules를 포함한 JSON 문자열을 반환하세요.
-    ...
+    if kind == None:
+        kind = "personal_schedule"
+    
+    schedules = _store().list_schedules(limit, kind, date_from, date_to)
+
+    return json_payload(tool_result("personal_list_saved_schedules", schedules = schedules, filters ={"limit": limit, "kind": kind, "date_from": date_from, "date_to": date_to}))
+
 
 
 def delete_saved_schedules_dict(
@@ -396,7 +409,7 @@ def delete_saved_schedules_dict(
 
 
 @tool(args_schema=SavedScheduleUpdateInput)
-def personal_update_saved_schedule(
+def personal_update_saved_schedule(     ### 추가 과제
     schedule_id: str,
     title: str | None = None,
     date: str | None = None,
@@ -412,7 +425,7 @@ def personal_update_saved_schedule(
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
-def personal_delete_saved_schedules(
+def personal_delete_saved_schedules(        ### 추가 과제
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
