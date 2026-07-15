@@ -27,11 +27,17 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = (
+    "사용자가 입력한 일정/할 일/알림은 SQLite DB에 영구적으로 저장해. "
+    "사용자의 일정을 조회할 때는 저장해둔 SQLite DB에서 먼저 조회하고, 필요하면 이후에 세션 메모리를 조회해. "
+    "새 대화를 시작하거나 앱을 재시작해도 SQLite에 저장된 일정은 그대로 남아있어."
+)
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = (
+    "저장 요청이 오면 먼저 extract_schedule_request로 자연어를 구조화해. 그리고 그 결과를 save_structured_request에 그대로 넘겨서 저장해. "
+    "자연어 문자열은 절대 그대로 저장하지 마. 반드시 구조화 단계를 거쳐야 해. "
+    "개인 일정 조회는 personal_list_saved_schedules, 구조화 요청 원본 전체 조회는 list_saved_requests나 get_saved_request를 사용해."
+)
 
 
 # [3주차 수강생 구현 가이드]
@@ -474,10 +480,12 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        # TODO(추가 과제 완료 후): 추가 과제인 수정/삭제 tool이 미구현 되었으므로 구현 후 수정 예정
+        "일정 저장 요청이 오면 personal_create_schedule이 아니라 반드시 extract_schedule_request와 save_structured_request 흐름을 사용해. personal_create_schedule은 아직 완성되지 않았어. "
+        "저장된 일정을 조회할 때는 personal_list_schedules가 아니라 반드시 personal_list_saved_schedules를 사용해. 새 대화에서도 유지되는 일정은 SQLite 쪽에만 있어. "
+        "이번 주차(Week 3)에서는 저장과 조회 tool만 사용 가능해. 일정 수정이나 삭제 요청이 와도 아직 그 tool은 구현되지 않았으니 시도하지 마."
     ]
 
 
@@ -488,8 +496,11 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+        )
     return _WEEK03_AGENT
 
 
