@@ -28,10 +28,32 @@ from student_parts.week02_structure_natural_language_requests import (
 _WEEK03_AGENT: Any | None = None
 
 # TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = """
+일정/할 일/알림은 현재 대화가 끝나거나 앱이 재시작되어도 사라지지 않는 앱 DB(SQLite)에 저장된다.
+
+사용자가 "전에 저장한 거 있어?", "내 일정 보여줘", "저번에 만든 약속 뭐였지?"처럼 과거 기록을 묻는다면, 
+지금 이 대화에 관련 내용이 없다는 이유로 기억나지 않는다고 답하지 않는다.
+대신 SQLite 조회 도구(personal_list_saved_schedules, list_saved_requests, get_saved_request)를 호출해 실제 저장된 기록을 확인한 뒤 답한다.
+
+새 대화이거나 앱을 다시 시작한 상태여도 이전에 저장된 일정/할 일/알림은 그대로 유지된다고 가정하고 행동한다.
+"""
 
 # TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """
+다음은 저장/조회/수정/삭제 동작에 관한 tool 호출 규칙이다.
+
+- 저장
+사용자가 요청하면 extract_schedule_request를 호출해 자연어를 StructuredRequest로 변경한다. 
+그 다음 구조화된 요청의 각 필드를 save_structured_request의 인자로 그대로 전달한다.
+
+- 조회
+사용자가 저장된 데이터를 요청하면 personal_list_saved_schedules(일정 목록) 또는 
+list_saved_requests/get_saved_request(구조화된 요청 원본)을 사용한다.
+
+- 수정
+- 삭제
+
+"""
 
 
 # [3주차 수강생 구현 가이드]
@@ -492,7 +514,11 @@ def build_week03_agent() -> object:
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
         # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt()
+        )
     return _WEEK03_AGENT
 
 
