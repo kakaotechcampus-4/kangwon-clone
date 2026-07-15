@@ -335,9 +335,9 @@ def personal_create_schedule(
     ...
 
 
-@tool(args_schema=SaveStructuredRequestInput)
 # LangChain이 Tool 호출 전에 검증을 끝냄
-def save_structured_request(
+@tool(args_schema=SaveStructuredRequestInput)
+def save_structured_request(    
     kind: RequestKind = "unknown",
     title: str | None = None,
     date: str | None = None,
@@ -387,8 +387,8 @@ def save_structured_request(
     # **result로 수정했는데 **은 dict를 펼쳐서 keyword argument로 전달한다. 저장된 key-value 형식이 펼쳐져서 합쳐지는 느낌?
     # 추가적으로 '*'와 '**'의 차이를 알게 되었는데 *는 리스트나 튜플을 펼치는 것이다. **는 dict
 
-@tool(args_schema=SavedRequestListInput)
 # LangChain이 호출 전에 검증을 끝냄.
+@tool(args_schema=SavedRequestListInput)
 def list_saved_requests(
     kind: RequestKind | None = None,
     date_from: str | None = None,
@@ -504,7 +504,12 @@ def week03_tools() -> list[Any]:
     """Week 1 도구, Week 2 구조화 helper, SQLite 저장/조회/삭제 도구를 조립합니다."""
 
     base_tools = [
-        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item for item in week01_tools()
+        personal_create_schedule 
+        if _tool_name(item) == "personal_create_schedule" 
+        else personal_list_saved_schedules
+        if _tool_name(item) == "personal_list_schedules"
+        else item
+        for item in week01_tools()
     ]
     return [
         *base_tools,
