@@ -183,8 +183,7 @@ WEEK03_TOOL_CALL_PROMPT = ""
 #     SQLite 저장까지 수행하는 이 파일의 호환 tool로 교체합니다.
 #
 #   - [공통] week03_system_prompt() / week03_prompt_parts()
-#     Week 3 agent가 "구조화 후 저장" 흐름을 따르도록 system prompt를 조립합니다.
-#
+#     Week 3 agent가 "구조화 후 저장" 흐름을 따르도록 system prompt를 조립합
 #   - [공통] build_week03_agent() / build_week_agent()
 #     Week 1~3 tool을 가진 agent를 한 번만 만들고 재사용합니다. build_week_agent()는 실행기가 호출하는 표준 entry point입니다.
 
@@ -321,8 +320,8 @@ def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStr
 
     # TODO: Week 1 schedule의 attendees/id를 Week 3 members/source_schedule_id에 맞춰 변환하세요.
     ...
-
-
+    
+    
 @tool("personal_create_schedule")
 def personal_create_schedule(
     title: str,
@@ -335,7 +334,19 @@ def personal_create_schedule(
 
     # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
     # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
-    ...
+    personal_schedule = week01_personal_create_schedule.invoke(
+        {
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "attendees": attendees,
+        }
+    )
+    personal_schedule_dict = json.loads(personal_schedule)
+    # if "created_schedule" in personal_schedule_dict:
+    #     structured_request =     
+    
 
 
 @tool(args_schema=SaveStructuredRequestInput)
@@ -352,10 +363,23 @@ def save_structured_request(
     source_schedule_id: str | None = None,
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
+    save_input = {
+        "kind": kind,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "members": members,
+        "priority": priority,
+        "reason": reason,
+        "original_text": original_text,
+        "source_schedule_id": source_schedule_id,
+    }
+    save_input = {key: value for key, value in save_input.items() if value is not None}
 
-    # TODO: 검증된 함수 인자를 저장 dict로 만들고 None 값을 제외한 뒤 SQLite에 저장하세요.
-    # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
-    ...
+    save_result = _store().save_structured_request(save_input)
+
+    return json_payload(tool_result("save_structured_request", **save_result))
 
 
 @tool(args_schema=SavedRequestListInput)
