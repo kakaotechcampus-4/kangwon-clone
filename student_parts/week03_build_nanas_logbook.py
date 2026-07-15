@@ -256,7 +256,44 @@ def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dic
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
     # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
-    ...
+    
+    # 기준 : 입력의 타입으로 분기
+
+    # 1. 이미 목표 타입이면 그대로 반환
+    if isinstance(value, SaveStructuredRequestInput):
+        return value
+    
+    # 2. Week2 StructuredRequest면 필드를 그대로 저장 스키마로 승격 (source_schedule_id 등은 기본값)
+    if isinstance(value, StructuredRequest):
+        return SaveStructuredRequestInput.model_validate(value.model_dump())
+    
+    # 3. dict면 바로 검증 (wrapper는 unwrap_legacy_payload가 정규화)
+    if isinstance(value, dict):
+        return SaveStructuredRequestInput.model_validate(value)
+    
+    # 4. 문자열이면 JSON/자연어
+    if isinstance(value, str):
+
+        # 4-1. JSON 파싱 가능 여부를 통해 JSON/자연어 구분
+        #      파싱이 되면 JSON, 안되면 자연어
+        try:
+            parsed = json.loads(value)
+        except (json.JSONDecodeError, ValueError):
+            parsed = None
+
+        # 4-2. JSON(dict)로 파싱됐다면 그 dict를 검증
+        if isinstance(parsed, dict):
+            return SaveStructuredRequestInput.model_validate(parsed)
+        
+        # 4-3. JSON이 아닌 자연어라면 Week2 extract_structured_request로 먼저 구조화
+        request = extract_structured_request(value)
+        
+        # 4-4. 검증
+        return SaveStructuredRequestInput.model_validate(request.model_dump())
+    
+    # 5. dict/JSON/자연어/StructuredRequest이 아닌 경우
+    raise RuntimeError(f"지원하지 않는 저장 입력 형태입니다: {type(value)}")
+        
 
 
 def save_structured_request_payload(
