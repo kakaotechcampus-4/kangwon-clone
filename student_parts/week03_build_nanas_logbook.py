@@ -27,11 +27,20 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = """
+    사용자의 일정 기록은 SQLite에 저장되어 있습니다. 새로운 대화창이더라도 사용자 일정/할 일/알림 조회, 수정, 삭제를 임의로 미리 판단하지 말고 저장소를 이용하는 tool들을 활용합니다.
+    
+"""
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+
+WEEK03_TOOL_CALL_PROMPT = """
+    사용자가 일정 저장을 요청할 경우: extract_schedule_request를 먼저 호출해 자연어를 StructuredRequest로 구조화 합니다.
+    그 후 structured_request의 값들을 save_structured_request 인자로 그대로 전달합니다.
+    사용자가 일정을 조회할 경우: personal_list_saved_schedules를 통해 조회하며 날짜가 명확한 조회는 date_from/date_to로 범위를 좁혀 인자로 집어넣습니다.
+    SQLite에 저장된 structured_requests 원본 기록을 목록으로 조회는 list_saved_requests, 단건 조회는 get_saved_request를 사용합니다.
+    사용자가 저장된 일정을 수정할 경우: 먼저 personal_list_saved_schedules로 대상 일정의 schedule_id를 확인한 뒤, 그 schedule_id와 실제로 바뀌는 필드만 personal_update_saved_schedule 인자로 전달합니다.
+    사용자가 저장된 일정을 삭제할 경우: 먼저 personal_list_saved_schedules로 삭제 후보를 확인한 뒤, 확인된 schedule_ids 또는 date/title/start_time 같은 명시적 필터를 personal_delete_saved_schedules 인자로 전달합니다.
+"""
 
 
 # [3주차 수강생 구현 가이드]
@@ -340,11 +349,25 @@ def save_structured_request(
     source_schedule_id: str | None = None,
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
-
-    # TODO: 검증된 함수 인자를 저장 dict로 만들고 None 값을 제외한 뒤 SQLite에 저장하세요.
-    # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
-    ...
-
+    payload = {
+        "kind": kind,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "members": members,
+        "priority": priority,
+        "reason": reason,
+        "original_text": original_text,
+        "source_schedule_id": source_schedule_id
+    }
+    clean_payload = {}
+    for key in payload:
+        value = payload[key]
+        if value is not None:
+            clean_payload[key] = value
+    result = _store().save_structured_request(clean_payload)
+    return json_payload(tool_result("save_structured_request", **result))
 
 @tool(args_schema=SavedRequestListInput)
 def list_saved_requests(
@@ -353,18 +376,14 @@ def list_saved_requests(
     date_to: str | None = None,
 ) -> str:
     """SQLite에 저장된 구조화 요청 목록을 조회합니다."""
-
-    # TODO: kind/date_from/date_to 필터로 저장 요청을 조회하고 rows를 JSON 문자열로 반환하세요.
-    ...
-
+    checked_rows = _store().list_saved_requests(kind,date_from,date_to)
+    return json_payload(tool_result("list_saved_requests",rows=checked_rows))
 
 @tool(args_schema=SavedRequestGetInput)
 def get_saved_request(request_id: str) -> str:
     """request_id로 구조화 요청 행 하나를 조회합니다."""
-
-    # TODO: request_id로 단건 조회하고, 결과가 없을 때도 row=None을 유지해 JSON 문자열로 반환하세요.
-    ...
-
+    checked_row = _store().get_saved_request(request_id)
+    return json_payload(tool_result("get_saved_request",row=checked_row))
 
 @tool(args_schema=SavedScheduleListInput)
 def personal_list_saved_schedules(
@@ -374,10 +393,17 @@ def personal_list_saved_schedules(
     date_to: str | None = None,
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
-
-    # TODO: 기본 kind를 personal_schedule로 정하고 날짜/종류/limit 필터로 저장 일정을 조회하세요.
-    # TODO: filters와 schedules를 포함한 JSON 문자열을 반환하세요.
-    ...
+    final_kind = kind
+    if final_kind is None:
+        final_kind = "personal_schedule"
+    schedules = _store().list_schedules(limit,final_kind,date_from,date_to)
+    filters = {
+        "limit": limit,
+        "kind": final_kind,
+        "date_from": date_from,
+        "date_to": date_to,
+    }
+    return json_payload(tool_result("personal_list_saved_schedules",filters=filters,schedules=schedules))
 
 
 def delete_saved_schedules_dict(
@@ -455,10 +481,13 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        """week 3에서 SQLite 저장소를 통해 일정 저장/조회/삭제/수정 기능이 추가되었으며 영속 저장이 가능합니다. 
+        week3에서는 저장소에 저장/조회/삭제/수정 기능은 week 1 tool(personal_create_schedule, personal_list_schedules, personal_delete_schedule)이 아닌 week 3 tool들
+        (save_structured_request,personal_list_saved_schedules,list_saved_requests,get_saved_request,personal_update_saved_schedule, personal_delete_saved_schedules)
+        을 가장 우선적으로 사용합니다.
+        """
     ]
 
 
@@ -469,8 +498,11 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model = chat_model(),
+            tools = week03_tools(),
+            system_prompt = week03_system_prompt(),
+        )
     return _WEEK03_AGENT
 
 
