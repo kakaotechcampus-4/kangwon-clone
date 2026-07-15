@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from datetime import datetime
 
 from langchain.agents import create_agent
 from langchain_core.tools import tool
@@ -28,10 +29,23 @@ from student_parts.week02_structure_natural_language_requests import (
 _WEEK03_AGENT: Any | None = None
 
 # TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = (
+    "너는 이제 앱 SQLite DB에 남는 영속 기록장을 가진다. "
+    "대화가 끝나거나 새 대화를 열어도 사라지지 않고 DB에 남는다. "
+    "'내 일정 알려줘', '저번에 저장한 거 뭐였지'와 같은 조회 요청에는 네 기억에 의존하지 않고 "
+    "반드시 personal_list_saved_schedules / list_saved_requests / get_saved_request 조회 tool을 호출해 "
+    "DB에 실제 저장된 값을 읽어 답한다."
+)
 
 # TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = (
+    "Tool 호출 순서 : "
+    "1) 새 일정/할 일/알림 저장 요청이면 먼저 extract_schedule_request(query=사용자 원문)로 자연어를 구조화한 뒤, "
+    "그 결과의 kind/title/date/start_time/end_time/members/priority/reason 필드를 save_structured_request 인자로 그대로 넘겨 저장한다. "
+    "2) 조회는 저장 일정=personal_list_saved_schedules, 저장 요청 원본=list_saved_requests, 단건=get_saved_request를 쓴다. "
+    "3) 수정/삭제는 먼저 personal_list_saved_schedules로 대상 schedule_id를 확인한 뒤 "
+    "personal_update_saved_schedule / personal_delete_saved_schedules를 호출하고, 조건 없이 전체 삭제하지 않는다. "
+)
 
 
 # [3주차 수강생 구현 가이드]
@@ -480,12 +494,21 @@ def week03_system_prompt() -> str:
 def week03_prompt_parts() -> list[str]:
     """1~3주차 system prompt 조각을 누적합니다."""
 
+    day_names = ["월", "화", "수", "목", "금", "토", "일"]
+    today_iso = current_app_date_iso()
+    day_name = day_names[datetime.fromisoformat(today_iso).weekday()]
+
     return [
         *week02_prompt_parts(),
         # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        (
+            f"오늘은 {today_iso} {day_name}요일이며 상대 날짜는 이 날짜를 기준으로 해석한다. "
+            "Week 3 범위는 구조화 결과를 SQLite에 저장하고 조회/수정/삭제하는 것까지이며, "
+            "RAG 검색이나 외부 멤버 일정 조율은 이후 주차에서 다룬다."
+        )
     ]
 
 
