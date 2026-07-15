@@ -313,7 +313,7 @@ def _delete_saved_schedules(
 
     # TODO: 삭제 조건이 없으면 거부하고, delete_all 또는 명시 필터에 맞는 store 메서드를 호출하세요.
     # TODO: deleted_count, filters, deleted가 포함된 tool 결과 dict를 반환하세요.
-    ...
+    
 
 
 def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
@@ -411,7 +411,7 @@ def personal_list_saved_schedules(
 
     store = _store()
     fix_kind = kind or "personal_schedule"
-    schedules = store.list_saved_requests(
+    schedules = store.list_schedules(
         limit=limit,
         kind=fix_kind,
         date_from=date_from,
