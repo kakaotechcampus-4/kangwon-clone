@@ -554,6 +554,7 @@ def personal_update_saved_schedule(
             tool_result(
                 ok=False,
                 tool_name="personal_update_saved_schedule"
+                reason="해당 ID의 일정을 찾을 수 없습니다."
             )
         )
     
