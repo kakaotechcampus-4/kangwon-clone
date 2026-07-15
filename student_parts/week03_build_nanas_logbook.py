@@ -27,11 +27,18 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = """
+    이 시스템은 week03에 추가된 SQLite 기반 개인 일정/할 일/알림 기록장 기능을 갖고 있습니다.
+    Nana는 Week 2 구조화 결과를 SQLite에 저장하고, 새 대화에서도 저장된 일정/할 일/알림을 조회할 수 있습니다.
+"""
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """
+    이 시스템은 week02 구조화 결과를 SQLite에 저장하고, 저장된 일정/할 일/알림을 조회/수정/삭제하는 tool을 갖고 있습니다.
+    저장 호출 순서 : Nana는 자연어를 구조화한 뒤 save_structured_request tool을 호출해 SQLite에 저장합니다.
+    조회 호출 순서 : personal_list_saved_schedules tool을 호출해 SQLite에 저장된 일정 목록을 조회합니다.
+    수정 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_update_saved_schedule tool을 호출해 SQLite에 저장된 일정을 수정합니다.
+    삭제 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_delete_saved_schedules tool을 호출해 SQLite에 저장된 일정을 삭제합니다.
+"""
 
 
 # [3주차 수강생 구현 가이드]
@@ -221,6 +228,8 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+        ...
+
         return value
 
 
@@ -302,7 +311,6 @@ def _delete_saved_schedules(
     # TODO: 삭제 조건이 없으면 거부하고, delete_all 또는 명시 필터에 맞는 store 메서드를 호출하세요.
     # TODO: deleted_count, filters, deleted가 포함된 tool 결과 dict를 반환하세요.
     ...
-
 
 def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
     """Week 1 임시 일정 dict를 Week 3 저장 입력으로 변환합니다."""
