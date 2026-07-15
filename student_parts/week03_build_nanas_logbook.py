@@ -519,7 +519,12 @@ def personal_delete_saved_schedules(
     """Nana가 고른 일정 ID나 날짜/제목/시간 필터로 저장 일정을 삭제합니다."""
 
     # TODO: _delete_saved_schedules(...)에 삭제 조건을 전달하고 결과를 JSON 문자열로 반환하세요.
-
+    return json_payload(
+        tool_result(
+            tool_name="personal_delete_saved_schedules",
+            **_delete_saved_schedules(_store(), schedule_ids, date, title, start_time, time_unspecified, delete_all)
+        )
+    )
 
 def week03_tools() -> list[Any]:
     """Week 1 도구, Week 2 구조화 helper, SQLite 저장/조회/삭제 도구를 조립합니다."""
