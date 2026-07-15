@@ -28,10 +28,18 @@ from student_parts.week02_structure_natural_language_requests import (
 _WEEK03_AGENT: Any | None = None
 
 # TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = (
+    "일정/할 일/알림은 영속적으로 SQLite에 저장한다. "
+    "새로운 대화가 시작되더라도 이전 대화에서 저장한 데이터를 조회하여 사용자의 요청에 응답해라."
+    )
 
 # TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = (
+    "첫 번째로, 자연어를 StructuredRequest를 구조화한다. "
+    "두 번째로, 구조화된 것을 바탕으로 SQLite tool를 호출한다. "
+    "생성 요청은 저장 tool을, 조회 요청은 조회 tool을 사용하고 "
+    "수정 요청은 수정 tool을 삭제 요청은 삭제 tool을 호출한다."
+)
 
 
 # [3주차 수강생 구현 가이드]
@@ -221,6 +229,7 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+        
         return value
 
 
@@ -327,6 +336,7 @@ def personal_create_schedule(
 
 
 @tool(args_schema=SaveStructuredRequestInput)
+# LangChain이 Tool 호출 전에 검증을 끝냄
 def save_structured_request(
     kind: RequestKind = "unknown",
     title: str | None = None,
@@ -340,13 +350,45 @@ def save_structured_request(
     source_schedule_id: str | None = None,
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
+    
+    data = {
+        "kind": kind,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "members": members,
+        "priority": priority,
+        "reason": reason,
+        "original_text": original_text,
+        "source_schedule_id": source_schedule_id,
+    }
 
-    # TODO: 검증된 함수 인자를 저장 dict로 만들고 None 값을 제외한 뒤 SQLite에 저장하세요.
-    # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
-    ...
-
+    data = {
+        key: value
+        for key, value in data.items()
+        if value is not None
+    }
+        
+    # None 값을 어떻게 제외할 수 있을까? dict comprehension을 사용한다.
+    # data.items로 key와 value 쌍을 꺼내서 value가 None이 아니면 새로운 dict에 넣는다.
+    # for문을 써도 되지만 가독성과 간결함이 좋아서 dict comprehension으로 쓴다.
+    # 궁금증 : original_text는 ""인데 얜 우째될까?
+    # -> 빈 문자열인 애는 남겨 놓는다. original_text는 항상 문자열이라고 지정했기 때문.
+    # 공백인 애들을 전부 제외할 것이었으면 if value: 로 썼을 것이다.
+    
+    store = _store()
+    result = store.save_structured_request(data)
+    # dict에는 _store() 메서드가 없기 때문에 객체를 얻은 뒤 호출한다.
+    
+    return json_payload(tool_result("save_structured_request", ok=True, **result))
+    # helper 함수를 사용하여 return을 하는데 save_structured_request의 반환값을 확인하려고 app_store.py에서 함수 반환값을 확인했다.
+    # 처음에 saved= result라고 작성했었는데 이렇게 쓴다면 dict가 한 번 더 감싸지는 구조이다.
+    # **result로 수정했는데 **은 dict를 펼쳐서 keyword argument로 전달한다. 저장된 key-value 형식이 펼쳐져서 합쳐지는 느낌?
+    # 추가적으로 '*'와 '**'의 차이를 알게 되었는데 *는 리스트나 튜플을 펼치는 것이다. **는 dict
 
 @tool(args_schema=SavedRequestListInput)
+# LangChain이 호출 전에 검증을 끝냄.
 def list_saved_requests(
     kind: RequestKind | None = None,
     date_from: str | None = None,
@@ -354,17 +396,33 @@ def list_saved_requests(
 ) -> str:
     """SQLite에 저장된 구조화 요청 목록을 조회합니다."""
 
-    # TODO: kind/date_from/date_to 필터로 저장 요청을 조회하고 rows를 JSON 문자열로 반환하세요.
-    ...
-
+    store = _store()
+    rows = store.list_saved_requests(
+        kind=kind, 
+        date_from=date_from, 
+        date_to=date_to
+    )
+    
+    return json_payload(tool_result("list_saved_requests", ok=True, rows=rows))
+    # app_store.py에서 list로 반환함. **로 못 펼친다!
 
 @tool(args_schema=SavedRequestGetInput)
 def get_saved_request(request_id: str) -> str:
     """request_id로 구조화 요청 행 하나를 조회합니다."""
 
     # TODO: request_id로 단건 조회하고, 결과가 없을 때도 row=None을 유지해 JSON 문자열로 반환하세요.
-    ...
+    store = _store()
+    row = store.get_saved_request(
+        request_id=request_id
+    )
+    
+    return json_payload(tool_result("get_saved_request", ok=True, row=row))
+    # row 반환시 **row라고 적었는데 조회 실패 시 타입 에러가 발생한다.
+    # None은 None일 뿐 dict가 아니기 때문에 **을 사용하지 못하는 것이다.
+    # 따라서 row=row라고 적어서 결과를 전달한다.
 
+    # 추가로 알게된 점이 있다. '='을 쓸 때 띄어쓰기를 어떻게 하나에 대한 궁금증이 생겼는데
+    # 함수 호출의 키워드 인자는 붙여야 하고 변수 대입은 띄어야 한다.
 
 @tool(args_schema=SavedScheduleListInput)
 def personal_list_saved_schedules(
@@ -375,10 +433,26 @@ def personal_list_saved_schedules(
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
 
-    # TODO: 기본 kind를 personal_schedule로 정하고 날짜/종류/limit 필터로 저장 일정을 조회하세요.
-    # TODO: filters와 schedules를 포함한 JSON 문자열을 반환하세요.
-    ...
-
+    if kind is None:
+        kind = "personal_schedule"
+    # kind가 지정되지 않은 기본일 때 personal_schedule로 조회
+    store = _store()
+    
+    schedules = store.list_schedules(
+        limit=limit,
+        kind=kind,
+        date_from=date_from,
+        date_to=date_to
+    )
+    # structured_requests가 아닌 schedules 테이블에서 저장된 일정을 가져온다.
+    filters = {
+        "kind": kind,
+        "date_from": date_from,
+        "date_to": date_to,
+        "limit": limit
+    }
+    # 어떤 조건으로 조회했는지 반환을 위한 필터 정보
+    return json_payload(tool_result("personal_list_saved_schedules", ok=True, filters=filters, schedules=schedules))
 
 def delete_saved_schedules_dict(
     schedule_ids: list[str] | None = None,
