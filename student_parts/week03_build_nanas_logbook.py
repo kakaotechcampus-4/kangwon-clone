@@ -639,12 +639,12 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
+        f"현재 날짜는 {current_app_date_iso}이다.",
         # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
-        WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
-        f"현재 날짜는 {current_app_date_iso}이다.",
         "Week3에서는 자연어 요청을 구조화해서 SQLite에 저장하고, 조회/수정/삭제 동작을 수행한다.",
+        WEEK03_TOOL_CALL_PROMPT
     ]
 
 
