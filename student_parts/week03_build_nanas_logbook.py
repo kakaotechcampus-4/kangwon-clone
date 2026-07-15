@@ -404,8 +404,8 @@ def save_structured_request(
         "original_text": original_text,
         "source_schedule_id": source_schedule_id
     }
-    filterd_dict = {key: value for key, value in original_dict.items() if value is not None}
-    result = _store().save_structured_request(filterd_dict)
+    filtered_dict = {key: value for key, value in original_dict.items() if value is not None}
+    result = _store().save_structured_request(filtered_dict)
     return json_payload(tool_result(ok=True, tool_name="save_structured_request", **result))
 
 
