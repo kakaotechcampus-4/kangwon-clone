@@ -38,6 +38,7 @@ WEEK03_TOOL_CALL_PROMPT = (
 일정을 수정하거나 삭제하기 전에는 반드시 먼저 personal_list_saved_schedules로 후보 일정을 조회해서 schedule_id를 확인한 뒤
 personal_update_saved_schedule 또는 personal_delete_saved_schedules를 호출해.
 조건 없이 전체를 삭제하지 마.
+후보 일정이 2건 이상 매칭되면 임의로 하나를 골라 삭제/수정하지 말고, 각 일정의 시간/제목을 알려주며 사용자에게 어느 것인지 먼저 물어봐.
     """
 )
 
