@@ -36,7 +36,8 @@ SQLITE_MEMORY_PROMPT = (
 WEEK03_TOOL_CALL_PROMPT = (
     "저장 요청이 오면 먼저 extract_schedule_request로 자연어를 구조화해. 그리고 그 결과를 save_structured_request에 그대로 넘겨서 저장해. "
     "자연어 문자열은 절대 그대로 저장하지 마. 반드시 구조화 단계를 거쳐야 해. "
-    "개인 일정 조회는 personal_list_saved_schedules, 구조화 요청 원본 전체 조회는 list_saved_requests나 get_saved_request를 사용해."
+    "개인 일정 조회는 personal_list_saved_schedules, 구조화 요청 원본 전체 조회는 list_saved_requests나 get_saved_request를 사용해. "
+    "사용자가 특정 날짜를 언급하지 않은 조회 요청이면 date_from/date_to를 비워서 전체 일정을 조회해. 임의로 오늘 날짜로 좁히지 마."
 )
 
 
