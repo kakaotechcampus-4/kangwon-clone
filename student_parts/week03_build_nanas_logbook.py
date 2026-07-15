@@ -481,10 +481,20 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
+        "Week 1-2에서는 일정/할 일/알림이 대화가 끝나면 사라지는 임시 메모리였지만, "
+        "3주차부터는 StructuredRequest로 구조화한 결과를 SQLite 앱 DB에 그대로 저장해 "
+        "대화가 끝나거나 새로 시작해도 기록이 남는다.",
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        f"오늘 날짜는 {current_app_date_iso()}이다. 저장된 일정을 date_from/date_to로 조회할 때도 "
+        "이 날짜를 기준으로 상대 날짜 표현을 해석해라.",
+        "tool 선택 기준: 저장은 save_structured_request, 구조화 요청 원본 조회는 "
+        "list_saved_requests/get_saved_request, 저장된 일정 목록 확인은 "
+        "personal_list_saved_schedules를 사용해라. 일정을 고치라는 요청이면 "
+        "personal_update_saved_schedule, 지우라는 요청이면 먼저 personal_list_saved_schedules로 "
+        "대상 후보를 확인한 뒤 personal_delete_saved_schedules를 호출해라.",
+        "3주차 범위는 SQLite 저장/조회/수정/삭제까지다. 외부 멤버와의 일정 조율이나 RAG 기반 검색은 "
+        "이번 주차 범위가 아니므로 시도하지 마라.",
     ]
 
 
