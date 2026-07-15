@@ -406,7 +406,13 @@ def save_structured_request(
     }
     filtered_dict = {key: value for key, value in original_dict.items() if value is not None}
     result = _store().save_structured_request(filtered_dict)
-    return json_payload(tool_result(ok=True, tool_name="save_structured_request", **result))
+    return json_payload(
+        tool_result(
+            ok=True, 
+            tool_name="save_structured_request", 
+            **result
+        )
+    )
 
 
 @tool(args_schema=SavedRequestListInput)
@@ -419,7 +425,13 @@ def list_saved_requests(
 
     # TODO: kind/date_from/date_to 필터로 저장 요청을 조회하고 rows를 JSON 문자열로 반환하세요.
     result = _store().list_saved_requests(kind, date_from, date_to)
-    return json_payload(tool_result(ok=True, tool_name="list_saved_requests", rows=result))
+    return json_payload(
+        tool_result(
+            ok=True, 
+            tool_name="list_saved_requests", 
+            rows=result
+        )
+    )
 
 
 @tool(args_schema=SavedRequestGetInput)
@@ -428,7 +440,13 @@ def get_saved_request(request_id: str) -> str:
 
     # TODO: request_id로 단건 조회하고, 결과가 없을 때도 row=None을 유지해 JSON 문자열로 반환하세요.
     result = _store().get_saved_request(request_id)
-    return json_payload(tool_result(ok=True, tool_name="get_saved_request", row=result))
+    return json_payload(
+        tool_result(
+            ok=True, 
+            tool_name="get_saved_request", 
+            row=result
+        )
+    )
 
 
 @tool(args_schema=SavedScheduleListInput)
@@ -449,7 +467,14 @@ def personal_list_saved_schedules(
         "date_from": date_from,
         "date_to": date_to
     }
-    return json_payload(tool_result(ok=True, tool_name="personal_list_saved_schedules", filters=filters, schedules=result))
+    return json_payload(
+        tool_result(
+            ok=True, 
+            tool_name="personal_list_saved_schedules", 
+            filters=filters, 
+            schedules=result
+        )
+    )
 
 def delete_saved_schedules_dict(
     schedule_ids: list[str] | None = None,
@@ -494,7 +519,6 @@ def personal_delete_saved_schedules(
     """Nana가 고른 일정 ID나 날짜/제목/시간 필터로 저장 일정을 삭제합니다."""
 
     # TODO: _delete_saved_schedules(...)에 삭제 조건을 전달하고 결과를 JSON 문자열로 반환하세요.
-    ...
 
 
 def week03_tools() -> list[Any]:
