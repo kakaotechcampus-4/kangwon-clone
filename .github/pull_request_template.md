@@ -27,9 +27,9 @@
 ## 구현한 기능
 이번 주차 **메인 과제** 중 구현한 항목에 체크해요.
 
-- [ ] 미션명
-- [ ] 미션명
-- [ ] 미션명
+- [ ] save_structured_request
+- [ ] list_saved_requests / get_saved_request
+- [ ] personal_list_saved_schedules
 
 ---
 
