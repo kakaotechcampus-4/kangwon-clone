@@ -29,6 +29,8 @@ _WEEK03_AGENT: Any | None = None
 
 # TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
 SQLITE_MEMORY_PROMPT = """
+다음은 영속 메모리 규칙이다.
+
 일정/할 일/알림은 현재 대화가 끝나거나 앱이 재시작되어도 사라지지 않는 앱 DB(SQLite)에 저장된다.
 
 사용자가 "전에 저장한 거 있어?", "내 일정 보여줘", "저번에 만든 약속 뭐였지?"처럼 과거 기록을 묻는다면, 
@@ -641,6 +643,8 @@ def week03_prompt_parts() -> list[str]:
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        f"현재 날짜는 {current_app_date_iso}이다.",
+        "Week3에서는 자연어 요청을 구조화해서 SQLite에 저장하고, 조회/수정/삭제 동작을 수행한다.",
     ]
 
 
