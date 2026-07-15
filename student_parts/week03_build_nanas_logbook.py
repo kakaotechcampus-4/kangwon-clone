@@ -620,7 +620,7 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        f"현재 날짜는 {current_app_date_iso}이다.",
+        f"현재 날짜는 {current_app_date_iso()}이다.",
         SQLITE_MEMORY_PROMPT,
         "Week3에서는 자연어 요청을 구조화해서 SQLite에 저장하고, 조회/수정/삭제 동작을 수행한다.",
         WEEK03_TOOL_CALL_PROMPT
