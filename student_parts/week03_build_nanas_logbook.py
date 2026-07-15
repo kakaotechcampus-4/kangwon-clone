@@ -492,8 +492,32 @@ def personal_update_saved_schedule(
     """앱 DB에 저장된 내 일정 원본을 수정하고 공유 일정 복사본을 같은 값으로 갱신합니다."""
 
     # TODO: None이 아닌 수정 필드를 AppSQLiteStore.update_schedule(...)에 전달하세요.
+    updated = _store().update_schedule(
+        schedule_id=schedule_id,
+        title=title,
+        date=date,
+        start_time=start_time,
+        end_time=end_time,
+        attendees=attendees,
+    )
+
     # TODO: ID가 없으면 ok=False, 있으면 updated_schedule/shared_sync를 담아 JSON 문자열로 반환하세요.
-    ...
+    
+    # 1. ID가 없는 경우
+    if updated is None:
+        return json_payload(tool_result(
+            "personal_update_saved_schedule",
+            ok=False,
+            schedule_id=schedule_id,
+            error="해당 schedule_id의 일정을 찾을 수 없습니다."
+        ))
+    
+    # 2. 정상적으로 업데이트가 이루어진 경우
+    return json_payload(tool_result(
+        "personal_update_saved_schedule",
+        updated_schedule=updated["schedule"],
+        shared_sync=updated["shared_sync"],
+    ))
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
