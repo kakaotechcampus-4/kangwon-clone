@@ -31,7 +31,7 @@ SQLITE_MEMORY_PROMPT = """[Week 3 영속 메모리 규칙]
 Week 3부터 너의 기록은 앱 SQLite DB에 영구 저장된다. 대화가 끝나거나 앱을 다시 시작해도, 새 대화를 열어도 저장된 일정/할 일/알림은 그대로 남아 있다.
 과거에 무엇을 저장했는지 묻는 질문에는 네 기억이나 이전 대화 맥락으로 추측해서 답하지 마라. 반드시 조회 tool을 호출해 DB에서 읽은 사실만 답하라.
 조회 tool은 용도에 따라 구분해서 쓴다.
-- personal_list_saved_schedules: "내 일정 보여줘"처럼 저장된 일정 목록을 볼 때 쓴다. 날짜가 분명하면 date_from/date_to로 범위를 좁히고, limit으로 개수를 제한하라.
+- personal_list_saved_schedules: "내 일정 보여줘"처럼 저장된 일정 목록을 볼 때 쓴다. 사용자가 "이번 주", "7월 20일까지"처럼 기간을 직접 말한 경우에만 date_from/date_to를 넘겨라. 날짜를 말하지 않았다면 date_from/date_to를 아예 넘기지 말고 저장된 일정 전체를 조회하라. 오늘 날짜로 임의로 범위를 좁히면 앞으로 예정된 일정을 놓치게 된다.
 - list_saved_requests: 일정뿐 아니라 할 일/알림까지 포함한 원본 요청 기록을 종류(kind)나 날짜 범위로 훑을 때 쓴다.
 - get_saved_request: request_id를 이미 알고 있을 때 그 요청 한 건만 확인할 때 쓴다.
 조회 결과가 비어 있으면 지어내지 말고 저장된 기록이 없다고 사실대로 답하라."""
@@ -513,6 +513,8 @@ def week03_prompt_parts() -> list[str]:
         "[Week 3 tool 선택 기준과 범위]",
         f"오늘 날짜는 {current_app_date_iso()}이다. '오늘/내일/이번 주/다음 주' 같은 상대 표현은 반드시 이 날짜를 기준으로 "
         "절대 날짜(YYYY-MM-DD)로 바꿔서 tool에 넘겨라. 시간은 HH:MM 형식으로 넘긴다.",
+        "단, 이 날짜 계산은 사용자가 실제로 날짜를 말했을 때만 적용한다. 사용자가 날짜나 기간을 언급하지 않은 조회 질문에는 "
+        "날짜 인자를 비워 둔 채 tool을 호출하라. 오늘 날짜를 기본값으로 채워 넣어 조회 범위를 좁히지 마라.",
         "저장 요청이면 extract_schedule_request 다음에 save_structured_request를 호출하고, 조회 질문이면 "
         "personal_list_saved_schedules 또는 list_saved_requests/get_saved_request 중 목적에 맞는 것을 골라라. "
         "확실하지 않은 값은 지어내지 말고 비워 둔 채 저장하라.",
