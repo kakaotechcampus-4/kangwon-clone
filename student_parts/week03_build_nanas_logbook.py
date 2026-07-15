@@ -334,16 +334,16 @@ def personal_create_schedule(
 
     # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
     # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
-    personal_schedule = week01_personal_create_schedule.invoke(
-        {
-            "title": title,
-            "date": date,
-            "start_time": start_time,
-            "end_time": end_time,
-            "attendees": attendees,
-        }
-    )
-    personal_schedule_dict = json.loads(personal_schedule)
+    # personal_schedule = week01_personal_create_schedule.invoke(
+    #     {
+    #         "title": title,
+    #         "date": date,
+    #         "start_time": start_time,
+    #         "end_time": end_time,
+    #         "attendees": attendees,
+    #     }
+    # )
+    # personal_schedule_dict = json.loads(personal_schedule)
     # if "created_schedule" in personal_schedule_dict:
     #     structured_request =     
     
@@ -411,10 +411,11 @@ def personal_list_saved_schedules(
     date_to: str | None = None,
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
-
-    # TODO: 기본 kind를 personal_schedule로 정하고 날짜/종류/limit 필터로 저장 일정을 조회하세요.
-    # TODO: filters와 schedules를 포함한 JSON 문자열을 반환하세요.
-    ...
+    if kind is None:
+        kind = "personal_schedule"
+    schedules = _store().list_schedules(limit = limit, kind = kind, date_from = date_from, date_to = date_to)
+    filters = {"limit": limit, "kind": kind, "date_from": date_from, "date_to": date_to}
+    return json_payload(tool_result("personal_list_saved_schedules", filters = filters, schedules = schedules))
 
 
 def delete_saved_schedules_dict(
@@ -506,8 +507,12 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+        )
+
     return _WEEK03_AGENT
 
 
