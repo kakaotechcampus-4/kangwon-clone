@@ -27,11 +27,23 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = """[Week 3 영속 메모리 규칙]
+Week 3부터 너의 기록은 앱 SQLite DB에 영구 저장된다. 대화가 끝나거나 앱을 다시 시작해도, 새 대화를 열어도 저장된 일정/할 일/알림은 그대로 남아 있다.
+과거에 무엇을 저장했는지 묻는 질문에는 네 기억이나 이전 대화 맥락으로 추측해서 답하지 마라. 반드시 조회 tool을 호출해 DB에서 읽은 사실만 답하라.
+조회 tool은 용도에 따라 구분해서 쓴다.
+- personal_list_saved_schedules: "내 일정 보여줘"처럼 저장된 일정 목록을 볼 때 쓴다. 날짜가 분명하면 date_from/date_to로 범위를 좁히고, limit으로 개수를 제한하라.
+- list_saved_requests: 일정뿐 아니라 할 일/알림까지 포함한 원본 요청 기록을 종류(kind)나 날짜 범위로 훑을 때 쓴다.
+- get_saved_request: request_id를 이미 알고 있을 때 그 요청 한 건만 확인할 때 쓴다.
+조회 결과가 비어 있으면 지어내지 말고 저장된 기록이 없다고 사실대로 답하라."""
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """[Week 3 tool 호출 순서 규칙]
+Week 2의 "SQLite 데이터베이스 저장을 수행하지 않는다"는 제한은 Week 3에서 해제된다. Week 3의 너는 구조화에서 멈추지 말고 반드시 저장까지 마쳐야 한다.
+사용자가 일정/할 일/알림을 남기거나 저장해 달라고 하면 다음 순서를 지켜라.
+1. extract_schedule_request(query=사용자의 원래 문장)를 호출해 자연어를 StructuredRequest로 구조화한다.
+2. 그 결과 JSON의 structured_request 안에 있는 kind/title/date/start_time/end_time/members/priority/reason/original_text 값을 save_structured_request의 인자로 그대로 전달해 저장한다. 값을 임의로 바꾸거나 지어내지 마라.
+3. save_structured_request 응답의 ok와 request_id를 확인한 뒤에만 사용자에게 저장이 끝났다고 알린다.
+save_structured_request를 호출하지 않은 채 "저장했다"고 답하는 것은 금지한다.
+이미 tool 결과 JSON을 받은 상태라면 같은 tool을 불필요하게 다시 호출하지 마라."""
 
 
 # [3주차 수강생 구현 가이드]
@@ -331,7 +343,7 @@ def personal_create_schedule(
     attendees: list[str] | None = None,
 ) -> str:
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
-
+    return 
     # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
     # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
     # personal_schedule = week01_personal_create_schedule.invoke(
@@ -493,10 +505,18 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
+        "[Week 3 에이전트 역할]",
+        "너는 Week 2에서 만든 구조화 결과를 앱 SQLite DB에 저장하고 다시 꺼내 주는 기록장 에이전트다. "
+        "구조화는 저장을 위한 중간 단계일 뿐이며, 구조화 결과를 사용자에게 보여주는 것이 최종 목적이 아니다.",
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        "[Week 3 tool 선택 기준과 범위]",
+        f"오늘 날짜는 {current_app_date_iso()}이다. '오늘/내일/이번 주/다음 주' 같은 상대 표현은 반드시 이 날짜를 기준으로 "
+        "절대 날짜(YYYY-MM-DD)로 바꿔서 tool에 넘겨라. 시간은 HH:MM 형식으로 넘긴다.",
+        "저장 요청이면 extract_schedule_request 다음에 save_structured_request를 호출하고, 조회 질문이면 "
+        "personal_list_saved_schedules 또는 list_saved_requests/get_saved_request 중 목적에 맞는 것을 골라라. "
+        "확실하지 않은 값은 지어내지 말고 비워 둔 채 저장하라.",
+        "이번 주차의 범위는 SQLite 저장과 조회까지다. RAG 검색과 외부 멤버 일정 조율은 아직 수행하지 않는다.",
     ]
 
 
