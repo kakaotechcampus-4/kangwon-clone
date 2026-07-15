@@ -243,6 +243,19 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+        if isinstance(value, StructuredRequest):
+            return value
+        if not isinstance(value, dict):
+            return value
+        
+        for wrapper_key in ("payload", "structured_request"):
+            wrapped = value.get(wrapper_key)
+            if isinstance(wrapped, (dict, StructuredRequest)):
+                inner = cls.unwrap_legacy_payload(wrapped)
+                if isinstance(inner, dict) and value.get("source_schedule_id") is not None:
+                    inner.setdefault("source_schedule_id", value["source_schedule_id"])
+                return inner
+
         return value
 
 
@@ -553,7 +566,7 @@ def personal_update_saved_schedule(
         return json_payload(
             tool_result(
                 ok=False,
-                tool_name="personal_update_saved_schedule"
+                tool_name="personal_update_saved_schedule",
                 reason="해당 ID의 일정을 찾을 수 없습니다."
             )
         )
