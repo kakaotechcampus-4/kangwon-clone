@@ -313,9 +313,45 @@ def _delete_saved_schedules(
 ) -> dict[str, Any]:
     """삭제 guard와 DB 호출을 한 곳에 둡니다."""
 
+    # filter 생성
+    filters = {
+        "schedule_ids": schedule_ids,
+        "date": date,
+        "title": title,
+        "start_time": start_time,
+        "time_unspecified": time_unspecified,
+        "delete_all": delete_all,
+    }
+
     # TODO: 삭제 조건이 없으면 거부하고, delete_all 또는 명시 필터에 맞는 store 메서드를 호출하세요.
+    has_filter = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified
+    
+    # 1. 삭제 조건이 없으면 거부
+    if not delete_all and not has_filter:
+        return {
+            "ok": False,
+            "deleted_count": 0,
+            "filters": filters,
+            "deleted": [],
+            "error": "삭제 조건이 없습니다. schedule_ids나 날짜/제목/시간 필터, 또는 delete_all이 필요합니다.",
+        }
+    
+    # 2. delete_all이면 모든 일정 삭제
+    if delete_all:
+        deleted = store.delete_all_schedules()
+
+    # 3. delete_all은 아니지만 명시 필터가 있으면 해당 조건으로 삭제
+    else:
+        deleted = store.delete_schedules_by_filter(
+            schedule_ids=schedule_ids,
+            date=date,
+            title=title,
+            start_time=start_time,
+            time_unspecified=time_unspecified
+        )
+    
     # TODO: deleted_count, filters, deleted가 포함된 tool 결과 dict를 반환하세요.
-    ...
+    return {"ok": True, "deleted_count": len(deleted), "filters": filters, "deleted": deleted}
 
 
 def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
@@ -526,7 +562,7 @@ def build_week03_agent() -> object:
             tools=week03_tools(),
             system_prompt=week03_system_prompt(),
         )
-        
+
     return _WEEK03_AGENT
 
 
