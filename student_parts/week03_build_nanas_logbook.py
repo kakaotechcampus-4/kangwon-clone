@@ -250,7 +250,14 @@ def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dic
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
     # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
-    ...
+    if isinstance(value, SaveStructuredRequestInput):
+        return value
+    elif isinstance(value, StructuredRequest):
+        return SaveStructuredRequestInput.model_validate(value.model_dump())
+    elif isinstance(value, dict):
+        return SaveStructuredRequestInput.model_validate(value)
+    else:
+        return SaveStructuredRequestInput.model_validate(extract_structured_request(value).model_dump())
 
 
 def save_structured_request_payload(
@@ -261,7 +268,9 @@ def save_structured_request_payload(
     """검증된 structured request를 앱 DB에 저장합니다."""
 
     # TODO: 입력을 검증한 뒤 AppSQLiteStore.save_structured_request(...)로 저장하고 tool 결과를 반환하세요.
-    ...
+    store = store or _store()
+    return store.save_structured_request(_save_input_from(request).model_dump())
+
 
 
 class SavedRequestListInput(BaseModel):
@@ -378,7 +387,6 @@ def personal_create_schedule(
 
     # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
     # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
-    ...
 
 
 @tool(args_schema=SaveStructuredRequestInput)
