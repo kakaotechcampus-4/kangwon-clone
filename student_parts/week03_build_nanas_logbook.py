@@ -529,10 +529,15 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        f"오늘 날짜는 {current_app_date_iso()}입니다.",
+        (
+            "사용자의 일정 저장 요청은 extract_schedule_request로 구조화한 뒤 "
+            "save_structured_request를 호출해 SQLite에 저장하세요. "
+            "저장된 일정 조회 요청은 personal_list_saved_schedules를 사용하고, "
+            "구조화 요청 조회는 list_saved_requests 또는 get_saved_request를 사용하세요."
+        )
     ]
 
 
@@ -543,8 +548,11 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+            _WEEK03_AGENT = create_agent(
+        model=chat_model(),
+        tools=week03_tools(),
+        system_prompt=week03_system_prompt(),
+    )
     return _WEEK03_AGENT
 
 
