@@ -358,7 +358,6 @@ def personal_create_schedule(
         "attendees": attendees,
     }))
     created_schedule = response["created_schedule"]
-
     structured_request = structured_request_from_week01_schedule(created_schedule).model_dump()
     sqlite_save = _store().save_structured_request(structured_request)
 
@@ -476,8 +475,10 @@ def delete_saved_schedules_dict(
 ) -> dict[str, Any]:
     """tool invoke 없이 저장 일정 삭제 로직을 직접 호출합니다."""
 
-    # TODO: 전달받은 store 또는 기본 store로 _delete_saved_schedules(...)를 호출하세요.
-    ...
+    if not app_store:
+        app_store = _store()
+
+    return _delete_saved_schedules(store=app_store, schedule_ids=schedule_ids, date=date, title=title, start_time=start_time, time_unspecified=time_unspecified, delete_all=delete_all)
 
 
 @tool(args_schema=SavedScheduleUpdateInput)
