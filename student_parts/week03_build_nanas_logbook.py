@@ -233,7 +233,10 @@ class SaveStructuredRequestInput(StructuredRequest):
             if "structured_request" in value:
                 return value["structured_request"]
             if "payload" in value:
-                return value["payload"]
+                payload = value["payload"]
+                if isinstance(payload, dict) and "structured_request" in payload:
+                    return payload["structured_request"]
+                return payload
         return value
 
 
