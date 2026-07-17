@@ -429,7 +429,7 @@ def save_structured_request(
     dict_to_save = {k: v for k, v in candidate.items() if v is not None}
     store = _store()
     saved_request = store.save_structured_request(dict_to_save)
-    return json_payload(tool_result("save_structured_request", ok=True, saved_request=saved_request))
+    return json_payload(tool_result("save_structured_request", ok=True, **saved_request))
 
 
 @tool(args_schema=SavedRequestListInput)
