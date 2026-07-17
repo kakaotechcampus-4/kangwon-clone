@@ -51,7 +51,6 @@ personal_create_schedule은 우선적으로 사용하지 않으며, 개인일정
 - 조회
 사용자가 저장된 데이터를 요청하면 personal_list_saved_schedules(일정 목록) 또는 
 list_saved_requests/get_saved_request(구조화된 요청 원본)을 사용한다.
-사용자가 개인 일정을 요청하면
 
 - 수정
 저장된 일정을 수정할 때는 먼저 personal_list_saved_schedules로 대상 schedule_id를 확인한 뒤 personal_update_saved_schedule을 호출한다.
@@ -650,7 +649,7 @@ def week03_prompt_parts() -> list[str]:
         """
         수행하는 모든 작업에 대해서 거짓은 말하지 않는다.
         불확실한 정보로 인해 문제가 발생할 시 사용자에게 먼저 물어보도록 한다.
-        
+
         - 금지되는 행위
         ```
         답변: 8월 21일 오후 3시에 그룹 일정 '회의'를 저장했습니다. 추가로 필요한 일정이나 요청 있으신가요?
