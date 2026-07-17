@@ -249,7 +249,6 @@ class SaveStructuredRequestInput(StructuredRequest):
 def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
-    # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
     if isinstance(value, SaveStructuredRequestInput):
         return value
     if isinstance(value, StructuredRequest):
@@ -274,9 +273,10 @@ def save_structured_request_payload(
 ) -> dict[str, Any]:
     """검증된 structured request를 앱 DB에 저장합니다."""
 
-    # TODO: 입력을 검증한 뒤 AppSQLiteStore.save_structured_request(...)로 저장하고 tool 결과를 반환하세요.
-    ...
-
+    validate_request = _save_input_from(request)
+    store = store or _store()
+    stored_request = store.save_structured_request(validate_request.model_dump(exclude_none=True))
+    return tool_result("save_structured_request", **stored_request)
 
 class SavedRequestListInput(BaseModel):
     """저장 요청 목록 조회 입력입니다."""
