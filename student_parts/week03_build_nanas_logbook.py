@@ -414,7 +414,7 @@ def list_saved_requests(
     date_to: str | None = None,
 ) -> str:
     """SQLite에 저장된 구조화 요청 목록을 조회합니다."""
-    rows = _store().list_saved_requests(kind, date_from, date_to)
+    rows = _store().list_saved_requests(kind = kind, date_from = date_from, date_to = date_to)
     save_result = tool_result("list_saved_requests", rows=rows)
     return json_payload(save_result)
     
