@@ -43,12 +43,15 @@ WEEK03_TOOL_CALL_PROMPT = """
 다음은 저장/조회/수정/삭제 동작에 관한 tool 호출 규칙이다.
 
 - 저장
-사용자가 요청하면 extract_schedule_request를 호출해 자연어를 StructuredRequest로 변경한다. 
+사용자가 일정/할 일/알림을 저장하기 위해 요청하면 extract_schedule_request를 호출해 자연어를 StructuredRequest로 변경한다. 
 그 다음 구조화된 요청의 각 필드를 save_structured_request의 인자로 그대로 전달한다.
+personal_create_schedule은 우선적으로 사용하지 않으며, 개인일정(personal_schedule)을 빠르게 생성할 때만 사용한다. 
+그룹 일정(group_schedule), 할 일(todo), 알림(remainder)은 personal_schedule로 저장하지 않는다.
 
 - 조회
 사용자가 저장된 데이터를 요청하면 personal_list_saved_schedules(일정 목록) 또는 
 list_saved_requests/get_saved_request(구조화된 요청 원본)을 사용한다.
+사용자가 개인 일정을 요청하면
 
 - 수정
 저장된 일정을 수정할 때는 먼저 personal_list_saved_schedules로 대상 schedule_id를 확인한 뒤 personal_update_saved_schedule을 호출한다.
@@ -643,7 +646,18 @@ def week03_prompt_parts() -> list[str]:
         f"현재 날짜는 {current_app_date_iso()}이다.",
         SQLITE_MEMORY_PROMPT,
         "Week3에서는 자연어 요청을 구조화해서 SQLite에 저장하고, 조회/수정/삭제 동작을 수행한다.",
-        WEEK03_TOOL_CALL_PROMPT
+        WEEK03_TOOL_CALL_PROMPT,
+        """
+        수행하는 모든 작업에 대해서 거짓은 말하지 않는다.
+        불확실한 정보로 인해 문제가 발생할 시 사용자에게 먼저 물어보도록 한다.
+        
+        - 금지되는 행위
+        ```
+        답변: 8월 21일 오후 3시에 그룹 일정 '회의'를 저장했습니다. 추가로 필요한 일정이나 요청 있으신가요?
+        저장 결과: kind: personal_schedule, title: "회의", date: 2026-08-21, start_time: 15:00
+        ```
+        위와 같이 저장된 결과와 일치하지 않는 답변은 금지한다.
+        """
     ]
 
 
