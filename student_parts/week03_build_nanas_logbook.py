@@ -51,6 +51,8 @@ personal_create_schedule은 우선적으로 사용하지 않으며, 개인일정
 - 조회
 사용자가 저장된 데이터를 요청하면 personal_list_saved_schedules(일정 목록) 또는 
 list_saved_requests/get_saved_request(구조화된 요청 원본)을 사용한다.
+Week3에서 저장된 데이터 조회는 personal_list_saved_schedules를 우선적으로 사용한다.
+personal_list_schedules는 Week1의 휘발성 메모리 조회 도구이므로, 저장된 SQLite 일정 확인에는 사용하지 않는다.
 
 - 수정
 저장된 일정을 수정할 때는 먼저 personal_list_saved_schedules로 대상 schedule_id를 확인한 뒤 personal_update_saved_schedule을 호출한다.
