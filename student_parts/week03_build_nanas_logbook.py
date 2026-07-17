@@ -51,6 +51,10 @@ WEEK03_TOOL_CALL_PROMPT = """
 list_saved_requests/get_saved_request(구조화된 요청 원본)을 사용한다.
 
 - 수정
+저장된 일정을 수정할 때는 먼저 personal_list_saved_schedules로 대상 schedule_id를 확인한 뒤 personal_update_saved_schedule을 호출한다.
+종료 시간을 비우거나 삭제하라는 요청이면 end_time=None이나 end_time 생략을 사용하지 않는다. 반드시 clear_end_time=True를 전달한다.
+사용자가 "시작 시간은 그대로 둬"라고 하면 start_time은 None으로 두고, clear_end_time=True만 전달한다.
+수정 완료라고 답하기 전에 personal_update_saved_schedule 결과의 updated_schedule.end_time이 요청한 값으로 바뀌었는지 확인한다.
 - 삭제
 """
 
@@ -312,7 +316,11 @@ class SavedScheduleUpdateInput(BaseModel):
     title: str | None = None
     date: str | None = None
     start_time: str | None = None
-    end_time: str | None = None
+    end_time: str | None = Field(
+        default=None,
+        description='종료 시간을 새 값으로 수정할 때 사용한다. 종료 시간을 비우거나 삭제하라는 요청이면 None이 아니라 clear_end_time=True를 사용한다.',
+    )
+    clear_end_time: bool = Field(default=False, description="종료 시간을 비우거나 삭제하라는 요청이면 True로 설정한다.")
     attendees: list[str] | None = None
 
 
@@ -540,11 +548,17 @@ def personal_update_saved_schedule(
     date: str | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
+    clear_end_time: bool = False,
     attendees: list[str] | None = None,
 ) -> str:
-    """앱 DB에 저장된 내 일정 원본을 수정하고 공유 일정 복사본을 같은 값으로 갱신합니다."""
+    """앱 DB에 저장된 내 일정 원본을 수정하고 공유 일정 복사본을 같은 값으로 갱신합니다.
 
-    result = _store().update_schedule(schedule_id, title, date, start_time, end_time, attendees)
+    종료 시간을 비우거나 삭제하라는 요청이면 end_time=None을 쓰지 말고
+    clear_end_time=True로 호출합니다. 수정하지 않을 필드는 None으로 둡니다.
+    """
+
+    updated_end_time = "" if clear_end_time else end_time
+    result = _store().update_schedule(schedule_id, title, date, start_time, updated_end_time, attendees)
 
     if result is None:
         return json_payload(
