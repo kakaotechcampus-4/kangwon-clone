@@ -27,11 +27,15 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = """ 일정,할 일 저장 요청은 save_structured_request tool을 호출해서 SQLite에 저장한다.
+저장된 데이터는 새 대화나 앱 재시작 시에도 유지된다.
+조회 요청이 오면 sqlite에서 personal_list_saved_schedules 라는 tool을 호출해서 조회한다."""
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """저장시에는 extract_schedule_request -> save_structured_request 순서대로 호출해서 저장.
+  - extract_scheudle_request로 자연어를 json으로 변환후 save 함.
+  조회시에는 Personal_list_saved_schedules
+  수정시에는 personal_list_saved_schedules -> personal_update_saved_schedule
+  삭제시에는 personal_list_saved_schedules -> personal_delelte_saved_schedule"""
 
 
 # [3주차 수강생 구현 가이드]
@@ -593,12 +597,16 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
+        """[week2->week3 연결흐름] extract_schedule_request로 pydantic 과 json 서로 상호작용한 구조화한 결과를 save_structured_request로 sqlite에 저장한다.""",
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        """[agent 구조] 오늘 날짜는 {current_app_date_iso()}이다. '내일', '다음 주 화요일' 같은 상대 날짜는
+        이 날짜를 기준으로 계산한다.
+        - Week 2에서 만든 StructuredRequest를 Pydantic 입력 스키마로 검증한 뒤 SQLite에 저장하고, 
+        저장된 요청/일정을 다시 조회/수정/삭제한다.
+        - 저장,조회,수정,삭제 요청은 Week 3 tool을 사용한다.
+        - RAG 검색, 외부 멤버 조율, 그룹 일정은 이번 주차의 범위가 아니다."""
     ]
-
 
 def build_week03_agent() -> object:
     """Week 1-3 누적 tool 목록을 노출하는 단일 LangChain agent를 만듭니다."""
