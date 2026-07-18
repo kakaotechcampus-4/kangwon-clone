@@ -584,9 +584,21 @@ def personal_delete_saved_schedules(
 def week03_tools() -> list[Any]:
     """Week 1 도구, Week 2 구조화 helper, SQLite 저장/조회/삭제 도구를 조립합니다."""
 
+    # Week1 도구를 그대로 가져오되 두 가지를 손본다.
+    #  1) personal_create_schedule: Week3 버전(임시 생성 + SQLite 저장)으로 교체
+    #  2) personal_list_schedules / personal_delete_schedule: 아예 뺀다.
+    #     - Week1의 이 둘은 "현재 대화 임시 메모리"만 조회/삭제한다.
+    #     - Week3엔 DB를 다루는 personal_list_saved_schedules / personal_delete_saved_schedules가 따로 있는데,
+    #       임시 tool까지 같이 노출하면 LLM이 임시 쪽을 골라 "DB에 저장한 일정을 못 찾거나 못 지우는" 버그가 난다.
+    #     - 그래서 임시 조회/삭제는 빼고 DB tool만 남긴다.
+    _WEEK1_TEMP_TOOLS = {"personal_list_schedules", "personal_delete_schedule"}
     base_tools = [
-        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item for item in week01_tools()
+        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item
+        for item in week01_tools()
+        if _tool_name(item) not in _WEEK1_TEMP_TOOLS
     ]
+
+
     return [
         *base_tools,
         extract_schedule_request,
