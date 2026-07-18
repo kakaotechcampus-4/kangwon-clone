@@ -236,12 +236,18 @@ class SaveStructuredRequestInput(StructuredRequest):
 
         # value가 dict인 경우
         if isinstance(value, dict):
-            # payload wrapper가 있다면 풀어준다.
+            # payload wrapper가 있다면 풀어준다. wrapper 바깥의 source_schedule_id는 유지한다.
             if "payload" in value:
-                return value["payload"]
-            # structured_request wrapper가 있다면 풀어준다.
+                inner = dict(value["payload"])
+                if "source_schedule_id" not in inner and "source_schedule_id" in value:
+                    inner["source_schedule_id"] = value["source_schedule_id"]
+                return inner
+            # structured_request wrapper가 있다면 풀어준다. wrapper 바깥의 source_schedule_id는 유지한다.
             if "structured_request" in value:
-                return value["structured_request"]
+                inner = dict(value["structured_request"])
+                if "source_schedule_id" not in inner and "source_schedule_id" in value:
+                    inner["source_schedule_id"] = value["source_schedule_id"]
+                return inner
 
         return value
 
