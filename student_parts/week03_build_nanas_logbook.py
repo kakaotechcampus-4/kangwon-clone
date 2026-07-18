@@ -269,7 +269,7 @@ def save_structured_request_payload(
 
     # 검증 끝난 dict를 저장하고, 결과를 tool 응답 모양으로 감싼다.
     saved = store.save_structured_request(request.model_dump())
-    return tool_result("save_structured_request", saved=saved)
+    return tool_result("save_structured_request", row=saved)
 
 
 
@@ -451,7 +451,7 @@ def save_structured_request(
     payload = {key: value for key, value in payload.items() if value is not None}
 
     saved = _store().save_structured_request(payload) #stroe 한테 저장하고 saved를 받음
-    return json_payload(tool_result("save_structured_request", saved=saved)) # saved 받고 JSON으로 반환 
+    return json_payload(tool_result("save_structured_request", row=saved))  # 단건이라 조회 tool과 같은 row 키로 통일
 
 
 @tool(args_schema=SavedRequestListInput)
