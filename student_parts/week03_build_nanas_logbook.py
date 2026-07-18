@@ -596,8 +596,7 @@ def week03_tools() -> list[Any]:
         personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item for item in week01_tools()
     ]
 
-    # 현재 미구현 상태인 함수를 임시 주석 처리.
-    # 추후 구현 후 주석을 해제할 예정.
+
     return [
         *base_tools,
         extract_schedule_request,
@@ -605,8 +604,8 @@ def week03_tools() -> list[Any]:
         list_saved_requests,
         get_saved_request,
         personal_list_saved_schedules,
-        # personal_update_saved_schedule,
-        # personal_delete_saved_schedules,
+        personal_update_saved_schedule,
+        personal_delete_saved_schedules,
     ]
 
 
