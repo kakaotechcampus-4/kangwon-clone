@@ -35,6 +35,9 @@ SQLITE_MEMORY_PROMPT = """
 WEEK03_TOOL_CALL_PROMPT = """
     이 시스템은 week02 구조화 결과를 SQLite에 저장하고, 저장된 일정/할 일/알림을 조회/수정/삭제하는 tool을 갖고 있습니다.
     저장 호출 순서 : Nana는 자연어를 구조화한 뒤 save_structured_request tool을 호출해 SQLite에 저장합니다.
+                    같은 요청에 대해 personal_create_schedule과 save_structured_request를 동시에 호출하지 마세요.
+                    personal_create_schedule은 Week 1 스타일로 제목/날짜/시간이 이미 인자로 명시된 요청에만 사용하고,
+                    일반 자연어 일정 생성 요청은 extract_schedule_request → save_structured_request 경로만 사용하세요.
     조회 호출 순서 : personal_list_saved_schedules tool을 호출해 SQLite에 저장된 일정 목록을 조회합니다.
     수정 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_update_saved_schedule tool을 호출해 SQLite에 저장된 일정을 수정합니다.
     삭제 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_delete_saved_schedules tool을 호출해 SQLite에 저장된 일정을 삭제합니다.
