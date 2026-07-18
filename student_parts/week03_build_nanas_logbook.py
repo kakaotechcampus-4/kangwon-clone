@@ -243,7 +243,6 @@ class SaveStructuredRequestInput(StructuredRequest):
             del value["payload"]
             value = {**value, **payload}
         return value
-        
 
 
 def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:
@@ -264,7 +263,6 @@ def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dic
             return SaveStructuredRequestInput.model_validate(value.model_dump())
     raise ValueError(f"value가 예상한 형태인 StructuredRequest, dict, json이 아닙니다.\n value_type : {type(value).__name__}")
 
-        
 
 def save_structured_request_payload(
     request: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str,
@@ -277,6 +275,7 @@ def save_structured_request_payload(
     store = store or _store()
     stored_request = store.save_structured_request(validate_request.model_dump(exclude_none=True))
     return tool_result("save_structured_request", **stored_request)
+
 
 class SavedRequestListInput(BaseModel):
     """저장 요청 목록 조회 입력입니다."""
@@ -364,22 +363,20 @@ def _delete_saved_schedules(
 def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
     """Week 1 임시 일정 dict를 Week 3 저장 입력으로 변환합니다."""
 
-    
     save_input = {
-       "kind": "personal_schedule",
-       "title": schedule.get("title"),
-       "date": schedule.get("date"),
-       "start_time": schedule.get("start_time"),
-       "end_time": schedule.get("end_time"),
-       "members": schedule.get("attendees") or [],
-       "source_schedule_id": schedule.get("id"),
-       "priority": None,
-       "reason": None,
-   }
-    return SaveStructuredRequestInput.model_validate(save_input) 
+        "kind": "personal_schedule",
+        "title": schedule.get("title"),
+        "date": schedule.get("date"),
+        "start_time": schedule.get("start_time"),
+        "end_time": schedule.get("end_time"),
+        "members": schedule.get("attendees") or [],
+        "source_schedule_id": schedule.get("id"),
+        "priority": None,
+        "reason": None,
+    }
+    return SaveStructuredRequestInput.model_validate(save_input)
 
-    
-    
+
 @tool("personal_create_schedule")
 def personal_create_schedule(
     title: str,
@@ -411,7 +408,6 @@ def personal_create_schedule(
             sqlite_save=sqlite_save,
         )
     )
-
 
 
 @tool(args_schema=SaveStructuredRequestInput)
@@ -457,7 +453,6 @@ def list_saved_requests(
     rows = _store().list_saved_requests(kind = kind, date_from = date_from, date_to = date_to)
     save_result = tool_result("list_saved_requests", rows=rows)
     return json_payload(save_result)
-    
 
 
 @tool(args_schema=SavedRequestGetInput)
@@ -497,6 +492,7 @@ def delete_saved_schedules_dict(
     result = _delete_saved_schedules(store=app_store or _store(), schedule_ids=schedule_ids, date=date, title=title, start_time=start_time, time_unspecified=time_unspecified, delete_all=delete_all)
     return tool_result("delete_saved_schedules_dict", **result)
 
+
 @tool(args_schema=SavedScheduleUpdateInput)
 def personal_update_saved_schedule(
     schedule_id: str,
@@ -511,8 +507,7 @@ def personal_update_saved_schedule(
     result = _store().update_schedule(schedule_id=schedule_id, title=title, date=date, start_time=start_time, end_time=end_time, attendees=attendees)
     if result is None:
         return json_payload(tool_result("personal_update_saved_schedule", ok=False))
-    return json_payload(tool_result("personal_update_saved_schedule",updated_schedule=result["schedule"], shared_sync=result["shared_sync"]))
-    
+    return json_payload(tool_result("personal_update_saved_schedule", updated_schedule=result["schedule"], shared_sync=result["shared_sync"]))
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
