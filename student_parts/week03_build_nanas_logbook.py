@@ -349,6 +349,7 @@ def save_structured_request(
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
 
+    # dict 생성
     payload = {
         "kind": kind,
         "title": title,
@@ -361,6 +362,11 @@ def save_structured_request(
         "original_text": original_text,
         "source_schedule_id": source_schedule_id,
     }
+
+    # 값이 None인 필드는 SQLite에 저장하지 않도록 제거.
+    payload = {k: v for k, v in payload.items() if v is not None}
+
+    # SQLite에 저장
     result = _store().save_structured_request(payload)
 
     return json_payload(tool_result("save_structured_request", **result))
