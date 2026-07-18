@@ -371,8 +371,8 @@ def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStr
        "date": schedule.get("date"),
        "start_time": schedule.get("start_time"),
        "end_time": schedule.get("end_time"),
-       "members": schedule.get("attendees"),        
-       "source_schedule_id": schedule.get("id"),     
+       "members": schedule.get("attendees") or [],
+       "source_schedule_id": schedule.get("id"),
        "priority": None,
        "reason": None,
    }
@@ -389,22 +389,29 @@ def personal_create_schedule(
     attendees: list[str] | None = None,
 ) -> str:
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
-    return 
-    # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
-    # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
-    # personal_schedule = week01_personal_create_schedule.invoke(
-    #     {
-    #         "title": title,
-    #         "date": date,
-    #         "start_time": start_time,
-    #         "end_time": end_time,
-    #         "attendees": attendees,
-    #     }
-    # )
-    # personal_schedule_dict = json.loads(personal_schedule)
-    # if "created_schedule" in personal_schedule_dict:
-    #     structured_request =     
-    
+    personal_schedule = week01_personal_create_schedule.invoke(
+        {
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "attendees": attendees,
+        }
+    )
+    personal_schedule_dict = json.loads(personal_schedule)
+    created_schedule = personal_schedule_dict["created_schedule"]
+
+    save_input = structured_request_from_week01_schedule(created_schedule)
+    sqlite_save = _store().save_structured_request(save_input.model_dump(exclude_none=True))
+
+    return json_payload(
+        tool_result(
+            "personal_create_schedule",
+            created_schedule=created_schedule,
+            sqlite_save=sqlite_save,
+        )
+    )
+
 
 
 @tool(args_schema=SaveStructuredRequestInput)
