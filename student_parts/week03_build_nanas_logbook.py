@@ -225,11 +225,18 @@ class SaveStructuredRequestInput(StructuredRequest):
     def unwrap_legacy_payload(cls, value: Any) -> Any:
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
-        if isinstance(value, dict):
-            for key in ("payload", "structured_request"):
-                inner = value.get(key)
-                if isinstance(inner, dict):
-                    return inner
+        if not isinstance(value, dict):   #dict가 아니라면 그대로 반환
+            return value
+        
+        for key in ("payload", "structured_request"):   #payload나 structured_request 키가 있으면 그 안의 dict를 꺼내서 반환
+            inner = value.get(key)
+            if not isinstance(inner, dict):
+                continue
+            
+            outer = {k: v for k, v in value.items() if k != key}
+            merged = {**outer, **inner}
+            return cls.unwrap_legacy_payload(merged)   # 재귀적으로 풀어줌
+        
         return value
 
 
