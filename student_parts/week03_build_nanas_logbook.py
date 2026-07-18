@@ -366,7 +366,6 @@ def save_structured_request(
     return json_payload(tool_result("save_structured_request", **result))
 
 
-
 @tool(args_schema=SavedRequestListInput)
 def list_saved_requests(
     kind: RequestKind | None = None,
@@ -377,7 +376,6 @@ def list_saved_requests(
 
     rows = _store().list_saved_requests(kind=kind, date_from=date_from, date_to=date_to)
     return json_payload(tool_result("list_saved_requests", rows=rows))
-
 
 
 @tool(args_schema=SavedRequestGetInput)
@@ -397,12 +395,10 @@ def personal_list_saved_schedules(
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
 
-    effective_kind = kind or "personal_schedule"
-    schedules = _store().list_schedules(limit=limit, kind=effective_kind, date_from=date_from, date_to=date_to)
+    schedules = _store().list_schedules(limit=limit, kind=kind, date_from=date_from, date_to=date_to)
 
-    filters = {"limit": limit, "kind": effective_kind, "date_from": date_from, "date_to": date_to}
+    filters = {"limit": limit, "kind": kind, "date_from": date_from, "date_to": date_to}
     return json_payload(tool_result("personal_list_saved_schedules", filters=filters, schedules=schedules))
-
 
 
 def delete_saved_schedules_dict(
