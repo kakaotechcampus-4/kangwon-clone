@@ -419,13 +419,13 @@ def personal_create_schedule(
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
 
     # Week 1 임시 일정 tool 호출
-    week01_result = json.loads(week01_personal_create_schedule.func(
-        title=title,
-        date=date,
-        start_time=start_time,
-        end_time=end_time,
-        attendees=attendees,
-    ))
+    week01_result = json.loads(week01_personal_create_schedule.invoke({
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees,
+    }))
     created_schedule = week01_result["created_schedule"]
 
     # Week 1 결과를 Week 3 저장 입력으로 변환 후 SQLite에 저장
