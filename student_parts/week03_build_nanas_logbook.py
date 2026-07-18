@@ -512,8 +512,16 @@ def delete_saved_schedules_dict(
 ) -> dict[str, Any]:
     """tool invoke 없이 저장 일정 삭제 로직을 직접 호출합니다."""
 
-    # TODO: 전달받은 store 또는 기본 store로 _delete_saved_schedules(...)를 호출하세요.
-    ...
+    store = app_store or _store()
+    return _delete_saved_schedules(
+        schedule_ids=schedule_ids,
+        date=date,
+        title=title,
+        start_time=start_time,
+        time_unspecified=time_unspecified,
+        delete_all=delete_all,
+        store=store
+    )
 
 
 @tool(args_schema=SavedScheduleUpdateInput)
@@ -527,9 +535,35 @@ def personal_update_saved_schedule(
 ) -> str:
     """앱 DB에 저장된 내 일정 원본을 수정하고 공유 일정 복사본을 같은 값으로 갱신합니다."""
 
-    # TODO: None이 아닌 수정 필드를 AppSQLiteStore.update_schedule(...)에 전달하세요.
-    # TODO: ID가 없으면 ok=False, 있으면 updated_schedule/shared_sync를 담아 JSON 문자열로 반환하세요.
-    ...
+    # 수정할 필드만 dict로 정리
+    edit_fields = {
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "attendees": attendees,
+    }
+    # None인 필드는 수정하지 않도록 제거
+    edit_fields = {k: v for k, v in edit_fields.items() if v is not None}
+
+    # schedule_id로 저장 일정을 찾아 수정하고, 공유 일정 복사본도 갱신
+    edit_result = _store().update_schedule(schedule_id, **edit_fields)
+
+    if edit_result is None:
+        # id가 None인 경우 ok=False로 반환.
+        return json_payload(tool_result(
+            "personal_update_saved_schedule", 
+            ok=False, 
+            updated_schedule=None, 
+            shared_sync=None))
+    else:
+        # id가 존재하면 수정된 schedule과 shared_sync 결과를 반환.
+        return json_payload(tool_result(
+            "personal_update_saved_schedule",
+            ok=True,
+            updated_schedule=edit_result["schedule"],
+            shared_sync=edit_result["shared_sync"],
+        ))
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
