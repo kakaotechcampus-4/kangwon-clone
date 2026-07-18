@@ -36,8 +36,8 @@ SQLITE_MEMORY_PROMPT = (
 WEEK03_TOOL_CALL_PROMPT = (
     "저장 요청이 오면 먼저 extract_schedule_request로 자연어를 구조화해. 그리고 그 결과를 save_structured_request에 그대로 넘겨서 저장해. "
     "자연어 문자열은 절대 그대로 저장하지 마. 반드시 구조화 단계를 거쳐야 해. "
-    "개인 일정 조회는 personal_list_saved_schedules, 구조화 요청 원본 전체 조회는 list_saved_requests나 get_saved_request를 사용해. "
-    "사용자가 특정 날짜를 언급하지 않은 조회 요청이면 date_from/date_to를 비워서 전체 일정을 조회해. 임의로 오늘 날짜로 좁히지 마."
+    "개인 일정 조회는 personal_list_saved_schedules를 사용해. 단, 우선순위·판단근거·원본 텍스트(priority/reason/original_text) 같은 필드까지 조회할 때는 list_saved_requests나 get_saved_request를 사용해. "
+    "사용자가 특정 날짜를 언급하지 않은 조회 요청이면 date_from/date_to를 비워서 사용자의 모든 일정을 조회해. 임의로 오늘 날짜로 좁히지 마."
 )
 
 
@@ -586,10 +586,12 @@ def week03_prompt_parts() -> list[str]:
         *week02_prompt_parts(),
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO(추가 과제 완료 후): 추가 과제인 수정/삭제 tool이 미구현 되었으므로 구현 후 수정 예정
-        "일정 저장 요청이 오면 personal_create_schedule이 아니라 반드시 extract_schedule_request와 save_structured_request 흐름을 사용해. personal_create_schedule은 아직 완성되지 않았어. "
-        "저장된 일정을 조회할 때는 personal_list_schedules가 아니라 반드시 personal_list_saved_schedules를 사용해. 새 대화에서도 유지되는 일정은 SQLite 쪽에만 있어. "
-        "이번 주차(Week 3)에서는 저장과 조회 tool만 사용 가능해. 일정 수정이나 삭제 요청이 와도 아직 그 tool은 구현되지 않았으니 시도하지 마."
+        "일정 저장은 기본적으로 extract_schedule_request와 save_structured_request 흐름을 사용해. "
+        "title/date/start_time 같은 필드를 직접 나눠 말한 요청이면 personal_create_schedule을 사용해도 돼. 대신 SQLite에도 같이 저장돼. "
+        "저장된 일정을 조회할 때는 personal_list_schedules가 아니라 반드시 personal_list_saved_schedules를 사용해. "
+        "일정을 수정할 때는 personal_update_saved_schedule을, 삭제할 때는 personal_delete_saved_schedules를 사용해. "
+        "personal_delete_schedule은 세션 임시 메모리만 지우고 SQLite엔 안 남기니 사용하지 마. "
+        "삭제 전에는 먼저 personal_list_saved_schedules로 후보 일정을 확인한 뒤 schedule_ids나 명시된 필터로 삭제해.",
     ]
 
 
