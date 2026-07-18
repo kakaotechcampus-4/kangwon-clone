@@ -38,6 +38,10 @@ WEEK03_TOOL_CALL_PROMPT = """
                     같은 요청에 대해 personal_create_schedule과 save_structured_request를 동시에 호출하지 마세요.
                     personal_create_schedule은 Week 1 스타일로 제목/날짜/시간이 이미 인자로 명시된 요청에만 사용하고,
                     일반 자연어 일정 생성 요청은 extract_schedule_request → save_structured_request 경로만 사용하세요.
+    
+    조회 / 수정 / 삭제 호출 시 주의 사항 : 수정/삭제 요청에서 사용자가 언급한 일정이 이전 대화의 조회 결과에 보이지 않더라도,
+                                        반드시 personal_list_saved_schedules를 다시 호출해 확인한 뒤 답하세요.
+                                        이전 조회 결과가 날짜 등으로 좁혀진 부분 목록일 수 있으므로, 대화 맥락만으로 "없다"고 단정하지 마세요.
     조회 호출 순서 : personal_list_saved_schedules tool을 호출해 SQLite에 저장된 일정 목록을 조회합니다.
     수정 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_update_saved_schedule tool을 호출해 SQLite에 저장된 일정을 수정합니다.
     삭제 호출 순서 : personal_list_saved_schedules를 호출하여 사용자가 요구한 스케줄의 id를 가져온 뒤, personal_delete_saved_schedules tool을 호출해 SQLite에 저장된 일정을 삭제합니다.
