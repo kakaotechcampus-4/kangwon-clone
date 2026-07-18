@@ -242,8 +242,28 @@ class SaveStructuredRequestInput(StructuredRequest):
 def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
-    # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
-    ...
+    if isinstance(value, SaveStructuredRequestInput):
+        # 이미 SaveStructuredRequestInput이면 그대로 반환
+        return value
+    elif isinstance(value, StructuredRequest):
+        # StructuredRequest이면 model_dump()로 dict로 변환 후 SaveStructuredRequestInput으로 생성
+        return SaveStructuredRequestInput(**value.model_dump())
+    elif isinstance(value, dict):
+        # dict이면 SaveStructuredRequestInput으로 생성
+        return SaveStructuredRequestInput(**value)
+    elif isinstance(value, str):
+        # str이면 JSON으로 파싱 후 SaveStructuredRequestInput으로 생성
+        try:
+            parsed = json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            # JSON 형태가 아닌 경우, 자연어 문자열로 간주하고 구조화 요청을 추출
+            structured_request = extract_structured_request(value)
+            return SaveStructuredRequestInput(**structured_request.model_dump())
+        # JSON으로 파싱된 dict를 SaveStructuredRequestInput으로 생성
+        return SaveStructuredRequestInput(**parsed)
+    else:
+        # 지원되지 않는 타입이면 ValueError를 발생.
+        raise ValueError(f"지원되지 않는 입력 타입입니다 : {type(value)}")
 
 def save_structured_request_payload(
     request: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str,
