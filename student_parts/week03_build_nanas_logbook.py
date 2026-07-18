@@ -228,10 +228,15 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         if isinstance(value, dict):
-            if isinstance(value.get("structured_request"), dict):
-                return value["structured_request"]
-            if isinstance(value.get("payload"), dict):
-                return value["payload"]
+            wrapped = value.get("structured_request")
+            if not isinstance(wrapped, dict):
+                wrapped = value.get("payload")
+            if isinstance(wrapped, dict):
+                merged = dict(wrapped)
+                # source_schedule_id는 SaveStructuredRequestInput만 가진 필드라, 항상 wrapper 바깥에 위치함 → 언랩 과정에서 유실되지 않도록 살리기
+                if "source_schedule_id" not in merged and "source_schedule_id" in value:
+                    merged["source_schedule_id"] = value["source_schedule_id"]
+                return merged
         return value
 
 
