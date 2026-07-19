@@ -226,12 +226,18 @@ class SaveStructuredRequestInput(StructuredRequest):
     def unwrap_legacy_payload(cls, value: Any) -> Any:
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
         if isinstance(value, StructuredRequest):
+            return value.model_dump()
+        if not isinstance(value, dict):
             return value
-        if isinstance(value, dict):
-            if "payload" in value:
-                return value["payload"]
-            if "structured_request" in value:
-                return value["structured_request"]
+        for wrapper_key in ("payload", "structured_request"):
+            if wrapper_key in value:
+                inner = value[wrapper_key]
+                if isinstance(inner, StructuredRequest):
+                    inner = inner.model_dump()
+                if isinstance(inner, dict):
+                    outer = {k: v for k, v in value.items() if k != wrapper_key}
+                    return {**outer, **inner}
+                return inner
         return value
 
 
@@ -649,6 +655,9 @@ def week03_prompt_parts() -> list[str]:
             "앱 DB에 저장된 일정을 조회/삭제하지 못합니다 — 절대 호출하지 마세요. "
             "일정 삭제는 personal_delete_saved_schedules만 사용하세요. "
             "구조화 요청 조회는 list_saved_requests 또는 get_saved_request를 사용하세요."
+            "특히 '내 일정 보여줘'처럼 날짜를 지정하지 않은 일정 조회도 "
+            "personal_list_saved_schedules를 사용하세요. list_saved_requests는 "
+            "일정 목록이 아니라 원본 요청 기록 조회 전용이므로 일정 조회에 쓰지 마세요."
         )
     ]
 
