@@ -241,18 +241,18 @@ def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dic
     if isinstance(value, SaveStructuredRequestInput):
         return value
     if isinstance(value, StructuredRequest):
-        return SaveStructuredRequestInput.model_validate(value)
+        return SaveStructuredRequestInput.model_validate(value.model_dump())
     if isinstance(value, dict):
         return SaveStructuredRequestInput.model_validate(value)
     # json이나 자연어나 둘 다 str임.
     if isinstance(value, str):
         try:
             parsed = json.loads(value)
-            return SaveStructuredRequestInput.model_validate(parsed)
         except json.JSONDecodeError:
-            result = extract_structured_request(value)
-            return SaveStructuredRequestInput.model_validate(result)
-
+            parsed = extract_structured_request(value).model_dump()
+        return SaveStructuredRequestInput.model_validate(parsed)
+    
+    raise TypeError(f"지원하지 않는 저장 입력 타입입니다: {type(value).__name__}")
 
 def save_structured_request_payload(
     request: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str,
@@ -263,7 +263,7 @@ def save_structured_request_payload(
     if store is None:
         store = _store()
     data = _save_input_from(request)
-    result = store.save_structured_request(data)
+    result = store.save_structured_request(data.model_dump())
     
     return tool_result("save_structured_request", ok=True, **result)
 
@@ -324,16 +324,32 @@ def _delete_saved_schedules(
     delete_all: bool = False,
 ) -> dict[str, Any]:
     """삭제 guard와 DB 호출을 한 곳에 둡니다."""
+    filters = {
+        "schedule_ids": schedule_ids,
+        "date": date,
+        "title": title,
+        "start_time": start_time,
+        "time_unspecified": time_unspecified,
+        "delete_all": delete_all,
+    }
+
     if(
         not delete_all
         and schedule_ids is None
         and date is None
         and title is None
         and start_time is None
-        and not time_unspecified 
+        and not time_unspecified
     ):
-        return tool_result("delete_saved_schedules", ok=False, error="삭제 조건이 필요합니다.")
-    
+        return tool_result(
+            "delete_saved_schedules",
+            ok=False,
+            error="삭제 조건이 필요합니다.",
+            deleted_count=0,
+            filters=filters,
+            deleted=[],
+        )
+
     if delete_all:
         deleted = store.delete_all_schedules()
     else:
@@ -344,16 +360,6 @@ def _delete_saved_schedules(
             start_time=start_time,
             time_unspecified=time_unspecified
         )
-        
-    filters = {
-        "schedule_ids": schedule_ids,
-        "date": date,
-        "title": title,
-        "start_time": start_time,
-        "time_unspecified": time_unspecified,
-        "delete_all": delete_all
-    }
-    
     return tool_result("delete_saved_schedules", ok=True, deleted_count=len(deleted), filters=filters, deleted=deleted)
 
 
@@ -383,13 +389,13 @@ def personal_create_schedule(
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
     
     created = json.loads(
-        week01_personal_create_schedule(
-            title=title,
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            attendees=attendees
-        )
+        week01_personal_create_schedule.invoke({
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "attendees": attendees
+        })
     )
     
     schedule = created["created_schedule"]
@@ -605,9 +611,7 @@ def week03_tools() -> list[Any]:
 
     base_tools = [
         personal_create_schedule 
-        if _tool_name(item) == "personal_create_schedule" 
-        else personal_list_saved_schedules
-        if _tool_name(item) == "personal_list_schedules"
+        if _tool_name(item) == "personal_create_schedule"
         else item
         for item in week01_tools()
     ]
@@ -640,7 +644,10 @@ def week03_prompt_parts() -> list[str]:
         (
             "사용자의 일정 저장 요청은 extract_schedule_request로 구조화한 뒤 "
             "save_structured_request를 호출해 SQLite에 저장하세요. "
-            "저장된 일정 조회 요청은 personal_list_saved_schedules를 사용하고, "
+            "저장된 일정 조회는 반드시 personal_list_saved_schedules만 사용하세요. "
+            "personal_list_schedules와 personal_delete_schedule는 이전 대화 전용 임시 메모리라 "
+            "앱 DB에 저장된 일정을 조회/삭제하지 못합니다 — 절대 호출하지 마세요. "
+            "일정 삭제는 personal_delete_saved_schedules만 사용하세요. "
             "구조화 요청 조회는 list_saved_requests 또는 get_saved_request를 사용하세요."
         )
     ]
@@ -654,10 +661,10 @@ def build_week03_agent() -> object:
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
         _WEEK03_AGENT = create_agent(
-        model=chat_model(),
-        tools=week03_tools(),
-        system_prompt=week03_system_prompt(),
-    )
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+            )
     return _WEEK03_AGENT
 
 
