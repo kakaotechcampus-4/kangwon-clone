@@ -430,7 +430,7 @@ def save_structured_request(
     # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
     result = _store().save_structured_request(data)
 
-    return json_payload(tool_result("save_structured_request", saved=result))
+    return json_payload(tool_result("save_structured_request", **result))
 
 @tool(args_schema=SavedRequestListInput)
 def list_saved_requests(
