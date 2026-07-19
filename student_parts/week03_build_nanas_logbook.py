@@ -333,7 +333,7 @@ def _delete_saved_schedules(
 ) -> dict[str, Any]:
     """삭제 guard와 DB 호출을 한 곳에 둡니다."""
 
-    if not delete_all and not any([schedule_ids, date, title, start_time]):
+    if not delete_all and not any([schedule_ids, date, title, start_time, time_unspecified]):
         return tool_result("personal_delete_saved_schedules", ok=False, deleted_count=0, filters={}, deleted=[])
 
     if delete_all:
@@ -438,7 +438,7 @@ def save_structured_request(
         "original_text": original_text,
         "source_schedule_id": source_schedule_id,
     }
-    payload = {key: value for key, value in payload.items() if value not in (None, "", [])}
+    payload = {key: value for key, value in payload.items() if value not in (None, "")}
     saved = _store().save_structured_request(payload)
     return json_payload(tool_result("save_structured_request", **saved))
 
