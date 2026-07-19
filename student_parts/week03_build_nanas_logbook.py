@@ -263,13 +263,16 @@ class SaveStructuredRequestInput(StructuredRequest):
     @model_validator(mode="before")
     @classmethod
     def unwrap_legacy_payload(cls, value: Any) -> Any:
-        """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
+        """예전 trace의 payload/structured_request wrapper를 반복적으로 풀어냅니다."""
 
-        if isinstance(value, dict):
+        while isinstance(value, dict):
             if "payload" in value and isinstance(value["payload"], dict):
-                return value["payload"]
+                value = value["payload"]
+                continue
             if "structured_request" in value and isinstance(value["structured_request"], dict):
-                return value["structured_request"]
+                value = value["structured_request"]
+                continue
+            break
         return value
 
 
@@ -283,6 +286,13 @@ def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dic
     if isinstance(value, dict):
         return SaveStructuredRequestInput.model_validate(value)
     if isinstance(value, str):
+        # 먼저 JSON으로 파싱을 시도하고, 실패하면 자연어로 간주
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                return SaveStructuredRequestInput.model_validate(parsed)
+        except json.JSONDecodeError:
+            pass
         structured = extract_structured_request(value)
         return SaveStructuredRequestInput(**structured.model_dump())
     raise RuntimeError(f"지원하지 않는 입력 타입입니다: {type(value)}")
@@ -366,9 +376,21 @@ def _delete_saved_schedules(
         "delete_all": delete_all,
     }
 
-    has_condition = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified or delete_all
-    if not has_condition:
+    has_scoped_filter = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified
+
+    # 조건이 하나도 없으면 삭제를 거부합니다.
+    if not has_scoped_filter and not delete_all:
         return {"ok": False, "deleted_count": 0, "filters": filters, "deleted": []}
+
+    # delete_all과 다른 범위 지정 필터가 함께 들어오면 의도가 모호하므로 거부합니다.
+    if delete_all and has_scoped_filter:
+        return {
+            "ok": False,
+            "deleted_count": 0,
+            "filters": filters,
+            "deleted": [],
+            "error": "delete_all과 다른 필터를 함께 사용할 수 없습니다. 둘 중 하나만 지정하세요.",
+        }
 
     if delete_all:
         deleted = store.delete_all_schedules()
