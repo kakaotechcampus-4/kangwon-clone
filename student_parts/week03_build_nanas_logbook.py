@@ -349,7 +349,7 @@ def _delete_saved_schedules(
         'delete_all' : delete_all,
     }
 
-    has_condition = bool(schedule_ids) or bool(title) or bool(start_time) or time_unspecified or delete_all
+    has_condition = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified or delete_all
     if not has_condition:
         return tool_result(
             'personal_delete_saved_schedules',
@@ -450,8 +450,8 @@ def save_structured_request(
         'kind' : kind,
         'title' : title,
         'date' : date,
-        'start_time' : end_time,
-        'end_time' : start_time,
+        'start_time' : start_time,
+        'end_time' : end_time,
         'members' : [] if members is None else members,
         'priority' : priority,
         'reason' : reason,
@@ -505,7 +505,7 @@ def personal_list_saved_schedules(
         'date_from' : date_from,
         'date_to' : date_to,
     }
-    schedules = _store().list_schedules(limit=limit, kind=kind, date_from=date_to, date_to=date_from)
+    schedules = _store().list_schedules(limit=limit, kind=kind, date_from=date_from, date_to=date_to)
 
     return json_payload(tool_result('personal_list_saved_schedules', filters=filters, schedules=schedules))
 
