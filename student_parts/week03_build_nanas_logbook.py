@@ -352,6 +352,8 @@ def _delete_saved_schedules(
         )
         filters = {k: v for k, v in filters.items() if v not in (None, False)}
     deleted_count = len(deleted)
+    if deleted_count == 0:
+        return tool_result("personal_delete_saved_schedules", ok=False, deleted_count=0, filters=filters, deleted=[])
     return tool_result(
         "personal_delete_saved_schedules",
         deleted_count=deleted_count,
