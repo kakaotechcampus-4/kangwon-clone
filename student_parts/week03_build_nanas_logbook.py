@@ -27,11 +27,11 @@ from student_parts.week02_structure_natural_language_requests import (
 
 _WEEK03_AGENT: Any | None = None
 
-# TODO: 새 대화에서도 SQLite 일정/할 일/알림을 조회할 수 있도록 Week 3 영속 메모리 규칙을 작성하세요.
-SQLITE_MEMORY_PROMPT = ""
+SQLITE_MEMORY_PROMPT = "'일정, 할 일, 알림' 에 대한 데이터들이 SQLite에 저장되어있다. 일정에 대한 질문을 받으면 추측하거나 아무 내용이나 답하지 않고 SQLite를 통해 조회를 한 후 진행한다."
 
-# TODO: 자연어 구조화 → SQLite 저장과 조회/수정/삭제 tool 호출 순서를 안내하는 규칙을 작성하세요.
-WEEK03_TOOL_CALL_PROMPT = ""
+WEEK03_TOOL_CALL_PROMPT = """저장 요청이 올 경우 : 1. extract_schedule_request를 먼저 호출하여 사용자 요청을 구조화 2. 구조화 결과를 save_structured_request의 kind/title/date/start_time/end_time/members/priority/reason/original_text 에 인자로 전달한다.
+조회 요청이 올 경우 : 1. 바로 personal_list_saved_schedules 을 사용한다.
+삭제 요청이 올 경우 : 1. personal_list_saved_schedules로 조회를 한다 2. 조회에 성공하면 해당하는 tool을 호출한다."""
 
 
 # [3주차 수강생 구현 가이드]
@@ -65,17 +65,17 @@ WEEK03_TOOL_CALL_PROMPT = ""
 #     agent가 일반적으로 호출하는 경로는 @tool(args_schema=...)가 붙은 tool 함수입니다.
 #
 # 메인과제 구현 대상
-#   1. save_structured_request
+#   1. save_structured_request  --- 완료
 #      - @tool(args_schema=SaveStructuredRequestInput)으로 Week 2 구조화 결과를 검증합니다.
 #      - tool 본문에서는 Pydantic class를 다시 만들지 말고, 함수 인자로 들어온 값을 바로 저장 dict로 정리합니다.
 #      - 자연어 문자열이나 ok/tool_name/base_date wrapper를 직접 저장하지 않습니다.
 #
-#   2. list_saved_requests / get_saved_request
+#   2. list_saved_requests / get_saved_request  --- 완료
 #      - list는 kind/date_from/date_to 필터를 AppSQLiteStore.list_saved_requests(...)에 그대로 넘깁니다.
 #      - get은 request_id 하나로 단건 조회합니다.
 #      - 조회 결과가 없어도 예외를 던지지 말고 rows=[] 또는 row=None 형태를 유지합니다.
 #
-#   3. personal_list_saved_schedules
+#   3. personal_list_saved_schedules  ---
 #      - 저장된 일정 목록을 반환해 "내 일정 보여줘" 같은 조회 질문과 이후 수정/삭제 후보 확인에 씁니다.
 #      - 날짜가 명확한 조회는 date_from/date_to로 범위를 좁히고, 너무 많은 row가 들어가지 않게 limit을 사용합니다.
 #
@@ -209,7 +209,7 @@ def tool_result(tool_name: str, *, ok: bool = True, **payload: Any) -> dict[str,
     return {"ok": ok, "tool_name": tool_name, **payload}
 
 
-class SaveStructuredRequestInput(StructuredRequest):
+class SaveStructuredRequestInput(StructuredRequest):        ### 추가 과제
     """SQLite 저장 직전에 검증하는 Week 3 입력 스키마입니다."""
 
     kind: RequestKind = Field(default="unknown", description="분류된 요청 종류")
@@ -221,17 +221,19 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
 
         # TODO: StructuredRequest와 예전 payload/structured_request wrapper를 저장 입력 형태로 정규화하세요.
+
+
         return value
 
 
-def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:
+def _save_input_from(value: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str) -> SaveStructuredRequestInput:        ### 추가 과제
     """저장 입력을 SaveStructuredRequestInput 하나로 모읍니다."""
 
     # TODO: dict/JSON/자연어/StructuredRequest 입력을 SaveStructuredRequestInput으로 검증하고 정규화하세요.
     ...
 
 
-def save_structured_request_payload(
+def save_structured_request_payload(        ### 추가 과제
     request: SaveStructuredRequestInput | StructuredRequest | dict[str, Any] | str,
     *,
     store: AppSQLiteStore | None = None,
@@ -287,7 +289,7 @@ class SavedScheduleDeleteInput(BaseModel):
     delete_all: bool = False
 
 
-def _delete_saved_schedules(
+def _delete_saved_schedules(        ### 추가 과제
     *,
     store: AppSQLiteStore,
     schedule_ids: list[str] | None = None,
@@ -299,20 +301,33 @@ def _delete_saved_schedules(
 ) -> dict[str, Any]:
     """삭제 guard와 DB 호출을 한 곳에 둡니다."""
 
-    # TODO: 삭제 조건이 없으면 거부하고, delete_all 또는 명시 필터에 맞는 store 메서드를 호출하세요.
-    # TODO: deleted_count, filters, deleted가 포함된 tool 결과 dict를 반환하세요.
-    ...
+    filters = {
+        "schedule_ids": schedule_ids,
+        "date": date,
+        "title": title,
+        "start_time": start_time,
+        "time_unspecified": time_unspecified,
+        "delete_all": delete_all,
+    }
+    if not delete_all and not any([schedule_ids, date, title, start_time, time_unspecified]):
+        return tool_result("_delete_saved_schedules", ok=False, deleted_count=0, filters=filters, deleted=[])
+
+    if delete_all:
+        deleted = store.delete_all_schedules()
+    else:
+        deleted = store.delete_schedules_by_filter(schedule_ids, date, title, start_time, time_unspecified)
+        
+    return tool_result("delete_saved_schedules", ok=True, deleted_count=len(deleted), filters=filters, deleted=deleted)
 
 
-def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:
+def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStructuredRequestInput:        ### 추가 과제
     """Week 1 임시 일정 dict를 Week 3 저장 입력으로 변환합니다."""
 
-    # TODO: Week 1 schedule의 attendees/id를 Week 3 members/source_schedule_id에 맞춰 변환하세요.
-    ...
+    return SaveStructuredRequestInput(kind="personal_schedule", title=schedule["title"], date=schedule["date"], start_time=schedule["start_time"], end_time=schedule["end_time"], members=schedule.get("attendees", []), source_schedule_id= schedule.get("id"))
 
 
 @tool("personal_create_schedule")
-def personal_create_schedule(
+def personal_create_schedule(       ### 추가 과제
     title: str,
     date: str,
     start_time: str,
@@ -321,9 +336,15 @@ def personal_create_schedule(
 ) -> str:
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
 
-    # TODO: Week 1 임시 일정 tool을 호출한 뒤 결과를 StructuredRequest로 바꿔 SQLite에도 저장하세요.
-    # TODO: created 결과에 structured_request와 sqlite_save를 합쳐 JSON 문자열로 반환하세요.
-    ...
+    tempo_schedule = week01_personal_create_schedule.invoke({"title": title, "date": date, "start_time": start_time, "end_time": end_time, "attendees": attendees})
+    created = json.loads(tempo_schedule)
+    inner = created["created_schedule"]
+    crecreated = structured_request_from_week01_schedule(inner).model_dump()
+    
+    saved = _store().save_structured_request(crecreated)
+    
+    return json_payload(tool_result("personal_create_schedule", ok=True, created_schedule=created["created_schedule"], structured_request=crecreated, sqlite_save=saved))
+
 
 
 @tool(args_schema=SaveStructuredRequestInput)
@@ -341,9 +362,13 @@ def save_structured_request(
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
 
-    # TODO: 검증된 함수 인자를 저장 dict로 만들고 None 값을 제외한 뒤 SQLite에 저장하세요.
-    # TODO: ok/tool_name과 저장 결과가 포함된 JSON 문자열을 반환하세요.
-    ...
+    request = {"kind": kind, "title": title, "date": date, "start_time": start_time, "end_time": end_time, "members": members, "priority": priority, "reason": reason, "original_text": original_text, "source_schedule_id": source_schedule_id}
+
+    clean_request = {key: value for key, value in request.items() if value is not None}
+
+    saved = _store().save_structured_request(clean_request)
+
+    return json_payload(tool_result("save_structured_request", **saved))
 
 
 @tool(args_schema=SavedRequestListInput)
@@ -354,16 +379,19 @@ def list_saved_requests(
 ) -> str:
     """SQLite에 저장된 구조화 요청 목록을 조회합니다."""
 
-    # TODO: kind/date_from/date_to 필터로 저장 요청을 조회하고 rows를 JSON 문자열로 반환하세요.
-    ...
+    rows = _store().list_saved_requests(kind, date_from, date_to)
+
+    return json_payload(tool_result("list_saved_requests", rows=rows))
 
 
 @tool(args_schema=SavedRequestGetInput)
 def get_saved_request(request_id: str) -> str:
     """request_id로 구조화 요청 행 하나를 조회합니다."""
 
-    # TODO: request_id로 단건 조회하고, 결과가 없을 때도 row=None을 유지해 JSON 문자열로 반환하세요.
-    ...
+    row = None
+    row = _store().get_saved_request(request_id)
+
+    return json_payload(tool_result("get_saved_request", row=row))
 
 
 @tool(args_schema=SavedScheduleListInput)
@@ -375,12 +403,16 @@ def personal_list_saved_schedules(
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
 
-    # TODO: 기본 kind를 personal_schedule로 정하고 날짜/종류/limit 필터로 저장 일정을 조회하세요.
-    # TODO: filters와 schedules를 포함한 JSON 문자열을 반환하세요.
-    ...
+    if kind == None:
+        kind = "personal_schedule"
+    
+    schedules = _store().list_schedules(limit, kind, date_from, date_to)
+
+    return json_payload(tool_result("personal_list_saved_schedules", schedules = schedules, filters ={"limit": limit, "kind": kind, "date_from": date_from, "date_to": date_to}))
 
 
-def delete_saved_schedules_dict(
+
+def delete_saved_schedules_dict(        ### 추가 과제
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
@@ -391,12 +423,13 @@ def delete_saved_schedules_dict(
 ) -> dict[str, Any]:
     """tool invoke 없이 저장 일정 삭제 로직을 직접 호출합니다."""
 
-    # TODO: 전달받은 store 또는 기본 store로 _delete_saved_schedules(...)를 호출하세요.
-    ...
+    if app_store is None:
+        app_store = _store()
+    return _delete_saved_schedules(store=app_store, schedule_ids=schedule_ids, date=date, title=title, start_time=start_time, time_unspecified=time_unspecified, delete_all=delete_all)
 
 
 @tool(args_schema=SavedScheduleUpdateInput)
-def personal_update_saved_schedule(
+def personal_update_saved_schedule(     ### 추가 과제
     schedule_id: str,
     title: str | None = None,
     date: str | None = None,
@@ -406,13 +439,17 @@ def personal_update_saved_schedule(
 ) -> str:
     """앱 DB에 저장된 내 일정 원본을 수정하고 공유 일정 복사본을 같은 값으로 갱신합니다."""
 
-    # TODO: None이 아닌 수정 필드를 AppSQLiteStore.update_schedule(...)에 전달하세요.
-    # TODO: ID가 없으면 ok=False, 있으면 updated_schedule/shared_sync를 담아 JSON 문자열로 반환하세요.
-    ...
+    result = _store().update_schedule(schedule_id, title, date, start_time, end_time, attendees)
+        
+    if result is not None:
+        return json_payload(tool_result("personal_update_saved_schedule", ok=True, updated_schedule= result["schedule"], shared_sync= result["shared_sync"]))
+    else:
+        return json_payload(tool_result("personal_update_saved_schedule", ok=False))
+    
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
-def personal_delete_saved_schedules(
+def personal_delete_saved_schedules(        ### 추가 과제
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
@@ -422,8 +459,9 @@ def personal_delete_saved_schedules(
 ) -> str:
     """Nana가 고른 일정 ID나 날짜/제목/시간 필터로 저장 일정을 삭제합니다."""
 
-    # TODO: _delete_saved_schedules(...)에 삭제 조건을 전달하고 결과를 JSON 문자열로 반환하세요.
-    ...
+    result = _delete_saved_schedules(store=_store(), schedule_ids=schedule_ids, date=date, title=title, start_time=start_time, time_unspecified=time_unspecified, delete_all=delete_all)
+    
+    return json_payload(result)
 
 
 def week03_tools() -> list[Any]:
@@ -455,7 +493,6 @@ def week03_prompt_parts() -> list[str]:
 
     return [
         *week02_prompt_parts(),
-        # TODO: Week 2 구조화 결과를 Week 3 SQLite 저장 흐름으로 연결하는 지시를 추가하세요.
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
         # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
@@ -469,8 +506,11 @@ def build_week03_agent() -> object:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
     global _WEEK03_AGENT
     if _WEEK03_AGENT is None:
-        # TODO: chat_model(), week03_tools(), week03_system_prompt()로 Week 3 LangChain agent를 생성하세요.
-        ...
+        _WEEK03_AGENT = create_agent(
+            model=chat_model(),
+            tools=week03_tools(),
+            system_prompt=week03_system_prompt(),
+        )
     return _WEEK03_AGENT
 
 

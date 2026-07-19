@@ -195,6 +195,7 @@ def personal_create_schedule(
         "tool_name": "personal_create_schedule",
         "created_at": _now_iso(),
         "date and title": date + title,
+        "created_schedule": schedule
     })
 
 

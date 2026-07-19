@@ -125,15 +125,35 @@ def _coerce_structured_request(value: Any) -> StructuredRequest:
 
 def extract_structured_request(text: str) -> StructuredRequest:
     """이후 회차에서 사용할 단건 구조화 예약 함수입니다."""
+    structured_model = chat_model().with_structured_output(StructuredRequest, method="function_calling")
+    result = structured_model.invoke([
+        ("system", f"{current_app_date_iso()}를 기준으로 오늘 날짜를 지정하고 사용자의 요청에 따른 상대적인 날짜를 구별한다."),
+        ("system", "personal_schedule: 나 혼자서 하는 일정(누군가와 같이 해야하는 일정이라면 혼자하는 일정이 아니기 때문에 personal_schedule이 아님), group_schedule: 2명 이상이 같이 하는 일정(누군가와 함께 하는 일정은 따로 명시되어있지 않는 한 나도 참석하는 일정이기 때문에 group_schedule임), todo: 완료해야 할 일, reminder: 완료 여부와 상관 없이 알려야 하는 일, unknown: (personal_schedule, group_schedule, todo, reminder)로 구분되지 않거나 명확하지 않은 것들."),
+        ("human", text)])
 
-    ...
+    return result
 
 
 @tool
 def extract_schedule_request(query: str) -> str:
     """이후 회차에서 저장 흐름과 연결할 예약 tool입니다."""
-
-    ...
+    result = extract_structured_request(query)
+    
+    return json.dumps({
+        "ok": True,
+        "tool_name": "extract_schedule_request",
+        "base_date": current_app_date_iso(),
+        "structured_request": {
+            "kind": result.kind,
+            "title": result.title,
+            "date": result.date,
+            "start_time": result.start_time,
+            "end_time": result.end_time,
+            "members": result.members,
+            "priority": result.priority,
+            "reason": result.reason,
+            "original_text": result.original_text},
+    }, ensure_ascii=False)
 
 
 def week02_tools() -> list[Any]:
