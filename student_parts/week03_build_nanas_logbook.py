@@ -349,12 +349,22 @@ def _delete_saved_schedules(
         'delete_all' : delete_all,
     }
 
-    has_condition = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified or delete_all
-    if not has_condition:
+    has_explicit_filter = bool(schedule_ids) or bool(date) or bool(title) or bool(start_time) or time_unspecified
+    if not has_explicit_filter and not delete_all:
         return tool_result(
             'personal_delete_saved_schedules',
             ok=False,
             error='삭제 조건이 없습니다. schedule_ids나 날짜/제목 필터 또는 delete_all을 넘겨주세요.',
+            deleted_count=0,
+            filters=filters,
+            deleted=[],
+        )
+
+    if delete_all and has_explicit_filter:
+        return tool_result(
+            'personal_delete_saved_schedules',
+            ok=False,
+            error='delete_all과 다른 삭제 조건을 함께 쓸 수 없습니다. 전체 삭제는 delete_all만 단독으로, 부분 삭제는 명시 필터만 넘겨주세요.',
             deleted_count=0,
             filters=filters,
             deleted=[],
