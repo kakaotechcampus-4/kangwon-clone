@@ -395,7 +395,7 @@ def personal_create_schedule(
     )
     created_schedule = week01_result["created_schedule"]
     save_input = structured_request_from_week01_schedule(created_schedule)
-    sqlite_save = _store().save_structured_request(save_input.model_dump())
+    sqlite_save = save_structured_request_payload(save_input)
     return json_payload(
         tool_result(
             "personal_create_schedule",
