@@ -173,7 +173,7 @@ def personal_create_schedule(
     title: str,
     date: str,
     start_time: str,
-    end_time: str = "미정",
+    end_time: str | None = None,
     attendees: list[str] | None = None,
 ) -> str:
     schedule ={
