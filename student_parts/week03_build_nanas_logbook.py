@@ -356,7 +356,7 @@ def personal_create_schedule(
     title: str,
     date: str,
     start_time: str,
-    end_time: str = "미정",
+    end_time: str | None = None,
     attendees: list[str] | None = None,
 ) -> str:
     """Nana의 개인 일정을 생성하고 Week 3+ 앱 SQLite DB에도 저장합니다."""
