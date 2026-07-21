@@ -25,7 +25,8 @@
       "Bash(awk '{print $2}')",
       "Bash(grep -n *)",
       "Bash(echo \"grep_rc=$?\")",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(git merge *)"
     ]
   }
 }
