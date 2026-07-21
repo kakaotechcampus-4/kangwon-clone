@@ -124,22 +124,47 @@ class StructuredRequestBatch(BaseModel):
 
 
 def _coerce_structured_request(value: Any) -> StructuredRequest:
-    """이후 회차에서 사용할 StructuredRequest 정규화 예약 함수입니다."""
+    """week 3에서 사용할 StructuredRequest 정규화 예약 함수입니다."""
 
-    ...
+    if isinstance(value, StructuredRequest):
+        return value
+    if isinstance(value, dict):
+        return StructuredRequest.model_validate(value)
+    if isinstance(value, str):
+        return extract_structured_request(value)
+    raise TypeError(f"StructuredRequest로 변환할 수 없는 입력값입니다: {type(value)!r}")
 
 
 def extract_structured_request(text: str) -> StructuredRequest:
-    """이후 회차에서 사용할 단건 구조화 예약 함수입니다."""
+    """week3에서 사용할 단건 구조화 예약 함수입니다."""
 
-    ...
+    today = current_app_date_iso()
+    structured_model = chat_model().with_structured_output(StructuredRequest)
+    result = structured_model.invoke(
+        [
+            {
+                "role": "system",
+                "content": (
+                    f"너는 자연어 일정/할 일 요청을 StructuredRequest로 변환하는 파서다. "
+                    f"오늘 날짜는 {today}이며, 상대 날짜(다음주, 내일, 모레, 어제 등)는 이 날짜를 기준으로 계산한다. "
+                    "kind는 personal_schedule/group_schedule/todo/reminder/unknown 중 하나를 고른다. "
+                    "확실하지 않은 값은 억지로 추측하지 말고 None 또는 빈 리스트로 남긴다."
+                ),
+            },
+            {"role": "user", "content": text},
+        ]
+    )
+    if not result.original_text:
+        result.original_text = text
+    return result
 
 
 @tool
 def extract_schedule_request(query: str) -> str:
-    """이후 회차에서 저장 흐름과 연결할 예약 tool입니다."""
+    """week3에서 저장 흐름과 연결할 예약 tool입니다."""
 
-    ...
+    structured = extract_structured_request(query)
+    return json.dumps(structured.model_dump(), ensure_ascii=False)
 
 
 def week02_tools() -> list[Any]:
