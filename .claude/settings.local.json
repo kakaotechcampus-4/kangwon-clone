@@ -24,7 +24,8 @@
       "Bash(git hash-object *)",
       "Bash(awk '{print $2}')",
       "Bash(grep -n *)",
-      "Bash(echo \"grep_rc=$?\")"
+      "Bash(echo \"grep_rc=$?\")",
+      "Bash(git fetch *)"
     ]
   }
 }
