@@ -227,7 +227,6 @@ class SaveStructuredRequestInput(StructuredRequest):
         """예전 trace의 payload wrapper만 짧게 풀고 실제 검증은 필드 스키마에 맡깁니다."""
         if isinstance(value, StructuredRequest):
             return value.model_dump()
-        # JSON 문자열이 직접 들어오면 dict로 파싱합니다. (JSON이 아니면 그대로 두어 필드 검증에 맡깁니다.)
         if isinstance(value, str):
             try:
                 value = json.loads(value)
