@@ -268,14 +268,14 @@ def search_personal_reference_hits(
     
     result = []
     
-    for num in range(top_k):
+    for searching in search_store:
         result.append({
-            "id": search_store[num]["id"],
-            "content": search_store[num]["content"],
-            "distance": search_store[num]["distance"],
+            "id": searching["id"],
+            "content": searching["content"],
+            "distance": searching["distance"],
             "metadata": {
-                "title": search_store[num]["title"],
-                "tags": search_store[num]["tags"]
+                "title": searching["title"],
+                "tags": searching["tags"]
             }})
     
     return result
@@ -358,15 +358,15 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     
     result = []
     
-    for num in range(top_k):
+    for searching in store:
         result.append(
             {"hit": {
-                "id": store[num]["id"],
-                "title": store[num]["title"],
-                "content": store[num]["content"],
-                "tags": store[num]["tags"],
-                "distance": store[num]["distance"]
-        }})    
+                "id": searching["id"],
+                "title": searching["title"],
+                "content": searching["content"],
+                "tags": searching["tags"],
+                "distance": searching["distance"]
+        }})
     
     return json_payload(result)
 
