@@ -397,6 +397,9 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        "저장된 할일/일정 등의 기록에 대해 질문이 들어오면 search_saved_requests를 호출해 SQLite에 저장된 기록을 검색합니다.",
+        "저장된 개인 참고자료에 대해 질문이 들어오면 search_personal_references를 호출해 ChromaDB에 저장된 참고자료를 검색합니다.",
+        "필요 시에는 여러 tool을 중복으로 사용해 결화를 조합하여 답변을 구성합니다."
     ]
 
 
