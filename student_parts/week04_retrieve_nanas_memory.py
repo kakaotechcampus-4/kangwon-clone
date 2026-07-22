@@ -248,8 +248,25 @@ def search_personal_reference_hits(
 ) -> list[dict[str, Any]]:
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
-    # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    # 1. 저장소의 search_personal_references를 호출해 결과값을 받아옴
+    result = reference_store.search_personal_references(query=query, limit=top_k)
+
+    # 2. 결과값을 주어진 구조로 변환
+    hits = []
+    for hit in result:
+        hits.append(
+            {
+                "id" : hit.get("id"),
+                "content" : hit.get("content"),
+                "distance" : hit.get("distance"),
+                "metadata" : {
+                    "title" : hit.get("title"),
+                    "tags" : hit.get("tags"),
+                }
+            }
+        )
+    
+    return {"hits": hits}
 
 
 def search_saved_request_rows(
