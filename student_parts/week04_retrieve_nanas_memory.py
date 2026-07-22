@@ -325,7 +325,18 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     """개인 참고자료를 ChromaDB에 추가합니다."""
 
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
-    ...
+
+    # helper로 저장 위임 -> {reference_backend(저장 위치), reference(저장된 자료 row)} dict 반환
+    # tags가 None이면 빈 list로 넘김
+    payload = add_personal_reference_dict(
+        REFERENCE_STORE,
+        title=title,
+        content=content,
+        tags=tags or [],
+    )
+
+    # tool 반환은 JSON 문자열 규격 -> json_payload로 dict를 감싸서 JSON 문자열로 변환하여 반환
+    return json_payload(payload)
 
 
 @tool(args_schema=SearchPersonalReferencesInput)
