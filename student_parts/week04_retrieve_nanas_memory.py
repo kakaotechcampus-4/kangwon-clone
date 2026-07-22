@@ -152,6 +152,7 @@ _WEEK04_AGENT: Any | None = None
 #     Week 1~4 tool을 가진 agent를 만들고 재사용합니다.
 
 
+# ── [공통] 완성된 helper (TODO 없음) ──────────────────────────────
 def _decode_attendees(raw_attendees: str | None) -> list[str]:
     try:
         decoded = json.loads(raw_attendees or "[]")
@@ -160,12 +161,14 @@ def _decode_attendees(raw_attendees: str | None) -> list[str]:
     return decoded if isinstance(decoded, list) else []
 
 
+# [공통]
 def json_payload(payload: dict[str, Any]) -> str:
     """도구 반환용 dict를 한글이 깨지지 않는 JSON 문자열로 변환합니다."""
 
     return json.dumps(payload, ensure_ascii=False)
 
 
+# [공통]
 def safe_limit(limit: int, default: int = 5, maximum: int = 50) -> int:
     """사용자/LLM이 넘긴 limit 값을 안전한 양의 정수 범위로 보정합니다."""
 
@@ -176,6 +179,7 @@ def safe_limit(limit: int, default: int = 5, maximum: int = 50) -> int:
     return max(1, min(value, maximum))
 
 
+# ══ [메인 과제] 입력 스키마 ═══════════════════════════════════════
 class AddPersonalReferenceInput(BaseModel):
     """개인 참고자료 추가 입력입니다."""
 
@@ -198,6 +202,7 @@ class SearchSavedRequestsInput(BaseModel):
     top_k: int = Field(default=3, ge=1, le=50)
 
 
+# ══ [추가 과제] 입력 스키마 ═══════════════════════════════════════
 class SearchConversationMessagesInput(BaseModel):
     """앱 대화 RAG 검색 입력입니다."""
 
@@ -216,6 +221,7 @@ class SearchNanaMemoryInput(BaseModel):
     limit: int = Field(default=5, ge=1, le=20)
 
 
+# ══ [메인 과제] 검색/저장 helper (TODO 구현) ═════════════════════
 def add_personal_reference_dict(
     reference_store: PersonalReferenceStore,
     *,
@@ -229,6 +235,7 @@ def add_personal_reference_dict(
     ...
 
 
+# [메인]
 def search_personal_reference_hits(
     reference_store: PersonalReferenceStore,
     *,
@@ -241,6 +248,7 @@ def search_personal_reference_hits(
     ...
 
 
+# [메인]
 def search_saved_request_rows(
     sqlite_store: AppSQLiteStore,
     *,
@@ -253,6 +261,7 @@ def search_saved_request_rows(
     ...
 
 
+# ══ [추가 과제] 대화 RAG helper (TODO 구현) ══════════════════════
 def search_conversation_messages_dict(
     sqlite_store: AppSQLiteStore,
     conversation_rag_store: ConversationRAGStore,
@@ -267,6 +276,7 @@ def search_conversation_messages_dict(
     ...
 
 
+# [추가]
 def search_conversation_message_rows(
     sqlite_store: AppSQLiteStore,
     *,
@@ -280,6 +290,7 @@ def search_conversation_message_rows(
     ...
 
 
+# ══ [메인 과제] @tool 래퍼 (TODO 구현) ═══════════════════════════
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
@@ -288,6 +299,7 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     ...
 
 
+# [메인]
 @tool(args_schema=SearchPersonalReferencesInput)
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
@@ -296,6 +308,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     ...
 
 
+# [메인]
 @tool(args_schema=SearchSavedRequestsInput)
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
@@ -304,6 +317,7 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
     ...
 
 
+# ══ [추가 과제] @tool 래퍼 (TODO 구현) ═══════════════════════════
 @tool(args_schema=SearchConversationMessagesInput)
 def search_conversation_messages(
     query: str,
@@ -316,6 +330,7 @@ def search_conversation_messages(
     ...
 
 
+# [추가]
 @tool(args_schema=SearchNanaMemoryInput)
 def search_nana_memory(
     query: str,
@@ -329,6 +344,7 @@ def search_nana_memory(
     # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
     ...
 
+# ══ [공통] agent 조립 (TODO 없음, prompt 조각만 선택 구현) ═════════
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
 
