@@ -319,7 +319,30 @@ def search_conversation_messages_dict(
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
     # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
+    
+    # 1. lazy sync: SQLite 대화(원본) -> ChromaDB(검색 인덱스)로 신규/변경분만 반영
+    sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
+
+    # 2. conversation_id가 없으면 현재 대화(session scope)를 검색에서 제외
+    # 방금 한 말이 과거 검색 결과처럼 섞이지 않도록 함
+    exclude_conversation_id = None if conversation_id else current_session_scope()
+
+    # 3. 대화 청크 벡터 검색 (제외/특정 대화 지정은 store가 처리)
+    hits = conversation_rag_store.search(
+        query=query,
+        top_k=top_k,
+        exclude_conversation_id=exclude_conversation_id,
+        conversation_id=conversation_id,
+    )
+
+    # 4. 반환: hits/rows(동일) + context(근거 문자열) + rag_backend(검색 backend) + sync(동기화 통계)
+    return {
+        "hits": hits,
+        "rows": hits,
+        "context": conversation_rag_store.context_from_hits(hits),
+        "rag_backend": conversation_rag_store.backend_info(),
+        "sync": sync,
+    }
 
 
 def search_conversation_message_rows(
