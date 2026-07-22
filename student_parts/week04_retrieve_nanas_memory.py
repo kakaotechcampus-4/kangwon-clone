@@ -266,7 +266,7 @@ def search_personal_reference_hits(
             }
         )
     
-    return {"hits": hits}
+    return hits
 
 
 def search_saved_request_rows(
