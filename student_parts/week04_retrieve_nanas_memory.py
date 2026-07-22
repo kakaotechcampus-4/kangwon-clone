@@ -230,12 +230,12 @@ def add_personal_reference_dict(
 
     # 2. 저장된 결과를 dict로 정리해 반환.
     return {
-        "reference_backend": reference_store.backend_info(),
+        "reference_backend": result["backend"],
         "reference": {
-            "reference_id": result.reference_id,
-            "title": result.title,
-            "content": result.content,
-            "tags": result.tags,
+            "reference_id": result["reference_id"],
+            "title": result["title"],
+            "content": result["content"],
+            "tags": result["tags"],
         }
     }
 
@@ -314,7 +314,13 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     """개인 참고자료를 ChromaDB에 추가합니다."""
 
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
-    ...
+    result_dict = add_personal_reference_dict(
+        REFERENCE_STORE,
+        title=title,
+        content=content,
+        tags=tags,
+    )
+    return json_payload(result_dict)
 
 
 @tool(args_schema=SearchPersonalReferencesInput)
