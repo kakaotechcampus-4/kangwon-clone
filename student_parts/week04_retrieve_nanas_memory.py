@@ -513,6 +513,17 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        (
+            "사용자가 과거 정보(참고자료·저장 기록·예전 대화)를 물으면, 네 기억에 의존하지 말고 "
+            "반드시 아래 순서로 검색 도구를 호출한 뒤 그 결과로만 답한다. "
+            "출처 판단: 개인 규칙·메모·선호는 search_personal_references, "
+            "저장한 일정·할 일·알림은 search_saved_requests, "
+            "'저번에', '예전에', '얘기했던' 등 지난 대화 내용은 search_conversation_messages. "
+            "가장 맞는 출처를 먼저 검색하고, 결과(hits/rows)가 비어 있으면 그대로 '없다'고 하지 말고 "
+            "다른 출처(특히 search_conversation_messages)를 이어서 검색한다. "
+            "검색을 하고도 어디에서도 못 찾은 경우에만 없다고 답한다. "
+            "새 참고자료를 남겨달라는 요청이면 add_personal_reference로 저장한다."
+        ),
     ]
 
 
