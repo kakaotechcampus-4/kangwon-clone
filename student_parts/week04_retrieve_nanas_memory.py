@@ -278,7 +278,19 @@ def search_personal_reference_hits(
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
     # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    # query = 검색할 질문, top_k = 반환할 상위 결과 개수
+    # results = query와 가까운(distance 작은) 순으로 정렬된 상위 top_k개의 참고자료
+    # distance = 질문 벡터와 문서 벡터 사이의 거리 → 작을수록 의미가 유사함
+    results = reference_store.search_personal_references(query, limit=top_k)
+    return [
+        {
+            "id": hit.get("id"),
+            "content": hit.get("content"),
+            "distance": hit.get("distance"),
+            "metadata": {"title": hit.get("title", ""), "tags": hit.get("tags", "")}
+        }
+        for hit in results
+    ]
 
 
 def search_saved_request_rows(
