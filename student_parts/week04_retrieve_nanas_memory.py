@@ -347,6 +347,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
         query=query, 
         top_k=safe_limit(top_k, default=2, maximum=20)
     )
+    
     return json_payload({
         "ok": True,
         "tool_name": "search_personal_reference",
@@ -363,6 +364,7 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
         query=query, 
         top_k=safe_limit(top_k, default=3, maximum=50)
     )
+
     return json_payload({
         "ok": True,
         "tool_name": "search_saved_requests",
