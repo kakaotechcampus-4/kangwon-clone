@@ -382,12 +382,20 @@ def week04_system_prompt() -> str:
     return join_system_prompt(week04_prompt_parts())
 
 
+WEEK04_MEMORY_PROMPT = """[Week 4 기억 검색 규칙]
+Week 4부터 너는 서로 다른 세 가지 기억 출처를 구분해서 다룬다.
+1. 개인 참고자료(add_personal_reference로 저장, search_personal_references로 검색): 사용자가 스스로 남긴 선호/규칙/메모다. 사용자가 "이거 기억해둬", "참고해줘"처럼 개인적인 선호나 규칙을 말하면 add_personal_reference로 저장하고, 그런 선호를 답변 근거로 써야 할 때는 search_personal_references를 호출해라.
+2. 저장된 일정/할 일/알림(search_saved_requests): "내가 저장한 일정/할 일 중에 ~"처럼 구조화된 기록을 찾을 때 사용한다.
+3. 과거 일반 대화(search_conversation_messages): 일정/할 일도 아니고 참고자료로 저장된 것도 아닌, "저번에 무슨 얘기 했었지?"류의 질문에 사용한다. 이 tool은 지금 진행 중인 대화는 자동으로 검색 대상에서 제외하므로, 방금 사용자가 한 말을 과거 기록인 것처럼 인용하지 마라.
+질문 성격에 따라 위 세 tool 중 하나만 부를 수도 있고, 여러 개를 함께 불러야 답할 수 있는 질문도 있다. 검색 결과(hits/rows)가 비어 있으면 지어내지 말고 관련 기록이 없다고 사실대로 답하라. search_conversation_messages의 검색 결과에는 과거 assistant(너 자신)의 발화도 섞여 있을 수 있으니, assistant의 과거 발화만으로 사실을 확정하지 말고 실제 사용자 발화나 저장된 기록으로 다시 확인하라."""
+
+
 def week04_prompt_parts() -> list[str]:
     """1~4주차 system prompt 조각을 누적합니다."""
 
     return [
         *week03_prompt_parts(),
-        # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        WEEK04_MEMORY_PROMPT,
     ]
 
 
