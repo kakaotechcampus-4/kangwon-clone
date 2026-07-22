@@ -293,6 +293,10 @@ def search_saved_request_rows(
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
     ...
+    saved = sqlite_store.search_saved_requests(query= query, limit=top_k)
+    
+    return saved
+    
 
 
 # ══ [추가 과제] 대화 RAG helper (TODO 구현) ══════════════════════
@@ -365,6 +369,9 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
     ...
+    rows = search_saved_request_rows(sqlite_store = AppSQLiteStore, query = query, top_k = top_k)
+    
+    return json_payload({"rows": rows})
 
 
 # ══ [추가 과제] @tool 래퍼 (TODO 구현) ═══════════════════════════
