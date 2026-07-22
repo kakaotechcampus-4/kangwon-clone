@@ -291,7 +291,7 @@ def search_conversation_messages_dict(
     hits = conversation_rag_store.search(
         query=query, 
         top_k=safe_limit(top_k), 
-        exclude_conversation_id=current_session_scope()
+        exclude_conversation_id=current_session_scope(),
         conversation_id=conversation_id
     )
 
@@ -328,7 +328,7 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
 
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
     result = add_personal_reference_dict(REFERENCE_STORE, title=title, content=content, tags=tags)
-    
+
     return json_payload({
         "ok": True,
         "tool_name": "add_personal_reference",
