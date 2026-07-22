@@ -393,7 +393,7 @@ def week04_tools() -> list[Any]:
         add_personal_reference,
         search_personal_references,
         search_saved_requests,
-        search_conversation_messages,
+        # search_conversation_messages, -> 미구현 tool 임시 주석 처리, 2회차 구현 후 복구 예정
     ]
 
 
