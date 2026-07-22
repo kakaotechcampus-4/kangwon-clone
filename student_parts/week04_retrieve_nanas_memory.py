@@ -226,7 +226,10 @@ def add_personal_reference_dict(
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
     # TODO: PersonalReferenceStore.add_personal_reference(...)로 개인 참고자료를 저장하세요.
-    ...
+    results = reference_store.add_personal_reference(title, content, tags)
+    backend_info = results["backend"]
+    reference = {key: value for key, value in results.items() if key != "backend"}
+    return {"reference_backend": backend_info, "reference": reference}
 
 
 def search_personal_reference_hits(
@@ -238,7 +241,19 @@ def search_personal_reference_hits(
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
     # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    results = reference_store.search_personal_references(query, top_k)
+    hits = [
+        {
+            "id": i["id"],
+            "content": i["content"],
+            "distance": i["distance"],
+            "metadata": {"title": i["title"], "tags": i["tags"]},
+        }
+        for i in results
+    ]
+
+    return hits
+
 
 
 def search_saved_request_rows(
@@ -250,7 +265,11 @@ def search_saved_request_rows(
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
-    ...
+    results = sqlite_store.search_saved_requests(query, limit=top_k)
+
+    return results
+
+
 
 
 def search_conversation_messages_dict(
@@ -280,28 +299,42 @@ def search_conversation_message_rows(
     ...
 
 
-@tool(args_schema=AddPersonalReferenceInput)
+@tool(args_schema=AddPersonalReferenceInput) #사용자: 기억해둬 -> ChromaDB에서 저장
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
 
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
-    ...
+    if tags == None:
+        tags = []
+    
+    results = add_personal_reference_dict(REFERENCE_STORE, title=title, content=content, tags=tags)
+
+    return json_payload(results)
 
 
-@tool(args_schema=SearchPersonalReferencesInput)
+@tool(args_schema=SearchPersonalReferencesInput) #사용자 질문 참고자료 성격시 -> ChromaDB에서 의미 검색
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    ...
+    top_k = safe_limit(limit=top_k, default=2, maximum=20)
+
+    results = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=top_k)
+
+    return json_payload({"hits":results})
+    
 
 
-@tool(args_schema=SearchSavedRequestsInput)
+@tool(args_schema=SearchSavedRequestsInput) #사용자 질문 저장된 일정/할일 ->  SQLite LIKE 검색
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
-    ...
+    top_k = safe_limit(limit=top_k, default=3, maximum=50)
+
+    results = search_saved_request_rows(SQLITE_STORE, query=query, top_k=top_k)
+
+    return json_payload({"rows":results})
 
 
 @tool(args_schema=SearchConversationMessagesInput)
@@ -352,7 +385,28 @@ def week04_prompt_parts() -> list[str]:
 
     return [
         *week03_prompt_parts(),
-        # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        """
+        이제부터 너는 세 가지 출처를 구분해서 검색해야 해.
+        - 사용자가 예전에 적어둔 개인 메모/의견/선호("나는 ~를 좋아해", "참고해줘" 같은 자유 서술)에 대한 질문이면
+          search_personal_references를 써서 참고자료를 검색해.
+        - 저장된 일정/할 일/알림처럼 실제로 SQLite에 확정 저장된 기록에 대한 질문이면
+          search_saved_requests를 써서 검색해.
+        - 사용자가 "이거 기억해둬", "참고자료로 남겨줘" 같은 요청을 하면 add_personal_reference로 저장해.
+        참고자료 검색 결과(hits)와 저장된 일정 검색 결과(rows)는 서로 다른 출처야.
+        참고자료는 사용자의 의견/선호일 뿐 확정된 사실이 아니니, 이걸 실제 일정처럼 답하지 마.
+        질문이 애매하면 두 tool을 모두 호출해서 근거를 확인한 뒤 답해도 돼.
+        search_personal_references의 hits는 저장소에 있는 참고자료일 뿐, "사용자가 방금 한 말"이 아니야.
+        hit의 content를 인용할 때는 절대 "사용자께서 ~라고 말씀하셨습니다"라고 쓰지 마.
+        대신 "참고자료에는 ~라고 저장되어 있습니다"처럼, 자료를 그대로 인용하는 표현만 써.
+        사용자가 실제로 한 말인지는 이번 대화의 대화 기록(사용자가 직접 타이핑한 문장)만 보고 판단해.
+        hit에 있다는 이유만으로 그 내용을 사용자가 한 말처럼 답하면 안 돼.
+        여러 hit이 함께 검색됐으면 하나로 뭉쳐 말하지 말고 hit마다 따로 인용해.
+
+        나쁜 예: "사용자는 커피를 마시면 집중이 잘 되고, 오전 10시~12시 사이에 집중이 잘 된다고 하셨습니다."
+        좋은 예: "제가 남긴 메모에 따르면 커피를 마시면 집중이 잘 된다고 하셨고, 참고자료에는 별도로
+        오전 10시~12시에 집중도가 높다는 내용도 저장되어 있어요. 이 부분은 대화에서 직접 말씀하신 적은
+        없는데, 참고자료에 있는 내용이라 같이 알려드려요."
+        """,
     ]
 
 
