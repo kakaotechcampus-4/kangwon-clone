@@ -302,7 +302,10 @@ def search_saved_request_rows(
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
-    ...
+
+    #search_saved_requests: structured_requests의 raw_json/title/reason을 LIKE 키워드 검색, 최신순 top_k개
+    # 참고자료는 벡터 검색, 저장 요청은 키워드 검색 - 출처별로 검색 방식이 다름
+    return sqlite_store.search_saved_requests(query, limit=top_k)
 
 
 def search_conversation_messages_dict(
@@ -356,7 +359,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    
+
     # top_k를 안전 범위(1~20)로 보정 후 helper로 검색
     # 검증 스키마(args_schema)인 SearchPersonalReferencesInput의 top_k: int = Field(default=2, ge=1, le=20)
     # -> default=2, maximum=20로 선정
