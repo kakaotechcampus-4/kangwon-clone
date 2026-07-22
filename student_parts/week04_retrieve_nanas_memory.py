@@ -356,7 +356,18 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    ...
+    
+    # top_k를 안전 범위(1~20)로 보정 후 helper로 검색
+    # 검증 스키마(args_schema)인 SearchPersonalReferencesInput의 top_k: int = Field(default=2, ge=1, le=20)
+    # -> default=2, maximum=20로 선정
+    hits = search_personal_reference_hits(
+        REFERENCE_STORE,
+        query=query,
+        top_k=safe_limit(top_k, default=2, maximum=20),
+    )
+    
+    # tool 반환 : top-level {"hits": [...]} JSON
+    return json_payload({"hits": hits})
 
 
 @tool(args_schema=SearchSavedRequestsInput)
@@ -365,6 +376,7 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
     ...
+    
 
 
 @tool(args_schema=SearchConversationMessagesInput)
