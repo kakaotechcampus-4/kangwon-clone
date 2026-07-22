@@ -318,9 +318,18 @@ def search_conversation_message_rows(
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
 
-    # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
-    ...
+    result = add_personal_reference_dict(reference_store= REFERENCE_STORE, title = title, content = content, tags = tags)
 
+    return json_payload({
+        "reference_backend": result["backend"],
+        "reference":
+        {
+            "reference_id": result["reference_id"],
+            "title": result["title"],
+            "content": result["content"],
+            "tags": result["tags"],
+        }
+    })
 
 # [메인]
 # 동작: 개인 참고자료 전용 검색 tool입니다. top-level hits 키를 반환하므로 LLM이 근거 문서를 바로 읽을 수 있습니다.
