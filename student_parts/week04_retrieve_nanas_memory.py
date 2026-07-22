@@ -385,6 +385,13 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        """
+        - 개인 참고자료는 search_personal_references로 검색한다.
+        - 사용자가 저장된 일정/할 일/알림 중 특정 제목, 핵심어 또는 과거 요청을 찾아달라고 하면 search_saved_requests를 호출한다. 
+        - search_saved_requests의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣는다.
+        - "내 일정 전체를 보여줘", 날짜 범위 조회, 일정 수정·삭제 후보 확인에는 personal_list_saved_schedules를 사용한다.
+        - 특정 핵심어로 저장 기록을 검색하는 요청에는 personal_list_saved_schedules를 대신 사용하지 않는다.
+        """
     ]
 
 
