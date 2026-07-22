@@ -359,13 +359,14 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     result = []
     
     for num in range(top_k):
-        result.append({
-            "id": store[num]["id"],
-            "title": store[num]["title"],
-            "content": store[num]["content"],
-            "tags": store[num]["tags"],
-            "distance": store[num]["distance"]
-        })    
+        result.append(
+            {"hit": {
+                "id": store[num]["id"],
+                "title": store[num]["title"],
+                "content": store[num]["content"],
+                "tags": store[num]["tags"],
+                "distance": store[num]["distance"]
+        }})    
     
     return json_payload(result)
 
