@@ -347,8 +347,19 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+    safe_guard = safe_limit(limit=top_k, default=5, maximum=50)
+    rows = search_conversation_message_rows(SQLITE_STORE, query=query, top_k=safe_guard, conversation_id=conversation_id)
+    sync_stats = CONVERSATION_RAG_STORE.sync_from_sqlite(SQLITE_STORE)
+    return json_payload(
+        {
+            "hits": rows,
+            "rows": rows,
+            "context": CONVERSATION_RAG_STORE.context_from_hits(rows),
+            "rag_backend": CONVERSATION_RAG_STORE.backend_info(),
+            "sync": sync_stats,
+        }
+    )
+
 
 
 @tool(args_schema=SearchNanaMemoryInput)
@@ -363,6 +374,7 @@ def search_nana_memory(
 
     # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
     ...
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
