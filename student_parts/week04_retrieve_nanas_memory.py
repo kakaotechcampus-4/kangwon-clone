@@ -369,7 +369,10 @@ def search_conversation_message_rows(
 
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
-    """개인 참고자료를 ChromaDB에 추가합니다."""
+    """
+    사용자가 '기억해줘/메모해줘/기록으로 남겨줘'라고 한 날짜 없는 사실·규칙·선호·업무 원칙을 개인 참고자료로 저장합니다.
+    일정이 아니라 두고두고 참고할 메모성 정보를 저장할 때 씁니다.
+    """
 
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
 
@@ -388,7 +391,10 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
 
 @tool(args_schema=SearchPersonalReferencesInput)
 def search_personal_references(query: str, top_k: int = 2) -> str:
-    """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
+    """
+    사용자가 저장해 둔 개인 규칙·정책·선호·메모(회의 규칙, 집중 시간대, 점심시간 규칙 등)를 검색합니다.
+    '~규칙', '내 선호', '~해도 돼?' 같은 질문에 씁니다.
+    """
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
 
@@ -407,18 +413,27 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
 
 @tool(args_schema=SearchSavedRequestsInput)
 def search_saved_requests(query: str, top_k: int = 3) -> str:
-    """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
+    """
+    SQLite에 저장된 일정/할 일/알림을 검색합니다.
+    LIKE 키워드 검색이라 query에는 긴 문장 대신 짧은 핵심 명사 하나(예: '보고서', '건강검진')를 넣어야 매칭이 잘 됩니다.
+    """
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
     
     # top_k를 안전 범위로 보정 후 helper로 검색
     # 검증 스키마 SearchSavedRequestsInput의 top_k: int = Field(default=3, ge=1, le=50)
     # -> default=3, maximum=50으로 선정
-    rows = search_saved_request_rows(
-        SQLITE_STORE,
-        query=query,
-        top_k=safe_limit(top_k, default=3, maximum=50),
-    )
+    limit = safe_limit(top_k, default=3, maximum=50)
+    rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=limit)
+
+    # LIKE 검색이라 긴 문장은 매칭이 잘 되지 않음
+    # (1) 검색 결과가 0건 and (2) 검색어가 여러 토큰 -> then 토큰을 하나씩 넣어 처음으로 결과가 나오는 것으로 대체.
+    if not rows and len(str(query or "").split()) > 1:
+        for token in str(query).split():
+            hit = search_saved_request_rows(SQLITE_STORE, query=token, top_k=limit)
+            if hit:
+                rows = hit
+                break
 
     # tool 반환 : top-level {"rows": [...]} JSON
     return json_payload({"rows": rows})
@@ -431,7 +446,11 @@ def search_conversation_messages(
     top_k: int = 5,
     conversation_id: str | None = None,
 ) -> str:
-    """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
+    """
+    예전에 사용자와 나눈 대화 내용(여행·맛집·루틴 등 저장되지 않은 조언·추천·의견)을 대화 단위 RAG로 검색합니다.
+    '저번에/예전에 ~라고 했지', '추천받은' 류 질문에 씁니다.
+    query에는 짧은 핵심 명사를 넣습니다.
+    """
 
     # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
     # 검증 스키마 SearchConversationMessagesInput의 top_k: int = Field(default=5, ge=1, le=50)
@@ -513,16 +532,33 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+
+        # 규칙·선호·과거 일정·지난 대화 질문은 기억으로 답하거나 되묻지 말고 반드시 도구로 먼저 확인
         (
-            "사용자가 과거 정보(참고자료·저장 기록·예전 대화)를 물으면, 네 기억에 의존하지 말고 "
-            "반드시 아래 순서로 검색 도구를 호출한 뒤 그 결과로만 답한다. "
-            "출처 판단: 개인 규칙·메모·선호는 search_personal_references, "
-            "저장한 일정·할 일·알림은 search_saved_requests, "
-            "'저번에', '예전에', '얘기했던' 등 지난 대화 내용은 search_conversation_messages. "
-            "가장 맞는 출처를 먼저 검색하고, 결과(hits/rows)가 비어 있으면 그대로 '없다'고 하지 말고 "
-            "다른 출처(특히 search_conversation_messages)를 이어서 검색한다. "
-            "검색을 하고도 어디에서도 못 찾은 경우에만 없다고 답한다. "
-            "새 참고자료를 남겨달라는 요청이면 add_personal_reference로 저장한다."
+            "사용자의 규칙·선호·메모·과거 일정·지난 대화에 관한 질문에는 네 기억으로 답하거나 "
+            "'어느 조직/시스템 규칙이냐'고 되묻지 말고, 아래 기준으로 검색 도구를 먼저 호출한 뒤 그 결과로만 답한다."
+        ),
+
+        # 출처 선택 기준 (+ 검색어는 짧은 핵심 명사)
+        (
+            "출처 선택 — "
+            "① 개인 규칙·정책·선호·메모('회의실 예약 규칙', '내 집중 시간', '점심시간 규칙', '~해도 돼?')는 search_personal_references. "
+            "② 저장한 일정·할 일·알림('저장한 회의', '마감', '알림')은 search_saved_requests(목록이 필요하면 personal_list_saved_schedules). "
+            "검색어에는 긴 문장 대신 짧은 핵심 명사 하나를 넣는다(예: '분기 보고서 마감' 대신 '보고서'). "
+            "③ 예전 대화로 오간 내용(여행·맛집·루틴 등 저장 안 된 조언·추천·의견; '저번에/예전에/~라고 했지/추천받은')은 search_conversation_messages."
+        ),
+
+        # 참고자료 '추가' vs '일정 저장' 구분 (최다 실패 지점)
+        (
+            "저장 요청 구분 — 날짜·시간이 있는 약속/할 일/알림만 일정으로 저장한다. "
+            "날짜 없는 사실·규칙·선호·업무 원칙을 '기억해줘/메모해줘/기록으로 남겨줘/원칙 추가'로 남겨달라고 하면 "
+            "일정(save_structured_request)이 아니라 add_personal_reference로 참고자료에 저장한다."
+        ),
+
+        # 폴백: 첫 출처가 비면 다른 출처(특히 대화)로 이어 검색, 다 뒤졌을 때만 '없음'
+        (
+            "가장 맞는 출처를 먼저 검색하고, 결과(hits/rows)가 비면 그대로 '없다'고 하지 말고 "
+            "다른 출처(특히 search_conversation_messages)를 이어서 검색한다. 여러 출처를 다 뒤졌을 때만 없다고 답한다."
         ),
     ]
 
