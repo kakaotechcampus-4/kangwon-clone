@@ -248,7 +248,20 @@ def search_personal_reference_hits(
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
     # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    result_list = reference_store.search_personal_references(query, safe_limit(top_k))
+
+    return [
+        {
+            "id": i.get("id"),
+            "content": i.get("content"),
+            "distance": i.get("distance"),
+            "metadata": {
+                "title": i.get("title"),
+                "tags": i.get("tags")
+            }
+        }
+        for i in result_list
+    ]
 
 
 def search_saved_request_rows(
@@ -306,7 +319,10 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    ...
+    result = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=safe_limit(top_k, default=2, maximum=20))
+    return json_payload({
+        "hits": result
+    })
 
 
 @tool(args_schema=SearchSavedRequestsInput)
