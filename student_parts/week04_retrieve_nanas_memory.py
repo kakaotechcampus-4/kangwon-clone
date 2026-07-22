@@ -352,23 +352,9 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
-    # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    ...
-    store = search_personal_reference_hits(reference_store = REFERENCE_STORE, query = query, top_k = top_k)
+    hits = search_personal_reference_hits(reference_store = REFERENCE_STORE, query = query, top_k = top_k)
     
-    result = []
-    
-    for searching in store:
-        result.append(
-            {"hit": {
-                "id": searching["id"],
-                "title": searching["title"],
-                "content": searching["content"],
-                "tags": searching["tags"],
-                "distance": searching["distance"]
-        }})
-    
-    return json_payload(result)
+    return json_payload({"hits": hits})
 
 
 # [메인]
