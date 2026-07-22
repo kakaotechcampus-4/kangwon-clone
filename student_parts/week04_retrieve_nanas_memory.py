@@ -264,6 +264,21 @@ def search_personal_reference_hits(
 
     # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
     ...
+    search_store = reference_store.search_personal_references(query, top_k)
+    
+    result = []
+    
+    for num in range(top_k):
+        result.append({
+            "id": search_store[num]["id"],
+            "content": search_store[num]["content"],
+            "distance": search_store[num]["distance"],
+            "metadata": {
+                "title": search_store[num]["title"],
+                "tags": search_store[num]["tags"]
+            }})
+    
+    return result
 
 
 # [메인]
@@ -339,6 +354,20 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
 
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
     ...
+    store = search_personal_reference_hits(reference_store = REFERENCE_STORE, query = query, top_k = top_k)
+    
+    result = []
+    
+    for num in range(top_k):
+        result.append({
+            "id": store[num]["id"],
+            "title": store[num]["title"],
+            "content": store[num]["content"],
+            "tags": store[num]["tags"],
+            "distance": store[num]["distance"]
+        })    
+    
+    return json_payload(result)
 
 
 # [메인]
