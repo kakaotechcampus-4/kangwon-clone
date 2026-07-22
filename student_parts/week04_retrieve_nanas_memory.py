@@ -230,7 +230,7 @@ def add_personal_reference_dict(
 
     return {
         "reference_backend": result.get("backend"),
-        "reference_row": {
+        "reference": {
             "reference_id": result.get("reference_id"),
             "title": title,
             "content": content,
@@ -297,7 +297,10 @@ def search_conversation_messages_dict(
 
     return {
         "hits": hits,
-        "sync_result": sync_result
+        "rows": hits,
+        "context": conversation_rag_store.context_from_hits(hits),
+        "rag_backend": conversation_rag_store.backend_info(),
+        "sync": sync_result
     }
 
 
@@ -337,8 +340,7 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     return json_payload({
         "ok": True,
         "tool_name": "add_personal_reference",
-        "reference_backend": result.get("reference_backend"),
-        "reference": result.get("reference_row")
+        **result
     })
 
 
@@ -385,16 +387,17 @@ def search_conversation_messages(
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
     # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    result = search_conversation_message_rows(
-        SQLITE_STORE, 
+    result = search_conversation_messages_dict(
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE, 
         query=query, 
         top_k=safe_limit(top_k, default=5, maximum=50), 
         conversation_id=conversation_id
     )
     return json_payload({
         "ok": True,
-        "tool_name": "search_conversation_massage",
-        "hits": result
+        "tool_name": "search_conversation_messages",
+        **result
     })
 
 
