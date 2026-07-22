@@ -457,7 +457,37 @@ def search_nana_memory(
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
     # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    
+    # 옛날 방식(현재 함수): 출처를 안 가리고 참고자료와 저장 일정을 모두 탐색한 뒤 한 dict에 몰아 담아 넘김
+    # 새 방식: 출처마다 tool을 따로 두어 필요한 것만 탐색할 수 있도록 함
+    # 예전 코드가 이 함수를 호출할 수 있어 호환용으로 남김
+
+    # 검증 스키마 SearchNanaMemoryInput의 limit: int = Field(default=5, ge=1, le=20)
+    # -> default=5, maximum=20으로 선정
+    top_k = safe_limit(limit, default=5, maximum=20)
+
+    # 1. 참고자료 출처: 개인 참고자료 벡터 검색
+    reference_hits = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=top_k)
+
+    # 2. 저장 일정 출처 : SQLite에서 날짜 범위 조회, attendee가 있으면 참석자로 후처리 필터
+    #   store의 list_schedules는 attendee를 받지 못하므로, attendees_json을 풀어 _decode_attendees로 직접 거름
+    schedules = SQLITE_STORE.list_schedules(limit=top_k, date_from=date_from, date_to=date_to)
+    if attendee:
+        schedules = [s for s in schedules if attendee in _decode_attendees(s.get("attendees_json"))]
+
+    # 3. 두 출처(참고자료, 저장 일정)를 한 context 문자열로 묶기
+    lines = [f"[참고자료] {h['metadata']['title']}: {h['content']}" for h in reference_hits]
+    lines += [f"[일정] {s.get('date')} {s.get('start_time')} {s.get('title')}" for s in schedules]
+    context = "\n".join(lines)
+
+    # 반환: 합친 context + 원본 검색 결과(참고자료 hit, 일정 목록)
+    return json_payload({
+        "query": query,
+        "context": context,
+        "reference_hits": reference_hits,
+        "schedules": schedules,
+    })
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
