@@ -255,9 +255,17 @@ def add_personal_reference_dict(
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
-    # TODO: PersonalReferenceStore.add_personal_reference(...)로 개인 참고자료를 저장하세요.
-    ...
+    saved  = reference_store.add_personal_reference(title, content, tags or [])
 
+    return {
+        "reference_backend": saved["backend"],
+        "reference": {
+            "reference_id": saved["reference_id"],
+            "title": saved["title"],
+            "content": saved["content"],
+            "tags": saved["tags"],
+        }
+    }
 
 def search_personal_reference_hits(
     reference_store: PersonalReferenceStore,
@@ -267,8 +275,18 @@ def search_personal_reference_hits(
 ) -> list[dict[str, Any]]:
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
-    # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    raw_result = reference_store.search_personal_references(query, limit=top_k)
+    hits = []
+    for hit in raw_result:
+        hits.append({
+            "id": hit["id"],
+            "content": hit["content"],
+            "distance": hit["distance"],
+            "metadata": {
+                "title": hit.get("title", ""),
+                "tags": hit.get("tags", "")}
+        })
+    return hits
 
 
 def search_saved_request_rows(
@@ -279,8 +297,7 @@ def search_saved_request_rows(
 ) -> list[dict[str, Any]]:
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
 
-    # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
-    ...
+    return sqlite_store.search_saved_requests(query, limit=top_k)
 
 
 def search_conversation_messages_dict(
@@ -309,7 +326,7 @@ def search_conversation_message_rows(
     # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
     ...
 
-
+# 1차
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
@@ -317,7 +334,7 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
     ...
 
-
+#1차
 @tool(args_schema=SearchPersonalReferencesInput)
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
@@ -325,7 +342,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
     ...
 
-
+# 1차
 @tool(args_schema=SearchSavedRequestsInput)
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
