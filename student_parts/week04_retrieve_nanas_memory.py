@@ -255,7 +255,18 @@ def add_personal_reference_dict(
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
-    return reference_store.add_personal_reference(title, content, tags)
+    result = reference_store.add_personal_reference(title, content, tags)
+    reference_backend = result['backend']
+    reference = {
+        "reference_id": result['reference_id'],
+        "title": result['title'],
+        "content": result['content'],
+        "tags": result['tags'],
+    }
+    return {
+        "reference_backend": reference_backend,
+        "reference": reference,
+    }
 
 
 def search_personal_reference_hits(
