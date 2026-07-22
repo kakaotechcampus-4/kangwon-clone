@@ -378,7 +378,18 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
-    ...
+    
+    # top_k를 안전 범위로 보정 후 helper로 검색
+    # 검증 스키마 SearchSavedRequestsInput의 top_k: int = Field(default=3, ge=1, le=50)
+    # -> default=3, maximum=50으로 선정
+    rows = search_saved_request_rows(
+        SQLITE_STORE,
+        query=query,
+        top_k=safe_limit(top_k, default=3, maximum=50),
+    )
+
+    # tool 반환 : top-level {"rows": [...]} JSON
+    return json_payload({"rows": rows})
     
 
 
