@@ -412,8 +412,44 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    limit = safe_limit(limit, default=5, maximum=20)
+
+    reference_hits = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=limit)
+
+    schedule_chunks = SQLITE_STORE.list_schedules(limit=limit, date_from=date_from, date_to=date_to)
+    # list_schedules에 attendee 필터가 없어 여기서 필터링
+    if attendee:
+        schedule_chunks = [
+            schedule for schedule in schedule_chunks
+            if attendee in (schedule.get("attendees") or [])
+        ]
+
+    context_lines = ["[참고자료]"]
+    if reference_hits:
+        for hit in reference_hits:
+            context_lines.append(f"- {hit['metadata']['title']}: {hit['content']}")
+    else:
+        context_lines.append("- 관련 참고자료가 없습니다.")
+
+    context_lines.append("[저장된 일정]")
+    if schedule_chunks:
+        for schedule in schedule_chunks:
+            context_lines.append(
+                f"- {schedule.get('title')} | {schedule.get('date')} {schedule.get('start_time') or ''}"
+            )
+    else:
+        context_lines.append("- 관련 일정이 없습니다.")
+
+    context = "\n".join(context_lines)
+    # context는 요약, reference_hits/schedule_chunks는 agent가 참조할 원본 데이터
+    return json_payload(
+        {
+            "context": context,
+            "reference_hits": reference_hits,
+            "schedule_chunks": schedule_chunks,
+        }
+    )
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
