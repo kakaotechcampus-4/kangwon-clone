@@ -225,8 +225,13 @@ def add_personal_reference_dict(
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
-    # TODO: PersonalReferenceStore.add_personal_reference(...)로 개인 참고자료를 저장하세요.
-    ...
+    result = reference_store.add_personal_reference(title, content, tags)
+    return {
+        #store가 반환된 정보가 어디에있는지.
+        "reference_backend": result["backend"],
+        #backend key값 빼고 나머지.
+        "reference": {k: v for k, v in result.items() if k != "backend"},
+    }
 
 
 def search_personal_reference_hits(
@@ -237,8 +242,15 @@ def search_personal_reference_hits(
 ) -> list[dict[str, Any]]:
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
-    # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
-    ...
+    #store_personal_referecnes와 동일하게 store 호출,hits키를 반환해야하니 hits 선언
+    hits = reference_store.search_personal_references(query, top_k)
+    #hits를 반환하는데 title과 tags를 metadata로 묶음, 리스트컴프리헨션 사용.
+    return [{
+        "id": hit["id"],
+        "content": hit["content"],
+        "distance": hit["distance"],
+        "metadata": {"title": hit["title"], "tags": hit["tags"]},
+    } for hit in hits]
 
 
 def search_saved_request_rows(
@@ -248,9 +260,10 @@ def search_saved_request_rows(
     top_k: int = 3,
 ) -> list[dict[str, Any]]:
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
-
-    # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
-    ...
+    
+    #[AI-assistant] AppSQLiteStore.~ 가 아니고 sqlite_store로 쓰는 이유 이해
+    # - 코드 실제 호출할땐 클래스가 아닌 인스턴스(객체) 사용해야함.
+    return sqlite_store.search_saved_requests(query, limit=top_k)
 
 
 def search_conversation_messages_dict(
@@ -263,8 +276,22 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
-    # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
+    #SQLite 대화를 chromaDB에 lazy sync
+    sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
+    #conversation_id 여부에 따라 검색
+    if conversation_id:
+        hits = conversation_rag_store.search(query=query, top_k=top_k, conversation_id=conversation_id)
+    else:
+        hits = conversation_rag_store.search(query=query, top_k=top_k,
+        exclude_conversation_id=current_session_scope())
+    #RAG 결과 반환
+    return {
+        "hits": hits,
+        "rows": hits,
+        "context": conversation_rag_store.context_from_hits(hits),
+        "rag_backend": conversation_rag_store.backend_info(),
+        "sync": sync,
+    }
 
 
 def search_conversation_message_rows(
@@ -275,33 +302,51 @@ def search_conversation_message_rows(
     conversation_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
-
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    #이 헬퍼엔 conversation_rag_store 인자가 없어서 다른 상수 사용
+    result = search_conversation_messages_dict(
+        sqlite_store,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+    )
+    #hits만 반환
+    return result["hits"]
 
 
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
-
-    # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
-    ...
+    #[AI assistant] if 문 형태로 is not 쓰는게 아닌 더 간략한 형태 / 입력값 none 방지
+    tags = tags or []
+    #상단에 구현한 helper 함수 호출해서 만든 데이터 dict 가져오기
+    result = add_personal_reference_dict(REFERENCE_STORE, title=title, content=content,
+            tags= tags)
+    # LLM에 json으로 전달
+    return json_payload(result)
 
 
 @tool(args_schema=SearchPersonalReferencesInput)
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
-    # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-    ...
-
+    #요구사항에 맞게 LLM 넘길때 오류 방지용설정
+    top_k = safe_limit(top_k)
+    #helper 호출
+    #[AI-assitant] helper정의에 의해서 키워드 인자로 넘겨야함.
+    hits= search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=top_k)
+    #top-level hits 반환
+    #[AI-assitant] json_dump를 쓸려했는데 이미 헬퍼함수 json_payload로 구현되어있었음.
+    return json_payload({"hits":hits})
 
 @tool(args_schema=SearchSavedRequestsInput)
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
-    # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
-    ...
+    #바로 위 tool과 유사함.
+    top_k = safe_limit(top_k)
+    rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=top_k)
+    return json_payload({"rows":rows})
 
 
 @tool(args_schema=SearchConversationMessagesInput)
@@ -312,9 +357,17 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
 
+    top_k = safe_limit(top_k)
+    #SQLITE 읽어서 ChromaDB RAG로 검색
+    result= search_conversation_messages_dict(
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+    )
+    return json_payload(result)
 
 @tool(args_schema=SearchNanaMemoryInput)
 def search_nana_memory(
@@ -326,8 +379,20 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    #[AI-assistant] 참고자료,일정 반환 방법 등 전반적인 이해 도움
+    limit = safe_limit(limit)
+    # chromaDB 검색
+    references = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=limit)
+    #SQLite 저장한 일정 검색
+    saved_requests = search_saved_request_rows(SQLITE_STORE, query=query, top_k=limit)
+    #context에 두개 묶어서 반환.
+    return json_payload({
+        #어느 store에 있는지 backend정보
+        "reference_backend": REFERENCE_STORE.backend_info(),
+        "references": references,
+        "saved_requests": saved_requests,
+        "context": {"references": references, "saved_requests": saved_requests},
+    })
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
@@ -353,6 +418,14 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        #[AI-assistant] 초안작성 도움 받음.
+        """[Week 4] RAG 검색 tool 선택 기준
+        개인 참고자료,선호 관련 질문 -> search_personal_references를 쓴다.
+        저장된 일정/할 일 자체를 조회하는 질문 -> search_saved_requests를 쓴다.
+        예전에 나눈 대화·발언 내용을 떠올리는 질문(무엇을 말했다/얘기했다/그때 등의 회상) -> search_conversation_messages를 쓴다.
+        판단이 애매하면 '저장된 데이터'를 묻는지, '과거 대화 자체'를 떠올리는지 먼저 살핀 뒤 tool을 고른다.
+        참고자료를 추가 -> add_personal_reference를 쓴다.
+        tool 실행 후에는 JSON을 그대로 출력하지 말고 사용자에게 자연어로 답한다.""",
     ]
 
 
