@@ -325,8 +325,17 @@ def search_conversation_message_rows(
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    # 1. 전달된 파라미터로 search_conversation_messages_dict(...)를 호출.
+    search_result = search_conversation_messages_dict(
+        sqlite_store,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id
+    )
+
+    # 2. 반환된 dict에서 hits만 꺼내 반환.
+    return search_result.get("hits", [])
 
 
 @tool(args_schema=AddPersonalReferenceInput)
