@@ -349,6 +349,9 @@ def search_conversation_message_rows(
 
     # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
     ...
+    search_dict = search_conversation_messages_dict(sqlite_store=sqlite_store, conversation_rag_store=CONVERSATION_RAG_STORE, query=query, top_k=top_k, conversation_id=conversation_id)
+    
+    return search_dict["hits"]
 
 # ══ [메인 과제] @tool 래퍼 (TODO 구현) ═══════════════════════════
 # 동작: 참고자료 추가 tool입니다. title/content/tags를 받아 vector store에 저장하고 JSON 문자열을 반환합니다.
