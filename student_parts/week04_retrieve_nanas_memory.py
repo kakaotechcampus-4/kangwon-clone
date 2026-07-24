@@ -302,12 +302,11 @@ def search_conversation_messages_dict(
 
 def search_conversation_message_rows(
     sqlite_store: AppSQLiteStore,
-    conversation_rag_store: ConversationRAGStore, 
+    conversation_rag_store: ConversationRAGStore,
     *,
     query: str,
     top_k: int = 5,
     conversation_id: str | None = None,
-    
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
@@ -319,7 +318,6 @@ def search_conversation_message_rows(
         conversation_id=conversation_id
     )
     return result["hits"]
-    
 
 
 @tool(args_schema=AddPersonalReferenceInput)
@@ -350,7 +348,6 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
-   
     safe_top_k = safe_limit(top_k, default=3, maximum=50)
     rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=safe_top_k)
     return json_payload({"rows": rows})
@@ -366,12 +363,12 @@ def search_conversation_messages(
 
     safe_top_k = safe_limit(top_k, default=5, maximum=50)
     payload = search_conversation_messages_dict(
-    SQLITE_STORE,
-    CONVERSATION_RAG_STORE,
-    query=query,
-    top_k=safe_top_k,
-    conversation_id=conversation_id,
-)
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=safe_top_k,
+        conversation_id=conversation_id,
+    )
     return json_payload(payload)
 
 
@@ -394,6 +391,7 @@ def search_nana_memory(
         "rows": search_saved_request_rows(SQLITE_STORE, query=query, top_k=safe_lim),
     }
     return json_payload(payload)
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
