@@ -1,0 +1,40 @@
+[
+  {
+    "id": "reference_add_1",
+    "query": "나 라면 먹을 때 계란 넣는 거 좋아해, 참고자료로 기억해줘",
+    "query_type": "reference_add",
+    "expected_tools": ["add_personal_reference"]
+  },
+  {
+    "id": "reference_search_1",
+    "query": "나 아침에 뭐 마시는 거 좋아한다고 예전에 말했었지?",
+    "query_type": "reference_search",
+    "expected_tools": ["search_personal_references"]
+  },
+  {
+    "id": "saved_schedule_list_1",
+    "query": "내가 저장해둔 다음 주 일정이나 할 일 있어?",
+    "query_type": "saved_schedule_date_range_list",
+    "expected_tools": ["list_saved_requests", "personal_list_saved_schedules"],
+    "match": "any",
+    "note": "일정+할 일을 함께 물어서 Week3 목록 tool 둘 다 합리적인 선택. 둘 중 하나만 불려도 통과."
+  },
+  {
+    "id": "saved_request_keyword_search_1",
+    "query": "내가 저장해둔 일정 중에 '치과' 관련된 거 있어?",
+    "query_type": "saved_request_keyword_search",
+    "expected_tools": ["search_saved_requests"]
+  },
+  {
+    "id": "conversation_search_1",
+    "query": "저번 대화에서 사이드 프로젝트 API 설계 얘기했었는데 내가 뭐라고 했었지?",
+    "query_type": "conversation_search",
+    "expected_tools": ["search_conversation_messages"]
+  },
+  {
+    "id": "ambiguous_focus_time_1",
+    "query": "나 요즘 집중 잘 되는 시간대 있어?",
+    "query_type": "ambiguous_reference_or_saved",
+    "expected_tools": ["search_personal_references"]
+  }
+]
