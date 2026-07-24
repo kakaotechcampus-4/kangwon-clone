@@ -312,6 +312,28 @@ def search_conversation_messages_dict(
 
     # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
     ...
+    
+    lazy_sync = conversation_rag_store.sync_from_sqlite(sqlite_store=sqlite_store)
+    
+    if conversation_id is None:
+        current_id = current_session_scope()
+        search = conversation_rag_store.search(query=query, top_k=top_k, exclude_conversation_id=current_id)
+    else:
+        search = conversation_rag_store.search(query=query, top_k=top_k, conversation_id=conversation_id)    
+    
+    context = conversation_rag_store.context_from_hits(search)
+    rag_backend = conversation_rag_store.backend_info()
+    
+    
+    result = {
+        "hits": search,
+        "rows": search,
+        "context": context,
+        "rag_backend": rag_backend,
+        "sync": lazy_sync
+    }
+    
+    return result
 
 
 # [추가]
@@ -327,7 +349,6 @@ def search_conversation_message_rows(
 
     # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
     ...
-
 
 # ══ [메인 과제] @tool 래퍼 (TODO 구현) ═══════════════════════════
 # 동작: 참고자료 추가 tool입니다. title/content/tags를 받아 vector store에 저장하고 JSON 문자열을 반환합니다.
