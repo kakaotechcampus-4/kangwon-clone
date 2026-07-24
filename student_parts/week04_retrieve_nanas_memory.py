@@ -383,7 +383,8 @@ def week04_prompt_parts() -> list[str]:
         "Week 4에서는 질문의 출처에 맞는 검색 도구를 골라 근거를 찾은 뒤 답한다. "
         "사용자가 자신의 선호·습관·메모를 말하면 add_personal_reference로 저장한다. "
         "사용자가 적어 둔 선호/참고자료를 물으면 search_personal_references를 쓴다. "
-        "저장된 일정·할 일·알림 기록을 물으면 search_saved_requests를 쓴다. "
+        "저장된 일정·할 일·알림에서 핵심어·내용으로 특정 항목을 찾을 때만 search_saved_requests를 쓴다. "
+        "날짜·기간으로 일정 목록을 볼 때는 Week 3의 personal_list_saved_schedules를 쓴다. "
         "검색 결과를 근거로 답하고, 추측하여 지어내지 않는다."
     ]
 
