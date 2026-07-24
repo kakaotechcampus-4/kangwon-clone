@@ -408,8 +408,38 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    # 1. 개인 참고자료 검색
+    personal_hits = search_personal_reference_hits(
+        REFERENCE_STORE,
+        query=query,
+        top_k=safe_limit(limit, default=5, maximum=50)
+    )
+
+    # 2. SQLite 저장 일정 검색
+    saved_request_rows = SQLITE_STORE.list_schedules(
+        date_from=date_from,
+        date_to=date_to,
+        limit=safe_limit(limit, default=5, maximum=50)
+    )
+
+    # 3. 만약 attendee가 지정되면 해당 참석자가 포함된 일정만 필터링
+    if attendee:
+        saved_request_rows = [row for row in saved_request_rows if attendee in row.get("attendees", [])]
+
+    # 4. personal_hits와 saved_request_rows를 context 문자열로 합쳐서 반환
+    context = "\n".join(
+        [f"[참고자료] {hit['metadata']['title']}: {hit['content']}" for hit in personal_hits]
+        + [f"[일정] {row['title']} {row['date']} {row['start_time']}~{row['end_time']}" for row in saved_request_rows]
+    ) or "관련 기록 없음"
+
+    # 5. json_payload 구성
+    return json_payload({
+        "reference_backend": REFERENCE_STORE.backend_info(),
+        "context": context,
+        "personal_hits": personal_hits,
+        "saved_request_rows": saved_request_rows
+    })
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
