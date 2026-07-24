@@ -277,7 +277,19 @@ def search_personal_reference_hits(
 ) -> list[dict[str, Any]]:
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
-    return reference_store.search_personal_references(query, top_k)
+    hits = reference_store.search_personal_references(query, limit=top_k)
+    return [
+        {
+            "id": hit["id"],
+            "content": hit["content"],
+            "distance": hit["distance"],
+            "metadata": {
+                "title": hit["title"],
+                "tags": hit["tags"]
+            },
+        }
+        for hit in hits
+    ]
 
 
 def search_saved_request_rows(
