@@ -263,7 +263,7 @@ def search_saved_request_rows(
     
     #[AI-assistant] AppSQLiteStore.~ 가 아니고 sqlite_store로 쓰는 이유 이해
     # - 코드 실제 호출할땐 클래스가 아닌 인스턴스(객체) 사용해야함.
-    return sqlite_store.search_saved_requests(query, top_k)
+    return sqlite_store.search_saved_requests(query, limit=top_k)
 
 
 def search_conversation_messages_dict(
