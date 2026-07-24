@@ -300,7 +300,7 @@ def search_saved_request_rows(
 ) -> list[dict[str, Any]]:
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
 
-    return sqlite_store.search_saved_requests(query, None, top_k)
+    return sqlite_store.search_saved_requests(query, kind=None, limit=top_k)
 
 def search_conversation_messages_dict(
     sqlite_store: AppSQLiteStore,
