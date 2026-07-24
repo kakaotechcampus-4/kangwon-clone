@@ -18,8 +18,9 @@ LLM이 안 끼는 부분은 빠르고 결과가 항상 같아야 한다.
 여기서 안 보는 것
   - @tool wrapper 자체: REFERENCE_STORE/SQLITE_STORE 전역(실 ChromaDB/SQLite)을
     타므로 결정적이지 않다. 계약 검증은 helper 층에서 끝난다.
-  - search_conversation_messages 계열(추가 과제): 본문이 아직 비어 있다.
-    범위 밖으로 뺐으므로 "tool 목록에서 빠졌는지"만 확인한다.
+  - search_conversation_messages 계열(추가 과제): 실 ChromaDB에 lazy sync하고
+    전역 store를 타므로 결정적이지 않다. tool 목록 노출 여부만 여기서 확인하고,
+    검색 계약은 helper(search_conversation_messages_dict) 층에서 다룬다.
 
 실행:
   uv run pytest tests/test_week04_retrieve.py
@@ -175,23 +176,27 @@ def test_safe_limit은_숫자문자열은_int로_바꾸고_이상한_값은_defa
 # 4) week04_tools() — 출처별 tool은 노출, 대화검색은 범위 밖이라 빠져 있어야
 # ---------------------------------------------------------------------------
 
-def test_week04_tools에_출처별_RAG_tool_3개가_있다():
-    """메인과제로 노출한 tool: 참고자료 추가/검색 + 저장 요청 검색."""
+def test_week04_tools에_출처별_RAG_tool_4개가_있다():
+    """노출한 tool: 참고자료 추가/검색 + 저장 요청 검색 + 대화 RAG 검색(추가 과제)."""
     names = {t.name for t in week04_tools()}
 
-    assert {"add_personal_reference", "search_personal_references", "search_saved_requests"} <= names
+    assert {
+        "add_personal_reference",
+        "search_personal_references",
+        "search_saved_requests",
+        "search_conversation_messages",
+    } <= names
 
 
-def test_week04_tools에_대화검색과_통합검색은_없다():
-    """추가 과제(대화 RAG)는 범위 밖으로 뺐다 — 목록에 새어 나오면 안 된다."""
+def test_week04_tools에_통합검색은_없다():
+    """search_nana_memory(이전 버전 호환 통합검색)는 출처 분리 취지와 어긋나 미등록이다."""
     names = {t.name for t in week04_tools()}
 
-    assert "search_conversation_messages" not in names
     assert "search_nana_memory" not in names
 
 
 def test_week04_tools는_week03_tool_위에_누적된다():
-    """Week 4는 Week 3 도구를 대체가 아니라 누적한다 — 개수가 3주차보다 커야 한다."""
+    """Week 4는 Week 3 도구를 대체가 아니라 누적한다 — 4개(참고자료 추가/검색·일정·대화) 더 많아야 한다."""
     from student_parts.week03_build_nanas_logbook import week03_tools
 
-    assert len(week04_tools()) == len(week03_tools()) + 3
+    assert len(week04_tools()) == len(week03_tools()) + 4

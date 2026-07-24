@@ -231,8 +231,8 @@ def add_personal_reference_dict(
         tags=tags or [],
     )
     return {
-        "reference_backend": reference_store.backend_info(),
-        "reference": saved,
+        "reference_backend": saved["backend"],
+        "reference": saved
     }
 
 
@@ -283,13 +283,12 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
     # 검색 직전에 sync를 쓰는 이유는 안 쓰는 대화까지 미리 임베딩하면 낭비라고 생각해서 이 시점에 몰아서 넘겨야 한다.
-    # hits/rows에 같은 결과를 넣은 이유는 이 tool은 출처가 대화 하나기 때문에 계약상 둘 다 채웠고
-    # "방금 한 말"이 과거 기억처럼 검색되면 안 되니까 현재 대화를 제외하였다. 
+    # hits/rows에 같은 결과를 넣은 이유는 이 tool은 출처가 대화 하나기 때문에 계약상 둘 다 채웠다.
     sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
     hits = conversation_rag_store.search(
         query=query,
         top_k=top_k,
-        exclude_conversation_id=conversation_id,
+        conversation_id=conversation_id
     )
     return {
         "hits": hits,
@@ -303,15 +302,24 @@ def search_conversation_messages_dict(
 
 def search_conversation_message_rows(
     sqlite_store: AppSQLiteStore,
+    conversation_rag_store: ConversationRAGStore, 
     *,
     query: str,
     top_k: int = 5,
     conversation_id: str | None = None,
+    
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    result = search_conversation_messages_dict(
+        sqlite_store,
+        conversation_rag_store,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id
+    )
+    return result["hits"]
+    
 
 
 @tool(args_schema=AddPersonalReferenceInput)
@@ -356,8 +364,15 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+    safe_top_k = safe_limit(top_k, default=5, maximum=50)
+    payload = search_conversation_messages_dict(
+    SQLITE_STORE,
+    CONVERSATION_RAG_STORE,
+    query=query,
+    top_k=safe_top_k,
+    conversation_id=conversation_id,
+)
+    return json_payload(payload)
 
 
 @tool(args_schema=SearchNanaMemoryInput)
@@ -368,10 +383,17 @@ def search_nana_memory(
     attendee: str | None = None,
     limit: int = 5,
 ) -> str:
-    """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
+    """개인 참고자료와 SQLite 저장 일정을 한 query로 함께 검색하는 이전 버전 호환 tool입니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    # date_from/date_to/attendee는 배포 시그니처가 준 호환용 파라미터다.
+    # 지금 통합검색은 두 출처를 query로만 훑고, 날짜/참석자 필터는 출처별 tool 쪽 몫이라 여기선 쓰지 않는다.
+    safe_lim = safe_limit(limit, default=5, maximum=20)
+    payload = {
+        "reference_backend": REFERENCE_STORE.backend_info(),
+        "hits": search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=safe_lim),
+        "rows": search_saved_request_rows(SQLITE_STORE, query=query, top_k=safe_lim),
+    }
+    return json_payload(payload)
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
@@ -381,6 +403,7 @@ def week04_tools() -> list[Any]:
         add_personal_reference,
         search_personal_references,
         search_saved_requests,
+        search_conversation_messages,
     ]
 
 
@@ -399,8 +422,9 @@ def week04_prompt_parts() -> list[str]:
             "너는 저장된 기억을 출처별로 구분해서 검색한다. "
             "질문 성격에 맞는 도구를 골라라: "
             "사용자의 선호·메모 같은 참고자료는 search_personal_references 로, "
-            "날짜·시간이 있는 저장된 일정/할 일/알림 기록은 search_saved_requests 로 찾는다. "            
-            "한 질문에 두 출처가 필요하면 둘 다 호출해도 된다." 
+            "날짜·시간이 있는 저장된 일정/할 일/알림 기록은 search_saved_requests 로 찾는다. "
+            "한 질문에 두 출처가 필요하면 둘 다 호출해도 된다. "
+            "예전 대화에서 뭐라고 했는지는 search_conversation_messages 로 찾는다."
         ),
         (
             "검색 결과(hits 또는 rows)가 비어 있으면 없는 내용을 지어내지 말고 "
