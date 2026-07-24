@@ -224,7 +224,7 @@ def add_personal_reference_dict(
     tags: list[str] | None = None,
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
-    reference = reference_store.add_personal_reference(title=title,content=content,tags=tags or [])
+    reference = reference_store.add_personal_reference(title=title, content=content, tags=tags or [])
     backend = reference.get("backend")
     return {"reference_backend": backend,"reference": reference}
 
@@ -238,14 +238,15 @@ def search_personal_reference_hits(
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
     raw_hits = reference_store.search_personal_references(query=query,limit=top_k)
     hits = []
-    for raw_hit in raw_hits:
-        hits.append({
-            "id": raw_hit.get("id"),
-            "content": raw_hit.get("content"),
-            "distance": raw_hit.get("distance"),
-            "metadata": {"title": raw_hit.get("title"),"tags": raw_hit.get("tags")}
-            })
-    return hits
+    return [
+      {
+          "id": raw_hit.get("id"),
+          "content": raw_hit.get("content"),
+          "distance": raw_hit.get("distance"),
+          "metadata": {"title": raw_hit.get("title"), "tags": raw_hit.get("tags")},
+      }
+      for raw_hit in raw_hits
+    ]
 
 
 def search_saved_request_rows(
@@ -382,6 +383,8 @@ def week04_prompt_parts() -> list[str]:
         사용자가 저장된 일정/할 일/알림에 대해 물어보면 search_saved_requests로 SQLite 구조화 기록을 검색합니다.
         사용자가 이전 일반 대화 내용을 다시 물어보면 search_conversation_messages로 과거 대화 기록을 검색합니다.
         질문이 여러 출처에 걸쳐 있으면 필요한 tool을 함께 호출해 결과를 종합합니다.
+        검색 tool의 결과(hits/rows)가 빈 배열이면 관련 정보를 찾지 못했다는 사실을 사용자에게 그대로 알리고,
+        찾지 못한 내용을 추측하거나 지어내서 답하지 않습니다.
     """
     ]
 
