@@ -434,7 +434,7 @@ def week04_prompt_parts() -> list[str]:
         "week04부터는 3가지 tool 중에 선택해야 해.",
         "1. 참고자료를 추가할때는 add_personal_reference 도구를 이용해. 이때 content는 요약하지 말고 사용자가 입력한 내용 전체를 넣어.",
         "2. 참고자료를 검색할때는 search_personal_references 도구를 이용해.",
-        "3. 저장된 일정/할 일/알림을 검색할때는 search_saved_requests 도구를 이용해서 SQLite에서 검색해. week1의 personal_list_schedules 도구는 인메모리 일정을 조회하기 때문에 사용하지 마.해",
+        "3. 저장된 일정/할 일/알림을 검색할때는 search_saved_requests 도구를 이용해서 SQLite에서 검색해. week1의 personal_list_schedules 도구는 인메모리 일정을 조회하기 때문에 사용하지 마.",
     ]
 
 
