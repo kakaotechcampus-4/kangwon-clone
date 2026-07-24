@@ -283,7 +283,19 @@ def search_conversation_messages_dict(
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
     # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
+    sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
+
+    search_result = conversation_rag_store.search(query=query, top_k=top_k, conversation_id=conversation_id, exclude_conversation_id=current_session_scope())
+
+    results = {
+        "hits": search_result,
+        "rows": search_result,
+        "context":conversation_rag_store.context_from_hits(search_result),
+        "rag_backend": conversation_rag_store.backend_info(),
+        "sync": sync
+    }
+
+    return results
 
 
 def search_conversation_message_rows(
@@ -296,8 +308,11 @@ def search_conversation_message_rows(
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
     # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    results = search_conversation_messages_dict(sqlite_store, CONVERSATION_RAG_STORE, query=query, top_k=top_k, conversation_id=conversation_id)
 
+    hits = results["hits"]
+
+    return hits
 
 @tool(args_schema=AddPersonalReferenceInput) #사용자: 기억해둬 -> ChromaDB에서 저장
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
@@ -346,7 +361,11 @@ def search_conversation_messages(
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
     # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+    top_k = safe_limit(limit=top_k, default=5, maximum=50)
+
+    results = search_conversation_messages_dict(SQLITE_STORE, CONVERSATION_RAG_STORE, query=query, top_k=top_k, conversation_id=conversation_id)
+
+    return json_payload(results)
 
 
 @tool(args_schema=SearchNanaMemoryInput)
@@ -406,6 +425,15 @@ def week04_prompt_parts() -> list[str]:
         좋은 예: "제가 남긴 메모에 따르면 커피를 마시면 집중이 잘 된다고 하셨고, 참고자료에는 별도로
         오전 10시~12시에 집중도가 높다는 내용도 저장되어 있어요. 이 부분은 대화에서 직접 말씀하신 적은
         없는데, 참고자료에 있는 내용이라 같이 알려드려요."
+        """,
+        """
+        네 번째 출처: 사용자가 예전 대화에서 무슨 말을 했는지("저번에 ~ 얘기했었는데 뭐라고 했지?" 같은 질문)
+        물으면 search_conversation_messages를 써서 과거 대화 기록을 검색해.
+        이건 참고자료(search_personal_references)나 저장된 일정(search_saved_requests)과는 다른 출처야 —
+        사용자가 지금까지 이 앱에서 나눈 일반 채팅 대화 자체를 찾는 거야.
+        search_conversation_messages의 hits도 참고자료 hits와 같은 원칙을 따라야 해: 검색된 대화 내용은
+        "이전 대화 기록에 따르면 ~라고 하셨습니다"처럼 출처를 밝혀서 인용하고, 여러 대화가 검색됐으면
+        각각 언제/어떤 대화였는지 구분해서 답해. 검색 결과가 없으면 지어내지 말고 그런 대화를 찾지 못했다고 답해.
         """,
     ]
 
