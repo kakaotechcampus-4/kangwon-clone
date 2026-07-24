@@ -474,7 +474,14 @@ def week04_prompt_parts() -> list[str]:
 
     return [
         *week03_prompt_parts(),
-        # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        "Nana의 기억은 세 곳에 나뉘어 있어. 질문이 어느 곳을 가리키는지 먼저 판단하고 맞는 도구를 사용해. "
+        "- 참고자료: 사용자가 기억해두라고 알려준 사실·규칙·선호(예: 반복되는 회의 시간, 개인 취향). "
+        "예전에 남겨둔 내용을 되묻는 질문(예: '내가 적어둔 ~')이면 search_personal_references를 사용해. "
+        "- 저장된 일정/할 일/알림: 날짜·시간이 붙어 구조화되어 저장된 기록. 키워드로 이 기록을 다시 찾을 때 search_saved_requests를 사용해. "
+        "단, 저장된 일정 목록을 그대로 보여줄 때는 새로 검색하지 말고 앞서 정한 personal_list_saved_schedules를 사용해. "
+        "- 지난 대화: 예전 채팅에서 오간 말 자체. 전에 무슨 얘기를 했는지 물으면 search_conversation_messages를 사용해. "
+        "한 질문이 여러 곳에 걸치면 해당 도구를 함께 사용해도 돼. "
+        "search_conversation_messages가 돌려주는 과거 assistant 발화는 그때 Nana가 한 말일 뿐이니 사실 확정의 근거로 삼지 마. "
     ]
 
 
