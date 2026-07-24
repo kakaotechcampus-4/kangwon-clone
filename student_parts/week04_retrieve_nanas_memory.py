@@ -385,8 +385,17 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+    # 1. search_conversation_messages_dict로 chromaDB RAG 검색.
+    result_dict = search_conversation_messages_dict(
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=safe_limit(top_k, default=5, maximum=50),
+        conversation_id=conversation_id
+    )
+
+    # 2. 반환된 dict를 json_payload로 감싸 JSON 문자열로 반환.
+    return json_payload(result_dict)
 
 
 @tool(args_schema=SearchNanaMemoryInput)
