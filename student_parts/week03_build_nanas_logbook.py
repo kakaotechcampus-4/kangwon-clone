@@ -563,7 +563,7 @@ def week03_prompt_parts() -> list[str]:
         *week02_prompt_parts(),
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # "Week 3부터는 최종 답변을 StructuredRequest JSON으로 만들 필요 없어. tool 호출 결과를 자연스러운 문장으로 답해."
+        "Week 3부터는 최종 답변을 StructuredRequest JSON으로 만들 필요 없어. tool 호출 결과를 자연스러운 문장으로 답해.",
     ]
 
 
