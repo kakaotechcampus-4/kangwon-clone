@@ -449,7 +449,7 @@ def week04_tools() -> list[Any]:
         add_personal_reference,
         search_personal_references,
         search_saved_requests,
-        # search_conversation_messages,
+        search_conversation_messages,
     ]
 
 
