@@ -255,7 +255,7 @@ def add_personal_reference_dict(
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
-    saved  = reference_store.add_personal_reference(title, content, tags or [])
+    saved = reference_store.add_personal_reference(title, content, tags or [])
 
     return {
         "reference_backend": saved["backend"],
@@ -310,8 +310,25 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
-    # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
+    lazy_sync_result = conversation_rag_store.sync_from_sqlite(sqlite_store)
+
+    excluded_id = None
+    if not conversation_id:
+        excluded_id = current_session_scope()
+
+    hits = conversation_rag_store.search(
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+        exclude_conversation_id=excluded_id,
+    )
+
+    return {
+        "hits": hits,
+        "context": conversation_rag_store.context_from_hits(hits),
+        "rag_backend": conversation_rag_store.backeend_info(),
+        "sync": lazy_sync_result,
+    }
 
 
 def search_conversation_message_rows(
@@ -323,8 +340,15 @@ def search_conversation_message_rows(
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    result = search_conversation_messages_dict(
+        sqlite_store,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+    )
+
+    return result["hits"]
 
 
 @tool(args_schema=AddPersonalReferenceInput)
@@ -375,8 +399,21 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+
+    top_k = safe_limit(top_k, default=5, maximum=50)
+
+    result = search_conversation_messages_dict(
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+    )
+
+    return json_payload({
+        **result,
+        "rows": result["hits"],
+    })
 
 
 @tool(args_schema=SearchNanaMemoryInput)
@@ -389,8 +426,30 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    top_k = safe_limit(limit, default=5, maximum=20)
+    reference_hits = search_personal_reference_hits(
+        REFERENCE_STORE,
+        query=query,
+        top_k=top_k)  
+
+    request_rows = search_saved_request_rows(
+        SQLITE_STORE,
+        query=query,
+        top_k=top_k)
+
+    lines = []
+    for hit in reference_hits:
+        lines.append(f"참고 자료는 {hit.get('content', '')}입니다.")
+    for row in request_rows:
+        lines.append(f"저장된 일정은 {row.get('title', '')}입니다.")
+    context = "\n".join(lines)
+
+    return json_payload({
+        "hits": reference_hits,
+        "rows": request_rows,
+        "context": context,
+    })
+
 
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
@@ -415,7 +474,20 @@ def week04_prompt_parts() -> list[str]:
 
     return [
         *week03_prompt_parts(),
-        # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        "당신은 개인 참고자료, 저장된 일정/할 일, 지난 채팅 발화를 통해 질문에 대한 답을 합니다.\n",
+        "질문 성격에 따라 search_personal_references, search_saved_requests, search_conversation_messages\n"
+        "중 맞는 tool을 선택해 검색하고, 검색 결과를 근거로 답변합니다.\n"
+        "search_personal_references는 사용자가 적어 둔 개인 참고자료와 선호/취향/메모를 검색합니다.\n"
+        "'내가 좋아하는', '평소에 어떻게 한다 했더라?' 같은 질문에 사용합니다.\n"
+        "search_saved_requests는 SQLite에 저장된 일정/할 일/알림 기록을 특정 키워드로 검색합니다.\n"
+        "'코드 리뷰 언제였지?', '다음 주 회의 일정 찾아줘'와 같이 키워드로 검색할 때 사용합니다.\n"
+        "search_conversation_messages는 SQLite에 저장된 지난 채팅 대화를 검색합니다.\n"
+        "'저번에 한 말이 뭐였지?', '지난번에 내가 한 말 기억해?' 같은 지난 대화 관련 질문에 사용합니다.\n"
+        "특정 키워드로 검색을 할때에는 search_saved_requests를 쓰고\n"
+        "조건 없이 전체 일정 나열시에는 기존 일정 목록 도구를 사용하세요\n"
+        "같은 단어가 나와도 취향을 묻는지 또는 저장 기록을 묻는지에 따라 다른 tool을 선택하며\n"
+        "필요시 여러 tool을 함께 사용합니다\n"
+        "검색 결과에 근거가 없다면 지어내지 말고 모른다고 합니다.\n"
     ]
 
 
