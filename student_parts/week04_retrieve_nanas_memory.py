@@ -310,8 +310,6 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
-    # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
     
     lazy_sync = conversation_rag_store.sync_from_sqlite(sqlite_store=sqlite_store)
     
@@ -347,8 +345,6 @@ def search_conversation_message_rows(
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
     search_dict = search_conversation_messages_dict(sqlite_store=sqlite_store, conversation_rag_store=CONVERSATION_RAG_STORE, query=query, top_k=top_k, conversation_id=conversation_id)
     
     return search_dict["hits"]
