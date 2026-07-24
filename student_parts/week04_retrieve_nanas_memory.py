@@ -326,7 +326,7 @@ def search_conversation_messages_dict(
     return {
         "hits": hits,
         "context": conversation_rag_store.context_from_hits(hits),
-        "rag_backend": conversation_rag_store.backeend_info(),
+        "rag_backend": conversation_rag_store.backend_info(),
         "sync": lazy_sync_result,
     }
 
@@ -354,7 +354,6 @@ def search_conversation_message_rows(
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
-
 
     payload = add_personal_reference_dict(
         REFERENCE_STORE,
@@ -399,7 +398,6 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-
     top_k = safe_limit(top_k, default=5, maximum=50)
 
     result = search_conversation_messages_dict(
@@ -426,16 +424,16 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    top_k = safe_limit(limit, default=5, maximum=20)
+    limit = safe_limit(limit, default=5, maximum=20)
     reference_hits = search_personal_reference_hits(
         REFERENCE_STORE,
         query=query,
-        top_k=top_k)  
+        top_k=limit)  
 
     request_rows = search_saved_request_rows(
         SQLITE_STORE,
         query=query,
-        top_k=top_k)
+        top_k=limit)
 
     lines = []
     for hit in reference_hits:
@@ -474,7 +472,7 @@ def week04_prompt_parts() -> list[str]:
 
     return [
         *week03_prompt_parts(),
-        "당신은 개인 참고자료, 저장된 일정/할 일, 지난 채팅 발화를 통해 질문에 대한 답을 합니다.\n",
+        "당신은 개인 참고자료, 저장된 일정/할 일, 지난 채팅 발화를 통해 질문에 대한 답을 합니다.\n"
         "질문 성격에 따라 search_personal_references, search_saved_requests, search_conversation_messages\n"
         "중 맞는 tool을 선택해 검색하고, 검색 결과를 근거로 답변합니다.\n"
         "search_personal_references는 사용자가 적어 둔 개인 참고자료와 선호/취향/메모를 검색합니다.\n"
