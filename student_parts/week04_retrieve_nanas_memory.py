@@ -323,9 +323,13 @@ def search_conversation_messages_dict(
     # 1. lazy sync: SQLite 대화(원본) -> ChromaDB(검색 인덱스)로 신규/변경분만 반영
     sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
 
-    # 2. conversation_id가 없으면 현재 대화(session scope)를 검색에서 제외
-    # 방금 한 말이 과거 검색 결과처럼 섞이지 않도록 함
-    exclude_conversation_id = None if conversation_id else current_session_scope()
+    # 2. 검색에서 "제외할 대화 id"를 결정
+    #   conversation_id 있음 -> "특정 대화 하나만 검색" 의도, 제외할 것이 없으므로 None
+    #   conversation_id 없음 -> "전체 대화 검색" 의도, current_session_scope()로 현재 대화 id를 구하여 제외 대상으로 사용
+    #       실제 채팅 세션 안(run_agent/stream_agent 경유) -> current_session_scope()가 실제 대화 id 반환 후 제외 대상으로 사용
+    #       채팅 세션 밖(테스트, 도구 직접 호출) -> current_session_scope()가 DEFAULT_SESSION_SCOPE("__direct_tool_call__")를 반환 = "제외할 현재 대화"가 없음 -> None 처리
+    scope = current_session_scope()
+    exclude_conversation_id = None if (conversation_id or scope == DEFAULT_SESSION_SCOPE) else scope
 
     # 3. 대화 청크 벡터 검색 (제외/특정 대화 지정은 store가 처리)
     hits = conversation_rag_store.search(
