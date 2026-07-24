@@ -462,16 +462,32 @@ def week04_system_prompt() -> str:
 def week04_prompt_parts() -> list[str]:
     """1~4주차 system prompt 조각을 누적합니다."""
 
+    week04_system_prompt_steps = """
+        Week 4 메모리 검색 tool은 아래 순서로 사용합니다.
+
+        [1차 호출 대상 - 목적에 맞는 tool을 먼저 시도]
+        - 개인 선호/메모/참고사항을 물으면 search_personal_references를 호출합니다.
+        - 특정 주제의 일정/할 일/알림을 물으면(전체 목록 조회가 아니라 주제/키워드 기반 질문이면)
+          personal_list_saved_schedules 대신 search_saved_requests를 호출합니다.
+        - 필요하면 두 tool을 함께 호출해 결과를 조합합니다.
+
+        [2차 호출 대상 - 1차 결과가 비어 있거나, 과거 대화 자체를 물을 때]
+        - search_saved_requests/search_personal_references 결과가 비어 있으면(rows/hits가 빈 배열),
+          바로 모른다고 답하지 말고 반드시 이어서 search_conversation_messages를 호출해 이전 대화에서 찾아봅니다.
+        - "예전에 이런 얘기 했었나?"처럼 처음부터 과거 대화 자체를 묻는 질문이면 곧바로 search_conversation_messages를 호출합니다.
+
+        [최종 - 그래도 결과가 없으면]
+        - 검색 결과에 실제로 있는 내용만 근거로 답변하고, 근거가 된 자료(제목/기록 내용)를 답변에서 언급합니다.
+        - 1차, 2차를 모두 시도했는데도 결과가 없으면 추측하지 말고 모른다고 솔직히 답합니다.
+
+        [저장]
+        - 사용자가 자신의 선호/습관/성향을 새로 말하면(예: '나는 ~을 좋아해', '~하는 걸 선호해')
+          add_personal_reference를 호출해 title/content로 정리해 저장합니다.
+    """
+
     return [
         *week03_prompt_parts(),
-        "저장된 할일/일정 등의 기록에 대해 질문이 들어오면 search_saved_requests를 호출해 SQLite에 저장된 기록을 검색하여 답변에 참고합니다.",
-        "사용자가 특정 주제에 대한 일정을 질문하면 전체 기록을 검색하는 대신 search_saved_requests를 호출해 SQLite에 저장된 기록을 검색하여 답변에 참고합니다.",
-        "저장된 개인 참고자료에 대해 질문이 들어오면 search_personal_references를 호출해 ChromaDB에 저장된 참고자료를 검색하여 답변에 참고합니다. 참고한 자료는 대화 내용에 밝힙니다.",
-        "필요 시에는 여러 tool을 중복으로 사용해 결과를 조합하여 답변을 구성합니다.",
-        "사용자가 자신의 선호/습관/성향을 새로 말하면(예: '나는 ~을 좋아해', '~하는 걸 선호해') add_personal_reference를 호출해 title/content로 정리해 저장하세요.",
-        "사용자가 이전에 나누었던 대화에 대해 질문하거나, 참고자료나 일정을 근거로 요청한 정보를 찾지 못하면 search_conversation_messages를 호출하여 이전 대화에서 관련 내용을 찾기를 시도합니다.",
-        "어떤 tool을 쓰든 검색 결과에 실제로 있는 내용만 근거로 답변하고, 근거가 된 자료(제목/기록 내용)를 답변에서 언급하세요. "
-        "검색 결과가 비어 있으면 추측하지 말고 모른다고 솔직히 답하세요.",
+        week04_system_prompt_steps
     ]
 
 
