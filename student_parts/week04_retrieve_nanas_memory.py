@@ -24,12 +24,12 @@ CONVERSATION_RAG_STORE = ConversationRAGStore(CONFIG.chroma_dir)
 _WEEK04_AGENT: Any | None = None
 WEEK04_RAG_PROMPT = """
 ## Week 4 기억 검색(RAG) 규칙
-Nana는 이제 서로 다른 세 종류의 기억을 출처별로 구분해서 검색한다. 질문의 성격에 따라 알맞은 tool을 선택한다.
+Nana는 이제 서로 다른 세 종류의 기억을 출처별로 구분해서 검색한다. 사용자가 자신의 과거 발언·선호·기록·대화에 근거해 물으면, 절대 추측하거나 대화 맥락만으로 답하지 말고 아래 tool을 먼저 호출해 근거를 찾은 뒤 답한다.
 
-- 개인 취향·선호·메모(예: "내가 선호하는 회의 시간이 언제였지?", "점심 관련해서 내가 적어둔 거 있어?")를 물으면 search_personal_references로 검색한다. 새로 기억해 달라고 하면(예: "나는 오전에 집중이 잘 돼, 기억해줘") add_personal_reference로 저장한다.
+- 개인 취향·선호·메모(예: "내가 선호하는 회의 시간이 언제였지?", "점심 관련해서 내가 적어둔 거 있어?")를 물으면 search_personal_references로 검색한다. 이 tool은 사용자가 "기억해줘"로 명시적으로 저장한 참고자료만 대상으로 한다. 새로 기억해 달라고 하면(예: "나는 오전에 집중이 잘 돼, 기억해줘") add_personal_reference로 저장한다.
 - 저장된 일정·할 일·알림(예: "지난번에 저장한 코칭 일정 찾아줘", "민서랑 관련된 일정 있었나?")을 물으면 search_saved_requests로 검색한다.
-- 이전에 나눈 대화 내용(예: "저번에 우리가 무슨 얘기 했지?", "지난 대화에서 내가 뭐라고 했더라?")을 물으면 search_conversation_messages로 검색한다.
-- 질문이 어느 출처에 해당하는지 애매하면, 개인 참고자료와 저장 기록을 각각 검색해 본 뒤 더 관련 있는 결과로 답한다.
+- 이전에 나눈 대화에서 언급된 내용을 되물으면 search_conversation_messages로 검색한다. "내가 ~라고 했지?", "저번에 ~ 얘기했었나?", "지난 대화에서 ~"처럼 과거 대화 자체를 근거로 하는 질문이 여기 해당한다.
+- 질문이 어느 출처에 해당하는지 애매하면, 관련 있어 보이는 tool을 각각 시도해 본 뒤 더 관련 있는 결과로 답한다.
 
 ## 검색 결과 정리 규칙
 - 검색 tool이 돌려준 결과(hits/rows JSON)를 사용자에게 그대로 보여주지 말고, 반드시 사람이 읽기 쉬운 자연스러운 한국어 문장으로 정리해서 답한다.
@@ -241,7 +241,7 @@ def add_personal_reference_dict(
 
     saved = reference_store.add_personal_reference(title=title, content=content, tags=tags or [])
     return {
-        "reference_backend": reference_store.backend_info(),
+        "reference_backend": saved["backend"],
         "reference": saved,
     }
 
@@ -294,6 +294,9 @@ def search_conversation_messages_dict(
     sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
     scope = current_session_scope()
     current_id = scope if scope != DEFAULT_SESSION_SCOPE else None
+
+    if conversation_id == current_id:
+        conversation_id = None
 
     hits = conversation_rag_store.search(
         query=query,
