@@ -6,10 +6,11 @@ Claude와 나눈 작업 대화를 시간순으로 요약해 기록하는 문서�
 
 - 브랜치: `yongbin/week4` (base는 `yongbin/final`)
 - Week 3: 메인+추가과제 전부 구현, PR #74에 반영·머지 완료
-- Week 4: 메인과제 중 `add_personal_reference`/`search_personal_references`/`search_saved_requests` 3개 tool 구현 완료. `week04_prompt_parts()`는 사용자가 직접 작성하기로 해 TODO 상태로 되돌려둠(의도적). 추가과제(`search_conversation_messages` 계열)는 미착수
-- `checks/tool_inventory.py` (Tier 1 정적 조립 검사) 구현 완료, 실행 확인함 — week1-3 전부 PASS, week4는 prompt 미작성으로 FAIL 1건(의도된 상태)
-- `ASSIGNMENT_CHECK_DESIGN.md`의 Tier 2(실제 agent 호출 골든 케이스)는 아직 미구현
-- 앱이 `./run.sh --week4`로 백그라운드 실행 중 (포트 7860, PID 20840) — 사용자가 직접 브라우저에서 채팅 테스트 예정
+- Week 4: 메인과제 3개 tool + 심화과제 `search_conversation_messages` 계열 3개 함수 모두 구현 완료 (`search_nana_memory`는 범위 밖 스텁 유지). 멘토 지적(스텁 노출)은 구현으로 해소됨
+- `week04_prompt_parts()`: 강화 후 다시 보수성 완화("모호해도 tool 먼저 시도, 잡담에만 미호출") 적용. golden 하네스도 4개 tool+control 전 카테고리(108케이스)로 확장. 최종 결과: add 80%, search_personal 100%, search_saved 100%, conversation 100%(3.1%→34.4%→100%), control 100%(오호출 0), 전체 96.3%
+- `checks/`: `tool_inventory.py`(Tier1 정적), `conversation_rag_check.py`(결정론적 로직, 13/13 PASS), `golden_cases.py`+`run_golden.py`(실제 agent Tier2) 모두 커밋됨
+- 검증 완료: 결정론적 로직 13/13, golden 68케이스 전체 54.4%(control 36/36 오호출0, conversation 1/32=3.1%, JSON계약 위반0) — `docs/WEEK04_ADVANCED_VERIFICATION_REPORT.md`
+- 실제 agent 500케이스 메인과제 테스트도 완료됨(`docs/WEEK04_FULL_AGENT_500_CASE_REPORT.md`)
 
 ## 로그
 
@@ -52,3 +53,19 @@ Claude와 나눈 작업 대화를 시간순으로 요약해 기록하는 문서�
 19. **`run.sh --week4` 실행 + 테스트케이스 6개 추천** — `run` 스킬로 앱을 백그라운드 실행(포트 7860), curl로 정상 기동 확인(이 환경엔 브라우저 자동화 도구가 없어 실제 채팅 구동은 사용자가 직접 진행). 포트 번호 질문에 7860 답변. Week4 검증용 테스트케이스 6개 추천(참고자료 추가/검색, 저장기록 검색, 결과 없음 케이스, distance 임계값 부재 직접 관찰용 동떨어진 질문, 복수 tool 동시 필요 질문) — 프롬프트 작성 전/후 비교해보라고 안내.
 
 20. **대화 로그 최신화 여부 질문 답변** — 17-19번 항목이 누락돼 있던 걸 확인하고 추가.
+
+21. **심화과제 + 멘토링 요구사항 정리 문서 작성** — `docs/WEEK04_ADVANCED_TASK_AND_MENTORING.md` 작성(구현 전 정리). 심화과제 자체 요구사항(가이드 기준: `search_conversation_messages` 계열 구현, lazy sync + 현재 대화 제외 + `hits/rows/context/rag_backend/sync` 반환, `conversation_id` 필터 vs `exclude_conversation_id` 상호배타 주의)과 멘토링 요구사항(스텁 tool이 `week04_tools()`에 노출된 문제, 세 검증 도구 모두 "구현 안 한 코드 노출"은 안 보는 설계라는 통찰, A안=목록에서 빼기 / B안=구현+`current_session_scope()` 정확 구현+검증 케이스 추가)을 분리 정리. 사용자는 B안(구현) 선택. (500케이스 PR body 작성 및 조회 대화는 사용자 요청으로 로그 미기록)
+
+22. **심화과제 구현 + 재현 가능한 검증 하네스 + 정량 보고서** — 사용자 결정(재현 가능한 형태 커밋 / `search_nana_memory` 범위 밖)에 따라 진행. ① `search_conversation_messages_dict`/`_rows`/tool 3개 구현(`current_session_scope()` 기준 현재 대화 제외 정확 매핑). ② 구현 중 발견한 `week04_prompt_parts()` 따옴표 중첩 문법오류를 단어 보존한 채 따옴표만 수정. ③ `checks/conversation_rag_check.py`(가짜 임베딩 주입, 오프라인 결정론적, 13/13 PASS)로 파라미터 미혼동 기계 검증. ④ `checks/golden_cases.py`+`run_golden.py`(실제 agent, 데이터 임시복사 격리)로 68케이스 실행 → control 36/36(오호출0), conversation 1/32(3.1%), JSON계약 위반0, 전체 54.4%. ⑤ `docs/WEEK04_ADVANCED_VERIFICATION_REPORT.md`에 정량 보고. 핵심 결론: 로직·계약 완벽하나 프롬프트에 이 tool 지시문이 없어 tool-selection이 낮음(사용자 프롬프트 작성 몫).
+
+23. **`.pyc` vs `.py` 질문 답변** — 프롬프트 편집 위치는 `__pycache__`의 `.pyc`(컴파일 캐시)가 아니라 원본 `.py`의 `week04_prompt_parts()`(385~394번 줄)임을 설명.
+
+24. **프롬프트 지시문 추천 + 보수 강화 적용 + 효과 재측정** — 사용자 요청으로 `week04_prompt_parts()` 강화 적용: `search_conversation_messages` 지시문 신규 추가, 기존 지시문 명령형 전환 및 메타 문구 제거, 방어 지침 강화(tool 미호출 채 '저장했다' 금지, Week3 tool과 명시적 구분, 결과 없으면 지어내지 않기, 관련성 낮으면 되묻기, assistant 발화만으로 사실확정 금지), `*week03_prompt_parts()` 중복 제거. `tool_inventory.py` week04 전부 PASS 확인. golden 재실행 결과 conversation 3.1%→34.4%, 전체 54.4%→69.1%, control 100% 유지(오호출 0), 실패 양상이 '다른 tool 오라우팅 17건'→'tool 미호출 21건, 오라우팅 0'으로 질적 개선. `docs/WEEK04_ADVANCED_VERIFICATION_REPORT.md`에 before/after 반영.
+
+25. **보수성 완화 + golden 하네스 전 카테고리 확장 + 재측정** — 사용자가 3차 실행표(add 72%/saved 64% 등)를 공유하며 "보수성 완화 + 모두 향상" 요청. `week04_prompt_parts()`의 "모호하면 되묻기 먼저"를 "모호해도 tool 먼저 시도, 인사·잡담에만 미호출"로 완화하고 search-first 편향 명시, 결과 사용 가드도 소폭 완화. `checks/golden_cases.py`/`run_golden.py`를 conversation 전용에서 4개 tool(add/personal/saved/conversation)+control 전 카테고리 108케이스로 확장(재현 가능하게 커밋). 재측정 결과: add 80%, search_personal 100%, search_saved 100%, conversation 100%(34.4%→100%), control 100%(오호출 0), 전체 96.3%. JSON 계약 위반 0. `docs/WEEK04_ADVANCED_VERIFICATION_REPORT.md` §4-5/§4-6 추가.
+
+28. **6차(라우팅 표) 실패 확인 → 4차로 롤백** — 단일 라우팅 표 가설이 6차에서 틀림 확인: saved만 54.7→63.3 소폭 개선, add 96→61 붕괴(personal도 동반 하락). 원인: 5차까지 add 전용이던 "미호출 채 저장했다 금지" 압박이 6차에서 5-tool 공통 규칙으로 뭉뚱그려져 개별 압박 약화. 6번 실행 종합상 4차(전체 82.8%, 최저 77%)가 가장 균형 잡힘. 사용자 지시로 `week04_prompt_parts()`를 4차(보수성 완화, 개별 배타경계·라우팅표 이전)로 롤백. tool_inventory PASS. §4-9 표로 회차별 정리.
+
+27. **5차 역효과 확인 → 시소 구조 진단 → 단일 라우팅 테이블 재설계(프롬프트만)** — 26번 경계 강화가 5차에서 saved 74.7%→54.7%(-30건) 급락(진짜 일정 질문도 Week3 tool로 샘), 전체 82.8%→81.2%. 사용자·Claude 공통 진단: 개별 tool을 배타적으로 하나씩 강화하면 인접 tool이 눌리는 시소 구조가 반복됨. 대응(프롬프트만): per-tool "X는 Y 아니다" 배타 문구 전부 제거하고, "질문이 무엇에 대한 것인가(개인특성/일정·약속/과거대화)" 단일 축 + '저장'단어는 기준 아님을 맨 위에서 한 번만 무력화 + (1)~(5) 긍정형 라우팅 표 하나로 재설계. 프롬프트 조각 8→6개. tool_inventory PASS. 6차 500케이스로 검증 예정(saved·personal 동시 확인 필요). §4-8 추가.
+
+26. **4차 결과 분석 + 프롬프트만 경계선 강화** — 사용자가 4차 500케이스표(add 77%/saved 74.7%/personal 83% 정체) 공유. 잔여 문제 진단: saved 지침이 강해질수록 personal 영역을 잠식(personal 실패 21/25가 saved로 쏠림), add 10건이 save_structured_request로 오분류. 사용자 지시("오직 프롬프트만 수정/추가/삭제")에 따라 코드·하네스 불변, `week04_prompt_parts()`의 3개 지시문만 경계선 명시로 교체: (a) add에 "개인특성은 save_structured_request 아니라 add_personal_reference" 경계, (b) personal에 "'저장/기록해둔 취향'도 성향·취향이면 personal" 명시, (c) saved를 "일정·할일·알림에만" 한정+Week3 두 list tool 모두와 구분+"성향·취향은 personal로". tool_inventory PASS. 효과는 사용자 500케이스 5차로 검증 예정(내 108케이스는 personal/saved가 이미 100%라 이 잠식 재현 불가). `docs/WEEK04_ADVANCED_VERIFICATION_REPORT.md` §4-7 추가.
