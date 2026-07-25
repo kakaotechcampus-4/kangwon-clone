@@ -406,6 +406,8 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        "'참고자료로 기억해줘', '이 내용 메모해줘', '기록해줘'처럼 날짜/시간이 없는 배경지식이나 메모를 저장해달라는 요청은 add_personal_reference를 호출하세요. ",
+        "save_structured_request는 일정/할 일/알림처럼 날짜·시간이 있는 구조화된 저장 요청에만 사용하고, 배경지식/메모 저장 요청에는 사용하지 마세요. ",
         "과거 채팅에서 사용자가 말한 내용을 기억해달라는 질문에는 search_conversation_messages를 호출해 확인한 뒤 답하세요. ",
         "search_conversation_messages 결과는 과거 채팅 발화 검색입니다. assistant 발화만 보고 사실을 확정하지 마세요. "
         "user 발화나 `search_saved_requests` 또는 `search_personal_references` 결과로 한 번 더 확인하세요. ",
