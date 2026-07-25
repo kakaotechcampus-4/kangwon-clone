@@ -321,7 +321,7 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
     safe_top_k = safe_limit(top_k, default=3, maximum=50)
-    rows = SQLITE_STORE.search_saved_requests(query=query, limit=safe_top_k)
+    rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=safe_top_k)
     
     result = {"rows": rows}
     
@@ -356,12 +356,14 @@ def search_nana_memory(
 def week04_tools() -> list[Any]:
     """3주차까지의 도구에 4주차 RAG 도구를 누적한 목록입니다."""
 
+    # NOTE: search_conversation_messages는 아직 미구현(TODO, 추가과제)이라 목록에서 제외한다.
+    # 실제로 호출하면 tool_result가 null만 반환해서, 모델이 근거 없이 "찾을 수 없다"고 얼버무리는 문제를 확인했다.
+    # 구현 완료 후 다시 return 목록에 포함시켜야 한다.
     return [
         *week03_tools(),
         add_personal_reference,
         search_personal_references,
         search_saved_requests,
-        search_conversation_messages,
     ]
 
 
