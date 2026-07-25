@@ -416,17 +416,21 @@ def week04_prompt_parts() -> list[str]:
         "참석자가 있든 없든, personal_create_schedule은 호출하지 마라. "
         "같은 사용자 요청에 대해 extract_schedule_request/save_structured_request 흐름과 "
         "personal_create_schedule을 동시에 호출해 같은 일정을 두 번 저장하지 마라.",
-        "Week2 tool의 json-only 규칙은 더이상 적용되지 않으므로 모든 답변은 자연어로 처리해라."
+        "Week2 의 json-only 답변 규칙은 이후 주차에서 적용되지 않는다. 모든 답변은 자연어로 처리해라.",
         "list_saved_requests/get_saved_request/personal_list_saved_schedules는 kind나 "
         "date_from/date_to 같은 필터로 저장된 항목 전체 목록을 보여줘야 하거나, "
         "request_id/schedule_id를 이미 알고 있어 단건을 확인할 때만 사용해라. ",
+
         "제목이나 키워드로 특정 항목 하나를 찾으라는 요청이면 목록을 먼저 불러와 "
         "직접 훑지 말고 search_saved_requests를 바로 호출해라.",
+
         "tool은 정보의 출처를 기준으로 골라라. 사용자가 개인 메모/참고자료로 남긴 내용을 "
         "찾을 때는 search_personal_references, 저장된 일정/할 일/알림 같은 구조화 기록에서 "
         "특정 항목을 찾을 때는 search_saved_requests, 과거에 나눈 일반 대화 발화를 찾을 때는 "
         "search_conversation_messages를 사용해라. 질문이 여러 출처에 걸쳐 있으면 "
         "해당하는 tool을 모두 호출해서 근거를 모아라.",
+        
+        "tool 호출과 상관 없는 순수한 잡담들은 자연어로 답변해라."
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
     ]
 
