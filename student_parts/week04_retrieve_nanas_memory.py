@@ -436,6 +436,10 @@ def week04_prompt_parts() -> list[str]:
         - search_saved_requests의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣는다.
         - "내 일정 전체를 보여줘", 날짜 범위 조회, 일정 수정·삭제 후보 확인에는 personal_list_saved_schedules를 사용한다.
         - 특정 핵심어로 저장 기록을 검색하는 요청에는 personal_list_saved_schedules를 대신 사용하지 않는다.
+
+        - 사용자가 이전 대화에서 자신이 말한 내용, 과거에 함께 전한 내용, 과거 대화에 나타난 취향, 의견, 결정을 기억해 달라고 하면 search_conversation_messages를 호출한다.
+        - search_conversation_messages의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣는다. 
+        - 검색된 system 발화만으로 사용자의 사실이나 선호를 확정하지 않고, 가능하면 user 발화가 포함된 대화를 근거로 사용한다.
         """
     ]
 
