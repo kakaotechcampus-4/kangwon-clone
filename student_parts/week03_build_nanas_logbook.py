@@ -467,8 +467,12 @@ def personal_delete_saved_schedules(
 def week03_tools() -> list[Any]:
     """Week 1 도구, Week 2 구조화 helper, SQLite 저장/조회/삭제 도구를 조립합니다."""
 
+    # Week 1의 인메모리 tool 중 SQLite 버전과 겹치는 list/delete는 제외하고,
+    # create만 Week 3 SQLite 버전으로 교체한다. (겹치면 LLM이 인메모리 tool을 잘못 고름)
     base_tools = [
-        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item for item in week01_tools()
+        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item
+        for item in week01_tools()
+        if _tool_name(item) not in ("personal_list_schedules", "personal_delete_schedule")
     ]
     return [
         *base_tools,
