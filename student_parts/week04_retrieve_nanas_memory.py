@@ -225,11 +225,10 @@ def add_personal_reference_dict(
 ) -> dict[str, Any]:
     """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
 
-    normalized_tags = tags or []
     reference = reference_store.add_personal_reference(
         title=title,
         content=content,
-        tags=normalized_tags,
+        tags=tags or [],
     )
     return {
         "reference_backend": reference_store.backend_info(),
@@ -247,6 +246,7 @@ def search_personal_reference_hits(
 
     rows = reference_store.search_personal_references(query=query, limit=top_k)
     hits: list[dict[str, Any]] = []
+
     for row in rows:
         raw_tags = row.get("tags") or []
         if isinstance(raw_tags, str):
@@ -255,6 +255,7 @@ def search_personal_reference_hits(
             tags = raw_tags
         else:
             tags = []
+
         hits.append(
             {
                 "id": row.get("id"),
@@ -266,6 +267,7 @@ def search_personal_reference_hits(
                 },
             }
         )
+
     return hits
 
 
@@ -280,6 +282,127 @@ def search_saved_request_rows(
     return sqlite_store.search_saved_requests(query=query, limit=top_k)
 
 
+def _query_terms(query: str) -> list[str]:
+    terms = re.findall(r"[0-9A-Za-z가-힣]+", str(query or "").lower())
+    return [term for term in terms if len(term) >= 2]
+
+
+def _load_conversation_message_hits(
+    sqlite_store: AppSQLiteStore,
+    conversation_hits: list[dict[str, Any]],
+    *,
+    query: str,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    conversation_ids = [
+        str(hit.get("conversation_id") or "").strip()
+        for hit in conversation_hits
+        if str(hit.get("conversation_id") or "").strip()
+    ]
+    conversation_ids = list(dict.fromkeys(conversation_ids))
+
+    if not conversation_ids:
+        return []
+
+    placeholders = ", ".join("?" for _ in conversation_ids)
+    sql = f"""
+        SELECT
+            m.message_id,
+            m.conversation_id,
+            c.title AS conversation_title,
+            m.role,
+            m.content,
+            m.created_at
+        FROM messages m
+        JOIN conversations c ON c.conversation_id = m.conversation_id
+        WHERE m.conversation_id IN ({placeholders})
+        ORDER BY m.created_at ASC, m.rowid ASC
+    """
+
+    with sqlite_store.connect() as conn:
+        rows = [
+            dict(row)
+            for row in conn.execute(sql, conversation_ids).fetchall()
+        ]
+
+    rank_by_conversation = {
+        conversation_id: index
+        for index, conversation_id in enumerate(conversation_ids)
+    }
+    distance_by_conversation = {
+        str(hit.get("conversation_id") or ""): hit.get("distance")
+        for hit in conversation_hits
+    }
+    terms = _query_terms(query)
+    scored_hits: list[tuple[int, int, int, int, dict[str, Any]]] = []
+
+    for index, row in enumerate(rows):
+        content = str(row.get("content") or "").strip()
+        if not content:
+            continue
+
+        role = str(row.get("role") or "").strip()
+        conversation_id = str(row.get("conversation_id") or "").strip()
+        compact_content = "".join(content.lower().split())
+        match_score = sum(
+            1 for term in terms if "".join(term.split()) in compact_content
+        )
+        user_priority = 1 if role == "user" else 0
+        conversation_rank = rank_by_conversation.get(
+            conversation_id,
+            len(rank_by_conversation),
+        )
+
+        hit = {
+            "id": row.get("message_id"),
+            "message_id": row.get("message_id"),
+            "conversation_id": conversation_id,
+            "role": role,
+            "content": content,
+            "created_at": row.get("created_at"),
+            "distance": distance_by_conversation.get(conversation_id),
+            "metadata": {
+                "conversation_id": conversation_id,
+                "conversation_title": row.get("conversation_title") or "새 대화",
+                "role": role,
+                "created_at": row.get("created_at"),
+                "source": "sqlite_conversation_message",
+            },
+        }
+        scored_hits.append(
+            (
+                -match_score,
+                -user_priority,
+                conversation_rank,
+                index,
+                hit,
+            )
+        )
+
+    scored_hits.sort(key=lambda item: item[:-1])
+    return [item[-1] for item in scored_hits[:top_k]]
+
+
+def _conversation_context(hits: list[dict[str, Any]]) -> str:
+    lines = ["[SQLite 대화 RAG 검색 결과]"]
+
+    if not hits:
+        lines.append("- 검색된 이전 대화가 없습니다.")
+        return "\n".join(lines)
+
+    for index, hit in enumerate(hits, start=1):
+        metadata = hit.get("metadata") or {}
+        lines.append(
+            f"[{index}] conversation_id={hit.get('conversation_id')} | "
+            f"role={hit.get('role')} | "
+            f"title={metadata.get('conversation_title') or '새 대화'} | "
+            f"created_at={hit.get('created_at') or '시간 미정'}"
+        )
+        lines.append(str(hit.get("content") or "").strip())
+
+    return "\n\n".join(lines)
+
+
 def search_conversation_messages_dict(
     sqlite_store: AppSQLiteStore,
     conversation_rag_store: ConversationRAGStore,
@@ -290,23 +413,32 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
+    normalized_top_k = safe_limit(top_k, default=5, maximum=50)
     sync = conversation_rag_store.sync_from_sqlite(sqlite_store)
     target_conversation_id = str(conversation_id).strip() if conversation_id else None
     active_scope = current_session_scope()
     exclude_conversation_id = None
+
     if not target_conversation_id and active_scope != DEFAULT_SESSION_SCOPE:
         exclude_conversation_id = active_scope
 
-    hits = conversation_rag_store.search(
+    conversation_hits = conversation_rag_store.search(
         query=query,
-        top_k=top_k,
+        top_k=normalized_top_k,
         exclude_conversation_id=exclude_conversation_id,
         conversation_id=target_conversation_id,
     )
+    hits = _load_conversation_message_hits(
+        sqlite_store,
+        conversation_hits,
+        query=query,
+        top_k=normalized_top_k,
+    )
+
     return {
         "hits": hits,
         "rows": hits,
-        "context": conversation_rag_store.context_from_hits(hits),
+        "context": _conversation_context(hits),
         "rag_backend": conversation_rag_store.backend_info(),
         "sync": sync,
     }
@@ -319,7 +451,7 @@ def search_conversation_message_rows(
     top_k: int = 5,
     conversation_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
+    """앱 SQLite에 저장된 일반 채팅 발화를 RAG로 검색합니다."""
 
     result = search_conversation_messages_dict(
         sqlite_store,
@@ -332,8 +464,12 @@ def search_conversation_message_rows(
 
 
 @tool(args_schema=AddPersonalReferenceInput)
-def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
-    """개인 참고자료를 ChromaDB에 추가합니다."""
+def add_personal_reference(
+    title: str,
+    content: str,
+    tags: list[str] | None = None,
+) -> str:
+    """개인 참고자료를 ChromaDB에 추가하고 저장 결과를 JSON으로 반환합니다."""
 
     return json_payload(
         add_personal_reference_dict(
@@ -347,7 +483,7 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
 
 @tool(args_schema=SearchPersonalReferencesInput)
 def search_personal_references(query: str, top_k: int = 2) -> str:
-    """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
+    """개인 참고자료를 검색하고 최종 답변의 근거가 되는 hits를 JSON으로 반환합니다."""
 
     normalized_top_k = safe_limit(top_k, default=2, maximum=20)
     hits = search_personal_reference_hits(
@@ -360,7 +496,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
 
 @tool(args_schema=SearchSavedRequestsInput)
 def search_saved_requests(query: str, top_k: int = 3) -> str:
-    """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
+    """SQLite의 일정, 할 일, 알림을 검색하고 최종 답변의 근거가 되는 rows를 JSON으로 반환합니다."""
 
     normalized_top_k = safe_limit(top_k, default=3, maximum=50)
     rows = search_saved_request_rows(
@@ -377,7 +513,7 @@ def search_conversation_messages(
     top_k: int = 5,
     conversation_id: str | None = None,
 ) -> str:
-    """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
+    """이전 일반 대화의 발화를 검색하고 role과 content가 포함된 근거를 JSON으로 반환합니다."""
 
     normalized_top_k = safe_limit(top_k, default=5, maximum=50)
     result = search_conversation_messages_dict(
@@ -398,7 +534,7 @@ def search_nana_memory(
     attendee: str | None = None,
     limit: int = 5,
 ) -> str:
-    """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
+    """개인 참고자료와 SQLite 저장 일정을 함께 검색해 context를 반환합니다."""
 
     normalized_limit = safe_limit(limit, default=5, maximum=20)
     reference_hits = search_personal_reference_hits(
@@ -406,7 +542,6 @@ def search_nana_memory(
         query=query,
         top_k=normalized_limit,
     )
-
     schedule_candidates = SQLITE_STORE.list_schedules(
         limit=max(normalized_limit * 10, 50),
         date_from=date_from,
@@ -432,9 +567,13 @@ def search_nana_memory(
                 *attendees,
             ]
         ).lower()
+
         if query_text and query_text not in searchable_text:
             continue
-        if attendee_text and not any(attendee_text in str(name).lower() for name in attendees):
+        if attendee_text and not any(
+            attendee_text in str(name).lower()
+            for name in attendees
+        ):
             continue
 
         title = str(row.get("title") or "제목 없음")
@@ -443,6 +582,7 @@ def search_nana_memory(
         end_time = str(row.get("end_time") or "")
         time_text = f"{start_time}-{end_time}" if end_time else start_time
         attendee_value = ", ".join(str(name) for name in attendees) or "없음"
+
         schedule_chunks.append(
             {
                 "id": row.get("schedule_id"),
@@ -460,21 +600,25 @@ def search_nana_memory(
                 },
             }
         )
+
         if len(schedule_chunks) >= normalized_limit:
             break
 
     context_lines = ["[개인 참고자료 검색 결과]"]
+
     if reference_hits:
         for index, hit in enumerate(reference_hits, start=1):
             metadata = hit.get("metadata") or {}
             context_lines.append(
-                f"[{index}] {metadata.get('title') or '제목 없음'}: {hit.get('content') or ''}"
+                f"[{index}] {metadata.get('title') or '제목 없음'}: "
+                f"{hit.get('content') or ''}"
             )
     else:
         context_lines.append("- 검색된 개인 참고자료가 없습니다.")
 
     context_lines.append("")
     context_lines.append("[SQLite 저장 일정 검색 결과]")
+
     if schedule_chunks:
         for index, chunk in enumerate(schedule_chunks, start=1):
             context_lines.append(f"[{index}] {chunk['content']}")
@@ -538,8 +682,13 @@ def week04_prompt_parts() -> list[str]:
             "일반 대화 질문에 저장 요청 검색을 대신 사용하지 않는다."
         ),
         (
-            "대화 검색 결과의 assistant 발화만으로 사용자에 관한 사실을 확정하지 말고 "
-            "user 발화와 전체 맥락을 근거로 판단한다."
+            "검색 질문에는 알맞은 검색 tool을 반드시 호출하고, 최종 답변은 "
+            "tool이 반환한 hits, rows, context의 실제 내용만 근거로 작성한다. "
+            "검색 결과가 비어 있으면 관련 기록을 찾지 못했다고 답하고 추측하지 않는다."
+        ),
+        (
+            "이전 대화에 관한 답변은 role이 user인 발화를 우선 근거로 사용한다. "
+            "assistant 발화만으로 사용자에 관한 사실을 확정하지 않는다."
         ),
         (
             "질문에 여러 출처가 필요하면 알맞은 검색 tool을 각각 호출한다. "
@@ -553,13 +702,16 @@ def build_week04_agent() -> object:
 
     if not CONFIG.has_openai_key:
         raise RuntimeError("PROXY_TOKEN이 .env에 필요합니다.")
+
     global _WEEK04_AGENT
+
     if _WEEK04_AGENT is None:
         _WEEK04_AGENT = create_agent(
             model=chat_model(),
             tools=week04_tools(),
             system_prompt=week04_system_prompt(),
         )
+
     return _WEEK04_AGENT
 
 
