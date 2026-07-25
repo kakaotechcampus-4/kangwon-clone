@@ -309,6 +309,7 @@ def search_conversation_message_rows(
     result = search_conversation_messages_dict(sqlite_store=sqlite_store, conversation_rag_store= CONVERSATION_RAG_STORE, query = query, top_k=top_k, conversation_id = conversation_id)
     return result["hits"]
 
+
 @tool(args_schema=AddPersonalReferenceInput)
 def add_personal_reference(title: str, content: str, tags: list[str] | None = None) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
@@ -348,18 +349,16 @@ def search_conversation_messages(
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
     safe_guard = safe_limit(limit=top_k, default=5, maximum=50)
-    rows = search_conversation_message_rows(SQLITE_STORE, query=query, top_k=safe_guard, conversation_id=conversation_id)
-    sync_stats = CONVERSATION_RAG_STORE.sync_from_sqlite(SQLITE_STORE)
+    message_dict = search_conversation_messages_dict(SQLITE_STORE, CONVERSATION_RAG_STORE, query=query, top_k=safe_guard, conversation_id=conversation_id)
     return json_payload(
         {
-            "hits": rows,
-            "rows": rows,
-            "context": CONVERSATION_RAG_STORE.context_from_hits(rows),
-            "rag_backend": CONVERSATION_RAG_STORE.backend_info(),
-            "sync": sync_stats,
+            "hits": message_dict["hits"],
+            "rows": message_dict["rows"],
+            "context": message_dict["context"],
+            "rag_backend": message_dict["rag_backend"],
+            "sync": message_dict["sync"],
         }
     )
-
 
 
 @tool(args_schema=SearchNanaMemoryInput)
