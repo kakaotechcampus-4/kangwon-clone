@@ -275,8 +275,8 @@ def search_personal_reference_hits(
             "content": hit["content"],
             "distance": hit["distance"],
             "metadata": {
-                "title": hit.get("title"),
-                "tags": hit.get("tags"),
+                "title": hit["title"],
+                "tags": hit["tags"],
             },
         }
         for hit in ref_hits
@@ -293,7 +293,7 @@ def search_saved_request_rows(
 
     # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
     rows = sqlite_store.search_saved_requests(query, limit=top_k)
-    return rows if rows else []
+    return rows
 
 
 def search_conversation_messages_dict(
@@ -429,8 +429,8 @@ def week04_prompt_parts() -> list[str]:
         "특정 항목을 찾을 때는 search_saved_requests, 과거에 나눈 일반 대화 발화를 찾을 때는 "
         "search_conversation_messages를 사용해라. 질문이 여러 출처에 걸쳐 있으면 "
         "해당하는 tool을 모두 호출해서 근거를 모아라.",
-        
-        "tool 호출과 상관 없는 순수한 잡담들은 자연어로 답변해라."
+
+        "tool 호출과 상관 없는 순수한 잡담들은 자연어로 답변해라.",
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
     ]
 
