@@ -447,6 +447,10 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
+        "사용자의 개인 참고자료를 추가 또는 저장하라는 요청을 받으면 add_personal_reference를 사용하여 저장해야한다.",
+        "사용자가 개인 참고자료를 물어보면 search_personal_references를 사용하여 검색을 한다.",
+        "사용자가 저장된 일정 기록을 물어보면 search_saved_requests를 사용하여 검색한다.",
+        "사용자가 특정 기간에 한 말에 대해 물어보면 search_conversation_messages를 사용하여 저장된 앱 대화 메시지를 찾는다."
     ]
 
 
