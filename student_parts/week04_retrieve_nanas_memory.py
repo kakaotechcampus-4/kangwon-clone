@@ -291,7 +291,6 @@ def search_saved_request_rows(
 ) -> list[dict[str, Any]]:
     """SQLite 저장 요청을 검색하고 실제 검색 결과만 반환합니다."""
 
-    # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하세요.
     rows = sqlite_store.search_saved_requests(query, limit=top_k)
     return rows
 
@@ -306,8 +305,27 @@ def search_conversation_messages_dict(
 ) -> dict[str, Any]:
     """SQLite 대화 목록을 lazy sync한 뒤 ChromaDB conversation RAG 결과를 반환합니다."""
 
-    # TODO: SQLite 대화 기록을 ConversationRAGStore에 lazy sync한 뒤 현재 대화를 제외하고 검색하세요.
-    ...
+    sync_result = conversation_rag_store.sync_from_sqlite(sqlite_store)
+
+    exclude_conversation_id = None
+    if not conversation_id:
+        current_scope = current_session_scope()
+        if current_scope != DEFAULT_SESSION_SCOPE:
+            exclude_conversation_id = current_scope
+
+    hits = conversation_rag_store.search(
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+        exclude_conversation_id=exclude_conversation_id,
+    )
+    return {
+        "hits": hits,
+        "rows": hits,
+        "context": conversation_rag_store.context_from_hits(hits),
+        "rag_backend": conversation_rag_store.backend_info(),
+        "sync": sync_result,
+    }
 
 
 def search_conversation_message_rows(
@@ -319,8 +337,14 @@ def search_conversation_message_rows(
 ) -> list[dict[str, Any]]:
     """앱 SQLite에 저장된 일반 채팅 대화 청크를 RAG 검색합니다."""
 
-    # TODO: search_conversation_messages_dict(...) 결과에서 hits만 반환하세요.
-    ...
+    result = search_conversation_messages_dict(
+        sqlite_store,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=top_k,
+        conversation_id=conversation_id,
+    )
+    return result["hits"]
 
 
 @tool(args_schema=AddPersonalReferenceInput)
@@ -328,8 +352,6 @@ def add_personal_reference(
     title: str, content: str, tags: list[str] | None = None
 ) -> str:
     """개인 참고자료를 ChromaDB에 추가합니다."""
-
-    # TODO: 개인 참고자료를 저장하고 JSON 문자열로 반환하세요.
 
     result = add_personal_reference_dict(
         REFERENCE_STORE, title=title, content=content, tags=tags
@@ -343,8 +365,6 @@ def add_personal_reference(
 def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
-    # TODO: query/top_k로 개인 참고자료 vector store를 검색하고 top-level hits를 반환하세요.
-
     hits = search_personal_reference_hits(
         REFERENCE_STORE, query=query, top_k=safe_limit(top_k, default=2, maximum=50)
     )
@@ -355,7 +375,6 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
 def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
-    # TODO: AppSQLiteStore.search_saved_requests(...)로 저장 요청을 검색하고 top-level rows를 반환하세요.
     rows = search_saved_request_rows(
         SQLITE_STORE, query=query, top_k=safe_limit(top_k, default=3, maximum=50)
     )
@@ -370,8 +389,14 @@ def search_conversation_messages(
 ) -> str:
     """앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: 앱 SQLite 대화 목록을 대화 단위 ChromaDB RAG로 검색하고 JSON 문자열로 반환하세요.
-    ...
+    result = search_conversation_messages_dict(
+        SQLITE_STORE,
+        CONVERSATION_RAG_STORE,
+        query=query,
+        top_k=safe_limit(top_k),
+        conversation_id=conversation_id,
+    )
+    return json_payload(result)
 
 
 @tool(args_schema=SearchNanaMemoryInput)
@@ -384,8 +409,49 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    # TODO: compatibility 통합 검색이 필요하면 개인 참고자료와 SQLite 일정 chunk를 함께 구성하세요.
-    ...
+    safe = safe_limit(limit, default=5, maximum=20)
+
+    reference_hits = search_personal_reference_hits(
+        REFERENCE_STORE, query=query, top_k=safe
+    )
+
+    saved_requests = SQLITE_STORE.list_saved_requests(
+        date_from=date_from, date_to=date_to, limit=max(safe * 4, safe)
+    )
+    if attendee:
+        saved_requests = [
+            row
+            for row in saved_requests
+            if attendee in _decode_attendees(row.get("members_json"))
+        ]
+    saved_requests = saved_requests[:safe]
+
+    schedule_chunks = [
+        f"[{row.get('kind')}] {row.get('title') or '제목 없음'} | 날짜={row.get('date') or '미정'} "
+        f"{row.get('start_time') or ''}~{row.get('end_time') or ''} | "
+        f"참석자={_decode_attendees(row.get('members_json'))} | reason={row.get('reason') or ''}"
+        for row in saved_requests
+    ]
+
+    context_lines = ["[개인 참고자료]"]
+    if reference_hits:
+        context_lines.extend(
+            f"- {hit['metadata']['title']}: {hit['content']}" for hit in reference_hits
+        )
+    else:
+        context_lines.append("- 검색된 참고자료가 없습니다.")
+    context_lines.append("[SQLite 저장 일정]")
+    if schedule_chunks:
+        context_lines.extend(f"- {chunk}" for chunk in schedule_chunks)
+    else:
+        context_lines.append("- 검색된 저장 일정이 없습니다.")
+
+    payload = {
+        "reference_hits": reference_hits,
+        "schedule_chunks": schedule_chunks,
+        "context": "\n".join(context_lines),
+    }
+    return json_payload(payload)
 
 
 def week04_tools() -> list[Any]:
@@ -416,21 +482,24 @@ def week04_prompt_parts() -> list[str]:
         "참석자가 있든 없든, personal_create_schedule은 호출하지 마라. "
         "같은 사용자 요청에 대해 extract_schedule_request/save_structured_request 흐름과 "
         "personal_create_schedule을 동시에 호출해 같은 일정을 두 번 저장하지 마라.",
-        "Week2 의 json-only 답변 규칙은 이후 주차에서 적용되지 않는다. 모든 답변은 자연어로 처리해라.",
         "list_saved_requests/get_saved_request/personal_list_saved_schedules는 kind나 "
         "date_from/date_to 같은 필터로 저장된 항목 전체 목록을 보여줘야 하거나, "
         "request_id/schedule_id를 이미 알고 있어 단건을 확인할 때만 사용해라. ",
-
         "제목이나 키워드로 특정 항목 하나를 찾으라는 요청이면 목록을 먼저 불러와 "
         "직접 훑지 말고 search_saved_requests를 바로 호출해라.",
-
         "tool은 정보의 출처를 기준으로 골라라. 사용자가 개인 메모/참고자료로 남긴 내용을 "
         "찾을 때는 search_personal_references, 저장된 일정/할 일/알림 같은 구조화 기록에서 "
         "특정 항목을 찾을 때는 search_saved_requests, 과거에 나눈 일반 대화 발화를 찾을 때는 "
         "search_conversation_messages를 사용해라. 질문이 여러 출처에 걸쳐 있으면 "
         "해당하는 tool을 모두 호출해서 근거를 모아라.",
+        "Week 2 규칙 중 '가장 최근 사용자 메시지 하나당 StructuredRequest를 최소 1개는 만들어 "
+        "requests 배열에 담아라'와 '반드시 JSON 객체만 출력하고 그 외 텍스트/설명/코드블록을 붙이지 마라'는 "
+        "Week 2 structured output agent 전용 규칙이며, Week 3 이후 이 agent에는 적용하지 않는다. "
+        "kind나 requests, StructuredRequestBatch 같은 필드를 답변에 절대 만들지 마라. "
+        "모든 답변은 tool 호출 결과를 근거로 한 자연어 문장으로만 작성해라.",
+        "일정/할 일/알림으로 해석되지 않는 메시지에는 extract_schedule_request/save_structured_request를 아예 호출하지 마라. "
+        "kind=unknown으로 아무거나 저장하지 마라.",
 
-        "tool 호출과 상관 없는 순수한 잡담들은 자연어로 답변해라.",
         # TODO: Week 4 Nana memory agent system prompt를 자유롭게 추가하세요.
     ]
 
