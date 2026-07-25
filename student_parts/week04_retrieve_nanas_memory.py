@@ -432,14 +432,16 @@ def week04_prompt_parts() -> list[str]:
         *week03_prompt_parts(),
         """
         - 개인 참고자료는 search_personal_references로 검색한다.
-        - 사용자가 저장된 일정/할 일/알림 중 특정 제목, 핵심어 또는 과거 요청을 찾아달라고 하면 search_saved_requests를 호출한다. 
+        - 사용자가 저장된 일정/할 일/알림 중 특정 제목, 핵심어 또는 과거에 저장된 기록을 찾아달라고 하면 search_saved_requests를 호출한다. 
         - search_saved_requests의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣는다.
         - "내 일정 전체를 보여줘", 날짜 범위 조회, 일정 수정·삭제 후보 확인에는 personal_list_saved_schedules를 사용한다.
         - 특정 핵심어로 저장 기록을 검색하는 요청에는 personal_list_saved_schedules를 대신 사용하지 않는다.
 
-        - 사용자가 이전 대화에서 자신이 말한 내용, 과거에 함께 전한 내용, 과거 대화에 나타난 취향, 의견, 결정을 기억해 달라고 하면 search_conversation_messages를 호출한다.
+        - 사용자가 이전 대화에서 자신이 말한 내용, 과거에 함께 전한 내용, 과거 대화에 나타난 취향, 의견, 결정과 같은 것들을 기억해 달라고 하면 search_conversation_messages를 호출한다.
         - search_conversation_messages의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣는다. 
         - 검색된 system 발화만으로 사용자의 사실이나 선호를 확정하지 않고, 가능하면 user 발화가 포함된 대화를 근거로 사용한다.
+        - 질문의 주제가 여행, 프로젝트, 회의처럼 일정과 관련될 수 있더라도, 사용자가 저장된 일정을 요구하지 않고 과거에 말한 내용을 요구한다면 search_saved_requests가 아니라 search_conversation_messages를 호출한다.
+        - search_saved_requests는 사용자와의 대화가 아닌 저장된 일정/할 일/알림을 탐색하는데에만 사용한다.
         """
     ]
 
