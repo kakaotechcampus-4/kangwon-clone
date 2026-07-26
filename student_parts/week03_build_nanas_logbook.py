@@ -327,7 +327,7 @@ def structured_request_from_week01_schedule(schedule: dict[str, Any]) -> SaveStr
 
 
 @tool("personal_create_schedule")
-def personal_create_schedule(       ### 추가 과제
+def personal_create_schedule(
     title: str,
     date: str,
     start_time: str,
@@ -403,8 +403,6 @@ def personal_list_saved_schedules(
 ) -> str:
     """앱 DB에 저장된 일정 목록을 날짜/종류 필터로 반환합니다. Nana가 조회/수정/삭제 후보를 볼 때 사용합니다."""
 
-    if kind == None:
-        kind = "personal_schedule"
     
     schedules = _store().list_schedules(limit, kind, date_from, date_to)
 
@@ -412,7 +410,7 @@ def personal_list_saved_schedules(
 
 
 
-def delete_saved_schedules_dict(        ### 추가 과제
+def delete_saved_schedules_dict(
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
@@ -429,7 +427,7 @@ def delete_saved_schedules_dict(        ### 추가 과제
 
 
 @tool(args_schema=SavedScheduleUpdateInput)
-def personal_update_saved_schedule(     ### 추가 과제
+def personal_update_saved_schedule(
     schedule_id: str,
     title: str | None = None,
     date: str | None = None,
@@ -449,7 +447,7 @@ def personal_update_saved_schedule(     ### 추가 과제
 
 
 @tool(args_schema=SavedScheduleDeleteInput)
-def personal_delete_saved_schedules(        ### 추가 과제
+def personal_delete_saved_schedules(
     schedule_ids: list[str] | None = None,
     date: str | None = None,
     title: str | None = None,
@@ -467,8 +465,12 @@ def personal_delete_saved_schedules(        ### 추가 과제
 def week03_tools() -> list[Any]:
     """Week 1 도구, Week 2 구조화 helper, SQLite 저장/조회/삭제 도구를 조립합니다."""
 
+    # Week 1의 인메모리 tool 중 SQLite 버전과 겹치는 list/delete는 제외하고,
+    # create만 Week 3 SQLite 버전으로 교체한다. (겹치면 LLM이 인메모리 tool을 잘못 고름)
     base_tools = [
-        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item for item in week01_tools()
+        personal_create_schedule if _tool_name(item) == "personal_create_schedule" else item
+        for item in week01_tools()
+        if _tool_name(item) not in ("personal_list_schedules", "personal_delete_schedule")
     ]
     return [
         *base_tools,
@@ -495,7 +497,11 @@ def week03_prompt_parts() -> list[str]:
         *week02_prompt_parts(),
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        # TODO: 현재 날짜, Week 3 tool 선택 기준, 이번 주차의 범위를 설명하는 agent 지시를 추가하세요.
+        f"일정 생성, 조회, 수정, 삭제를 할 때에는 {current_app_date_iso()}을 오늘 날짜 기준으로 하여 상대적인 날짜들을 결정한다.",
+        "사용자가 저장되어 있는 일정들에 대해 물어보면 list_saved_requests를 사용하여 일정 기록들에 대해 조회한다.",
+        "사용자가 구체적인 일정의 내용을 물어보면 personal_list_saved_schedules를 사용하여 일정을 조회한다.",
+        "사용자가 일정 취소나 삭제를 요청하면 personal_list_saved_schedules를 사용하여 조회 후, 존재하는 일정이라면 personal_delete_saved_schedules를 사용하여 일정 삭제를 한다.",
+        "사용자가 일정 수정을 요청하면 personal_list_saved_schedules를 사용하여 조회 후, 존재하는 일정이라면 personal_update_saved_schedule를 사용하여 일정 수정을 한다."
     ]
 
 
