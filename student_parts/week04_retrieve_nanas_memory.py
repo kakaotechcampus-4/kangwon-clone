@@ -223,9 +223,21 @@ def add_personal_reference_dict(
     content: str,
     tags: list[str] | None = None,
 ) -> dict[str, Any]:
-    """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다."""
+    """개인 참고자료를 vector store에 추가하고 backend 정보를 반환합니다.
 
-    return reference_store.add_personal_reference(title=title, content=content, tags=tags or [])
+    제목이나 내용이 공백뿐이면 저장하지 않고 error dict를 반환해 collection을 그대로 둡니다.
+    """
+
+    clean_title = (title or "").strip()
+    clean_content = (content or "").strip()
+    if not clean_title or not clean_content:
+        return {"error": "empty_title_or_content"}
+
+    return reference_store.add_personal_reference(
+        title=clean_title,
+        content=clean_content,
+        tags=tags or [],
+    )
 
 
 def search_personal_reference_hits(
@@ -291,6 +303,14 @@ def add_personal_reference(title: str, content: str, tags: list[str] | None = No
     """개인 참고자료를 ChromaDB에 추가합니다."""
 
     saved = add_personal_reference_dict(REFERENCE_STORE, title=title, content=content, tags=tags)
+    if "error" in saved:
+        return json_payload(
+            {
+                "ok": False,
+                "error": saved["error"],
+                "message": "제목과 내용이 모두 필요해서 저장하지 않았습니다.",
+            }
+        )
     backend = saved.pop("backend")
     return json_payload({"reference_backend": backend, "reference": saved})
 
@@ -362,10 +382,30 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         (
-            "4주차부터는 기억 출처를 구분해서 검색해."
-            "사용자의 개인 선호나 메모, 참고자료를 물어보면 search_personal_references로 찾아봐."
-            "저장된 일정/할 일/알림을 물어보면 search_saved_requests로 찾아봐."
+            "4주차부터는 기억 출처를 구분해서 검색해. "
+            "사용자의 개인 선호나 메모, 참고자료를 물어보면 search_personal_references로 찾아봐. "
+            "저장된 일정/할 일/알림을 물어보면 search_saved_requests로 찾아봐. "
             "새 참고자료를 알려주면 add_personal_reference로 저장해."
+        ),
+        (
+            "한 질문에 개인 선호/기준과 저장된 일정이 함께 필요하면 "
+            "search_personal_references와 search_saved_requests를 모두 호출해. "
+            "예를 들어 '내 오전 회의 선호와 이번 주 일정을 함께 보고 옮기면 좋을 일정을 알려줘'처럼 "
+            "판단 기준이 참고자료에 있고 대상이 일정에 있는 요청은 "
+            "hits와 rows를 모두 받은 뒤에 두 결과를 함께 근거로 제시해서 답해. "
+            "이미 저장돼 있을 수 있는 선호를 사용자에게 다시 알려달라고 되묻지 말고 먼저 검색해봐."
+        ),
+        (
+            "search_saved_requests의 query는 문자열 부분 일치 검색이야. "
+            "'이번 주 일정'이나 '다음 달 할 일'처럼 기간을 나타내는 표현은 저장된 기록에 그대로 들어 있지 않아서 결과가 비어. "
+            "'회의', '치과'처럼 짧은 핵심 명사를 쓰고, 찾을 주제가 딱히 없으면 빈 문자열을 넘겨 최근 기록부터 훑어봐. "
+            "결과가 비면 곧바로 없다고 답하지 말고 더 짧은 검색어로 한 번 더 시도해봐."
+        ),
+        (
+            "저장했다는 안내는 실제 tool 결과가 있을 때만 해. "
+            "add_personal_reference를 호출해서 reference_id를 받은 경우에만 저장했다/기억했다고 말해. "
+            "사용자가 선호를 말하기만 하고 저장을 요청하지 않았다면 기억하겠다고 약속하지 말고, "
+            "참고자료로 저장할지 먼저 물어봐."
         ),
     ]
 
