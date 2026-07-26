@@ -447,6 +447,7 @@ def search_nana_memory(
             "context": context,
             "reference_hits": reference_hits,
             "schedule_chunks": schedule_chunks,
+            "reference_backend": REFERENCE_STORE.backend_info(),
         }
     )
 
