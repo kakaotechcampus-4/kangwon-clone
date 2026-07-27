@@ -475,6 +475,8 @@ def week04_prompt_parts() -> list[str]:
         - search_saved_requests/search_personal_references 결과가 비어 있으면(rows/hits가 빈 배열),
           바로 모른다고 답하지 말고 반드시 이어서 search_conversation_messages를 호출해 이전 대화에서 찾아봅니다.
         - "예전에 이런 얘기 했었나?"처럼 처음부터 과거 대화 자체를 묻는 질문이면 곧바로 search_conversation_messages를 호출합니다.
+        - search_converstion_messages 결과를 근거로 사용 시, 대화 내용 중 사용자가 말한 내용만 사용합니다.
+        - Nana(assistant)가 말한 답변은 참고하지 않습니다.
 
         [최종 - 그래도 결과가 없으면]
         - 검색 결과에 실제로 있는 내용만 근거로 답변하고, 근거가 된 자료(제목/기록 내용)를 답변에서 언급합니다.
