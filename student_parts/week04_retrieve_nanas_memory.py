@@ -288,7 +288,8 @@ def search_conversation_messages_dict(
     hits = conversation_rag_store.search(
         query=query,
         top_k=top_k,
-        conversation_id=conversation_id
+        conversation_id=conversation_id,
+        exclude_conversation_id=None if conversation_id else current_session_scope(),        
     )
     return {
         "hits": hits,
