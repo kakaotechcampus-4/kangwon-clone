@@ -28,3 +28,6 @@ dist/
 # Keep later-week student files local until their assignment is published.
 student_parts/week05_load_kanas_past_conversations.py
 student_parts/week06_kanamate_decides_schedule.py
+
+# 테스트 하네스는 로컬 전용(주차별 보관, 재실행/회차 비교용). 결과 리포트만 report/ 로 커밋한다.
+test_harness/
