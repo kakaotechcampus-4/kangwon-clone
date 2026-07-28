@@ -386,6 +386,7 @@ def week04_prompt_parts() -> list[str]:
         "내용·핵심어로 특정 항목을 찾을 때는 list_saved_requests가 아니라 search_saved_requests를 쓴다. "
         "list_saved_requests는 종류·날짜로 전체 목록을 훑을 때 쓴다. "
         "날짜·기간으로 일정 목록을 볼 때는 personal_list_saved_schedules를 쓴다. "
+        "personal_list_schedules는 Week 1-2의 현재 대화 임시 메모리 조회 전용이므로 일정 조회에는 절대 쓰지 않는다. "
         "검색 결과를 근거로 답하고, 추측하여 지어내지 않는다."
     ]
 
