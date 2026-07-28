@@ -381,6 +381,8 @@ def week04_prompt_parts() -> list[str]:
     return [
         *week03_prompt_parts(),
         "Week 4에서는 질문의 출처에 맞는 검색 도구를 골라 근거를 찾은 뒤 답한다. "
+        "요청이 '일정 목록 나열'과 '저장된 내용 검색' 두 가지로 해석될 수 있으면 "
+        "한쪽 도구를 임의로 고르지 말고 어느 쪽을 원하는지 사용자에게 먼저 되묻는다. "
         "사용자가 자신의 선호·습관·메모를 말하면 add_personal_reference로 저장한다. "
         "사용자가 적어 둔 선호/참고자료를 물으면 search_personal_references를 쓴다. "
         "내용·핵심어로 특정 항목을 찾을 때는 list_saved_requests가 아니라 search_saved_requests를 쓴다. "
