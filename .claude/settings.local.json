@@ -26,7 +26,14 @@
       "Bash(grep -n *)",
       "Bash(echo \"grep_rc=$?\")",
       "Bash(git fetch *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(./.venv/bin/python -c ' *)",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(grep -rln \"pytest\\\\|unittest\\\\|tmp_path\\\\|tmpdir\" --include=\"*.py\" --include=\"*.md\" -not -path \"./.venv/*\" .)",
+      "Bash(./.venv/Scripts/python.exe /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/08a9791a-5889-4293-8b9f-78fb4af47acd/scratchpad/verify_search_nana_memory.py)",
+      "Bash(./.venv/Scripts/python.exe _verify_search_nana_memory_tmp.py)",
+      "Bash(rm -f \"/mnt/c/Users/김은우/kangwon-clone/_verify_search_nana_memory_tmp.py\")",
+      "Bash(rm -f /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/08a9791a-5889-4293-8b9f-78fb4af47acd/scratchpad/verify_search_nana_memory.py)"
     ]
   }
 }
