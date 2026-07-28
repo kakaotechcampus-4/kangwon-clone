@@ -300,6 +300,9 @@ def search_conversation_messages_dict(
         conversation_id=conversation_id,
     )
 
+    for hit in hits:
+        hit["messages"] = sqlite_store.load_conversation(hit.get("conversation_id", ""))
+
     return {
         "hits": hits,
         "rows": hits,
@@ -450,14 +453,19 @@ def week04_prompt_parts() -> list[str]:
             "첫 번째로, 사용자가 '기억해줘', '메모해줘'처럼 선호, 참고자료를 저장해 달라고 하면 "
             "add_personal_reference로 ChromaDB에 저장한다. "
             "두 번째로, '내 회의 선호가 뭐였지', '내가 적어둔 참고자료 찾아줘'처럼 "
-            "저장해 둔 개인 선호, 참고자료를 묻는 질문은 search_personal_references로 검색한다 "
+            "저장해 둔 개인 선호, 참고자료를 묻는 질문은 search_personal_references로 검색한다. "
             "세 번째로, '저장한 일정/할 일 중에 ~있었나', '예전에 저장한 (어떤) 일정 찾아줘'처럼 "
             "SQLite에 저장된 일정, 할 일, 알림 기록을 키워드로 찾을 때는 search_saved_requests를 사용한다. "
+            "네 번째로, '예전에 우리 무슨 얘기 했지', '지난 대화에서 ~라고 했잖아'처럼 "
+            "과거 앱 대화 발화 내용을 물으면 search_conversation_messages로 검색한다. "
+            "이는 일정 DB(search_saved_requests)와 다른 '대화 기록' 출처이며, "
+            "conversation_id를 지정하지 않으면 지금 진행 중인 대화는 검색에서 제외된다. "
             "search_personal_references는 ChromaDB 개인 참고자료 검색이고, "
             "search_saved_requests는 SQLite 저장 기록 검색이라 출처가 다르므로 질문 성격에 맞는 것을 고른다. "
             "날짜나 종류로 일정 목록을 그대로 나열하는 조회는 여전히 personal_list_saved_schedules를 쓰고, "
             "키워드로 과거 저장 기록을 찾아 근거로 삼을 때만 search_saved_requests를 쓴다. "
-            "검색 결과의 hits/rows에 담긴 내용만 근거로 사용하고, 없는 사실을 지어내서는 안된다."
+            "대화 기록을 근거로 쓸 때는 hit의 role을 확인해 assistant 발화만으로 사실을 확정하지 않는다. "
+            "검색 결과의 hits/rows에 담긴 내용만 근거로 사용하고, 없는 사실을 지어내서는 안 된다."
         ),
     ]
 
