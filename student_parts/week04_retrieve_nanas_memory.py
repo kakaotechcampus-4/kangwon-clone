@@ -267,7 +267,7 @@ def search_personal_reference_hits(
 ) -> list[dict[str, Any]]:
     """ChromaDB 검색 결과를 tool이 바로 반환하기 쉬운 hit 구조로 정리합니다."""
 
-    # TODO: 개인 참고자료 검색 결과를 id/content/distance/metadata 구조로 정리하세요.
+    
     ref_hits = reference_store.search_personal_references(query, limit=top_k)
     return [
         {
@@ -366,7 +366,7 @@ def search_personal_references(query: str, top_k: int = 2) -> str:
     """개인 참고자료를 ChromaDB와 OpenAI embedding 기반으로 검색합니다."""
 
     hits = search_personal_reference_hits(
-        REFERENCE_STORE, query=query, top_k=safe_limit(top_k, default=2, maximum=50)
+        REFERENCE_STORE, query=query, top_k=safe_limit(top_k)
     )
     return json_payload({"hits": hits})
 
@@ -376,7 +376,7 @@ def search_saved_requests(query: str, top_k: int = 3) -> str:
     """SQLite에 저장된 구조화 일정/할 일/알림 row를 검색합니다. query에는 LLM이 고른 일정/할 일/알림 핵심어를 넣습니다."""
 
     rows = search_saved_request_rows(
-        SQLITE_STORE, query=query, top_k=safe_limit(top_k, default=3, maximum=50)
+        SQLITE_STORE, query=query, top_k=safe_limit(top_k)
     )
     return json_payload({"rows": rows})
 
@@ -409,27 +409,50 @@ def search_nana_memory(
 ) -> str:
     """개인 참고자료와 SQLite 저장 일정을 한 번에 검색하고 일정 chunk를 반환합니다."""
 
-    safe = safe_limit(limit, default=5, maximum=20)
+    safe = safe_limit(limit)
 
     reference_hits = search_personal_reference_hits(
         REFERENCE_STORE, query=query, top_k=safe
     )
 
-    saved_requests = SQLITE_STORE.list_saved_requests(
-        date_from=date_from, date_to=date_to, limit=max(safe * 4, safe)
+    saved_requests = search_saved_request_rows(
+        SQLITE_STORE, query=query, top_k=1000
     )
+
     if attendee:
         saved_requests = [
             row
             for row in saved_requests
             if attendee in _decode_attendees(row.get("members_json"))
         ]
+    if date_from:
+        saved_requests = [
+            row
+            for row in saved_requests
+            if (row.get("date") or "") >= date_from
+        ]
+    if date_to:
+        saved_requests = [
+            row
+            for row in saved_requests
+            if (row.get("date") or "") <= date_to
+        ]
+    
     saved_requests = saved_requests[:safe]
+    
+    KIND_LABELS = {
+    "personal_schedule": "일정",
+    "group_schedule": "그룹 일정",
+    "todo": "할일",
+    "reminder": "알림",
+    "unknown": "미분류",
+}
 
-    schedule_chunks = [
-        f"[{row.get('kind')}] {row.get('title') or '제목 없음'} | 날짜={row.get('date') or '미정'} "
+    saved_request_chunks = [
+        f"[{KIND_LABELS.get(row.get('kind'), row.get('kind'))}] {row.get('title') or '제목 없음'} | 날짜={row.get('date') or '미정'} "
         f"{row.get('start_time') or ''}~{row.get('end_time') or ''} | "
-        f"참석자={_decode_attendees(row.get('members_json'))} | reason={row.get('reason') or ''}"
+        f"참석자={_decode_attendees(row.get('members_json'))} | reason={row.get('reason') or ''} | "
+        f"request_id={row.get('request_id')}"
         for row in saved_requests
     ]
 
@@ -440,15 +463,15 @@ def search_nana_memory(
         )
     else:
         context_lines.append("- 검색된 참고자료가 없습니다.")
-    context_lines.append("[SQLite 저장 일정]")
-    if schedule_chunks:
-        context_lines.extend(f"- {chunk}" for chunk in schedule_chunks)
+    context_lines.append("[SQLite 저장 내역]")
+    if saved_request_chunks:
+        context_lines.extend(f"- {chunk}" for chunk in saved_request_chunks)
     else:
         context_lines.append("- 검색된 저장 일정이 없습니다.")
 
     payload = {
         "reference_hits": reference_hits,
-        "schedule_chunks": schedule_chunks,
+        "saved_request_chunks": saved_request_chunks,
         "context": "\n".join(context_lines),
     }
     return json_payload(payload)
