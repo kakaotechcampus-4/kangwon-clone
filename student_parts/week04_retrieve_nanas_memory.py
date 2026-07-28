@@ -259,18 +259,31 @@ def search_nana_memory(
     limit = safe_limit(limit, default=5, maximum=20)
     reference_hits = search_personal_reference_hits(REFERENCE_STORE, query=query, top_k=limit)
 
+    CANDIDATE_POOL_SIZE = 200
     if date_from or date_to:
-        raw_rows = SQLITE_STORE.list_saved_requests(date_from=date_from, date_to=date_to, limit=limit)
+        raw_rows = SQLITE_STORE.list_saved_requests(
+            date_from=date_from, date_to=date_to, limit=CANDIDATE_POOL_SIZE
+        )
         saved_rows = [
             {**row, "members": _decode_attendees(row.get("members_json"))}
             for row in raw_rows
         ]
     else:
-        saved_rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=limit)
+        saved_rows = search_saved_request_rows(SQLITE_STORE, query=query, top_k=CANDIDATE_POOL_SIZE)
+
+    if (date_from or date_to) and query:
+        saved_rows = [
+            row for row in saved_rows
+            if query in (row.get("title") or "")
+            or query in (row.get("reason") or "")
+            or query in (row.get("raw_json") or "")
+        ]
 
     if attendee:
         saved_rows = [row for row in saved_rows if attendee in row.get("members", [])]
 
+    saved_rows = saved_rows[:limit]
+    
     lines = ["[개인 참고자료]"]
     if reference_hits:
         for hit in reference_hits:
@@ -303,6 +316,7 @@ def week04_tools() -> list[Any]:
         search_personal_references,
         search_saved_requests,
         search_conversation_messages,
+        search_nana_memory,        
     ]
 
 
@@ -323,24 +337,44 @@ def week04_prompt_parts() -> list[str]:
             "1. 개인 참고자료 (search_personal_references / add_personal_reference)\n"
             "   - 사용자가 '메모해줘', '기억해줘', '참고자료로 남겨줘'처럼 명시적으로 저장을\n"
             "     요청하면 add_personal_reference를 쓴다.\n"
-            "   - '내가 뭐라고 메모해뒀지', '저번에 남긴 참고자료 있어?'처럼 과거에 저장한\n"
-            "     개인 취향/사실을 찾을 때는 search_personal_references를 쓴다.\n"
+            "   - '내가 뭐라고 메모해뒀지', '저번에 남긴 참고자료 있어?', '우주여행\n"
+            "     관련해서 저장한 거 있어?', '이런 주제로 뭐 적어둔 거 있나?'처럼\n"
+            "     취향/생각/의견/아이디어 등 구조화된 일정이 아닌 자유 형식의 개인\n"
+            "     기록을 찾을 때는 search_personal_references를 쓴다.\n"
+            "   - '저장한 거 있어?', '저장해뒀나?' 같은 표현은 saved_requests\n"
+            "     전용이 아니다. 찾으려는 대상이 회의/예약/할 일처럼 구체적인\n"
+            "     일정성 제목이 아니라, 주제/관심사/생각에 가깝다면 이 표현이\n"
+            "     붙어 있어도 search_personal_references를 먼저 시도한다.\n"
             "\n"
-            "2. 저장된 일정/할 일/알림 (search_saved_requests)\n"
+            "2. 저장된 일정/할 일/알림\n"
             "   - 정식으로 구조화되어 등록된 일정/할 일/알림 자체를 다루는 출처다.\n"
-            "   - 순수하게 날짜나 기간으로만 조회할 때는(예: '오늘 일정 뭐 있어', '이번 주\n"
-            "     할 일 보여줘', '이번 달 일정 브리핑해줘') search_saved_requests가 아니라\n"
-            "     Week 3의 personal_list_saved_schedules(date_from, date_to)를 사용한다.\n"
-            "     search_saved_requests는 date 컬럼을 비교하는 게 아니라 title/reason/\n"
-            "     raw_json 안의 텍스트를 검색하는 tool이라, '이번 주' 같은 표현만으로는\n"
+            "     아래 세 tool 중 조회 대상과 조회 방식에 맞는 것을 골라 쓴다.\n"
+            "   - 날짜나 기간으로 '일정'(personal_schedule/group_schedule)을 조회할\n"
+            "     때는(예: '오늘 일정 뭐 있어', '이번 주 일정 보여줘', '이번 달 일정\n"
+            "     브리핑해줘') Week 3의 personal_list_saved_schedules(date_from,\n"
+            "     date_to)를 사용한다. 이 tool은 schedules 테이블만 조회하므로\n"
+            "     personal_schedule/group_schedule에만 쓴다.\n"
+            "   - 날짜나 기간으로 '할 일'이나 '알림'(todo/reminder)을 조회할\n"
+            "     때는(예: '이번 주 할 일 보여줘', '오늘 알림 있어?', '이번 주에\n"
+            "     등록해둔 할 일 있어?') personal_list_saved_schedules가 아니라\n"
+            "     Week 3의 list_saved_requests(kind='todo' 또는 'reminder',\n"
+            "     date_from, date_to)를 사용한다. todo/reminder는 schedules\n"
+            "     테이블이 아니라 structured_requests 테이블에 저장되므로\n"
+            "     personal_list_saved_schedules로는 조회되지 않는다.\n"
+            "   - search_saved_requests는 '회의', '치과 예약', '장어먹기'처럼\n"
+            "     구체적인 일정/할 일/알림 제목으로 저장 요청을 찾을 때만 사용한다\n"
+            "     (예: '회의 관련해서 저장한 거 있어?', '헬스장 예약 저장해뒀나').\n"
+            "     이 tool은 date 컬럼을 비교하는 게 아니라 title/reason/raw_json\n"
+            "     안의 텍스트를 검색하는 tool이라, '이번 주' 같은 표현만으로는\n"
             "     날짜 범위를 정확히 찾을 수 없다.\n"
+            "   - '우주여행', '취미', '좋아하는 것'처럼 일정/할 일/알림의 제목이\n"
+            "     아니라 생각이나 관심사에 가까운 주제는 search_saved_requests가\n"
+            "     아니라 search_personal_references를 먼저 시도한다.\n"
             "   - 구체적인 제목이 날짜 표현과 함께 언급된 질문은(예: '장어먹은 게\n"
             "     이번주였나', '회의가 다음주 맞나') 날짜부터 좁히지 말고\n"
             "     search_saved_requests로 제목 키워드를 먼저 검색해 결과 row의 date\n"
             "     필드로 답한다. personal_list_saved_schedules로 먼저 좁히면 범위가\n"
             "     틀렸을 때 재검색이 필요해 호출이 낭비된다.\n"
-            "   - search_saved_requests는 특정 키워드로 저장 요청을 찾을 때만 사용한다\n"
-            "     (예: '회의 관련해서 저장한 거 있어?', '헬스장 예약 저장해뒀나').\n"
             "   - '~일정 언제야', '~저장한 거 있어' 같은 조회 질문에는\n"
             "     extract_schedule_request나 save_structured_request를 호출하지\n"
             "     않는다. 이 두 tool은 새로운 일정/할 일/알림을 등록할 때만 사용한다.\n"
@@ -358,8 +392,13 @@ def week04_prompt_parts() -> list[str]:
             "     그것을 사실 확정 근거로 쓰지 않는다. user의 발화를 우선 근거로 삼는다.\n"
             "\n"
             "구분이 애매하면 이렇게 판단한다:\n"
-            "- 질문이 '정식으로 등록/기록했는지'를 묻는 뉘앙스면 saved_requests를 먼저 찾고,\n"
-            "  결과가 없으면 search_conversation_messages로 확장해서 다시 찾는다.\n"
+            "- 먼저 찾으려는 대상이 무엇인지로 구분한다: 일정/할 일/알림처럼 구체적인\n"
+            "  제목과 시간이 있는 항목이면 saved_requests, 취향/생각/의견처럼 자유\n"
+            "  형식의 기록이면 personal_references, 정식 저장 없이 대화 중 지나가듯\n"
+            "  한 말이면 conversation_messages다. saved_requests를 무조건 먼저\n"
+            "  시도하는 기본값으로 삼지 않는다.\n"
+            "- 그래도 애매하면 가장 가능성 높은 tool 하나를 먼저 시도하고, 결과가\n"
+            "  없으면 다른 출처로 확장해서 다시 찾는다.\n"
             "- 하나의 요청에 여러 출처가 필요하면(예: '일정도 보여주고 관련 메모도 같이') "
             "  해당하는 tool을 모두 호출해서 종합적으로 답한다.\n"
             "- 확실하지 않을 때는 tool을 호출하지 않고 추측해서 답하지 말고, "
@@ -369,8 +408,11 @@ def week04_prompt_parts() -> list[str]:
             "- 이번에 호출한 tool의 실제 반환값(hits/rows)에 들어있는 내용만 근거로 삼는다.\n"
             "- 이전 대화에서 기억하는 내용이 있더라도, 이번 tool 결과에 없다면 그것을\n"
             "  이번 답변에 섞어서 마치 이번 검색으로 찾은 것처럼 말하지 않는다.\n"
-            "- 검색 결과에 사용자가 찾는 내용이 안 보이면, 무리하게 더 찾으려 하지 말고\n"
-            "  관련 자료가 없다고 솔직히 답한다."
+            "- 검색 결과에 사용자가 찾는 내용이 안 보이면, 같은 tool의 top_k만 기계적으로\n"
+            "  늘리지 말고, 검색어(query)를 다른 표현으로 바꾸거나 더 적절한 다른 tool로\n"
+            "  재시도해본다. 그래도 근거를 찾지 못했다면, 검색한 표현을 명시하며 '<검색어>로는\n"
+            "  찾지 못했다'고 답한다. 표현을 다르게 저장해뒀을 수 있으니, 다른 키워드로\n"
+            "  다시 물어봐도 좋다고 안내한다."
         ),
     ]
 
