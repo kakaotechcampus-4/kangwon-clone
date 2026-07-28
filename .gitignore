@@ -25,6 +25,9 @@ node_modules/
 dist/
 
 # Keep later-week student files local until their assignment is published.
+<<<<<<< HEAD
 student_parts/week04_retrieve_nanas_memory.py
 student_parts/week05_load_kanas_past_conversations.py
+=======
+>>>>>>> 8c16b940bc5b9554f680522e943651b015bde52e
 student_parts/week06_kanamate_decides_schedule.py
