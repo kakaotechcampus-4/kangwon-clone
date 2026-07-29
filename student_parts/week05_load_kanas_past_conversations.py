@@ -302,7 +302,78 @@ def _collect_member_schedules(
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
-    ...
+
+    # 출처가 다른 두 일정을 같은 row 구조로 통일하여 한 배열에 담기
+    #   내 일정(personal_schedules) -> member_name에 "나"를 붙여 반환
+    #   외부 멤버(MCP extract_...)  -> rows 그대로 사용
+    # 공통 row 구조: member_name / title / date / start_time / end_time / notes
+    # 왜? -> LLM이 "누가 언제 바쁜지"를 한 목록으로 읽기 위하여
+    # 이름과 날짜 정규화 -> 내 일정 변환(+날짜 범위 필터) -> 외부 멤버 조회 -> 합쳐서 반환
+    
+    # 1. 외부 store 기준으로 멤버 이름과 날짜 범위를 정규화
+    #   normalize_external_schedule_date_bounds: "2026-07-07T00:00" -> "2026-07-07" (날짜 부분만 추출)
+    #   -> 아래 내 일정 날짜와 MCP 호출이 같은 기준을 사용하게 됨
+    normalized_member_names = normalize_external_member_names(member_names)
+    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(member_names, date_from, date_to)
+
+    # 공통 row 구조 list
+    rows: list[dict[str, Any]] = []
+
+    # 2. 내 일정: personal_schedules는 날짜로 좁혀지지 않은 전체 목록이라 범위 규정
+    #   _structured_request_from_schedule_row: SQLite row / week1 임시 row를 같은 모양으로 읽어주는 Adapter
+    #   내 일정에는 member_name이 없으므로 "나"를 직접 붙여 외부 멤버 row와 구조를 맞춤
+    for schedule in personal_schedules:
+        request = _structured_request_from_schedule_row(schedule)
+        schedule_date = str(request.date or "")
+        if normalized_date_from and schedule_date < normalized_date_from:
+            continue
+        if normalized_date_to and schedule_date > normalized_date_to:
+            continue
+        rows.append(
+            {
+                "member_name": "나",
+                "title": request.title or "제목 없음",
+                "date": schedule_date,
+                "start_time": request.start_time or "미정",
+                "end_time": request.end_time or "미정",
+                "notes": "앱에 저장된 내 일정",
+            }
+        )
+
+    # 3. 외부 멤버 일정: MCP tool 결과(JSON 문자열)을 dict로 읽어 rows만 꺼냄
+    #   멤버 이름이 하나도 없으면 조회할 대상이 없으므로 MCP 호출 생략
+    if normalized_member_names:
+        payload = json.loads(
+            call_mcp_tool_sync(
+                "extract_schedules_from_history",
+                {
+                    "member_names": normalized_member_names,
+                    "date_from": normalized_date_from,
+                    "date_to": normalized_date_to,
+                },
+            )
+        )
+        for row in payload.get("rows", []):
+            rows.append(
+                {
+                    "member_name": row.get("member_name"),
+                    "title": row.get("title"),
+                    "date": row.get("date"),
+                    "start_time": row.get("start_time"),
+                    "end_time": row.get("end_time"),
+                    "notes": row.get("notes"),
+                }
+            )
+
+    # 4. 반환: 합친 rows + schedule_summary
+    return {
+        "member_names": normalized_member_names,
+        "date_from": normalized_date_from,
+        "date_to": normalized_date_to,
+        "rows": rows,
+        "schedule_summary": external_schedule_summary(rows),
+    }
+
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
