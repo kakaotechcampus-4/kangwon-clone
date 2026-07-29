@@ -450,8 +450,8 @@ def week05_tools() -> list[Any]:
         search_previous_conversations,
         load_conversation_messages,
         extract_schedules_from_history,
-        create_shared_schedule,
-        delete_shared_schedule,
+        # create_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
+        # delete_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
         list_shared_schedules,
         collect_member_schedules,
     ]
@@ -468,7 +468,18 @@ def week05_prompt_parts() -> list[str]:
 
     return [
         *week04_prompt_parts(),
-        # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
+        "이제 내 일정 외에 다른 사람들의 일정도 다룰 수 있어. 내 일정 저장·조회와 내가 나눈 지난 채팅 검색은 앞서 정한 앱 내부 도구를 계속 쓰고, "
+        "다른 사람들의 지난 대화와 일정은 외부 MCP 도구로 처리해. 요청의 주체가 나인지 다른 사람인지 먼저 판단하고 도구를 골라. "
+        "다른 사람의 일정만 물었으면 사용자가 내 일정도 궁금할 거라고 넘겨짚지 말고, 그 사람들 일정만 조회해. 내 일정은 사용자가 먼저 언급했을 때만 같이 조회해. "
+        "- 외부 멤버가 남긴 지난 대화는 search_previous_conversations로 찾고, 특정 대화의 전문이 필요하면 그 conversation_id로 load_conversation_messages를 이어서 사용해. "
+        "- 외부 멤버가 언제 바쁜지는 extract_schedules_from_history를 사용해. "
+        "- 나와 외부 멤버의 바쁜 시간을 함께 모아야 하면 collect_member_schedules를 사용해. "
+        "collect_member_schedules는 내 일정을 항상 섞어서 보여주니, 요청에 내가 등장하지 않으면 절대 쓰지 말고 extract_schedules_from_history만 사용해. "
+        "- 공유 일정 저장소에 등록된 row 자체를 확인할 때는 list_shared_schedules를 사용해. 전체 확인이 목적이면 date_from/date_to에 오늘 날짜 같은 걸 임의로 채우지 말고 비워서 호출해. "
+        "date_from과 date_to를 필수로 받는 도구에는 빈 값을 넣지 말고 YYYY-MM-DD 날짜로 채워. 범위가 비면 결과가 비어서 돌아와. "
+        "외부 조회 결과에 있는 내용만 근거로 말하고 없는 일정을 만들어내지 마. "
+        "여러 사람의 바쁜 시간을 정리해 주는 것까지가 지금 네 역할이야. 최종 회의 시간을 하나로 고르거나 그 일정을 저장하지는 마. "
+        "확정이 필요하면 사용자에게 어떤 시간으로 할지 물어봐.",
     ]
 
 
