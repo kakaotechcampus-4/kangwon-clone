@@ -33,7 +33,16 @@
       "Bash(./.venv/Scripts/python.exe /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/08a9791a-5889-4293-8b9f-78fb4af47acd/scratchpad/verify_search_nana_memory.py)",
       "Bash(./.venv/Scripts/python.exe _verify_search_nana_memory_tmp.py)",
       "Bash(rm -f \"/mnt/c/Users/김은우/kangwon-clone/_verify_search_nana_memory_tmp.py\")",
-      "Bash(rm -f /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/08a9791a-5889-4293-8b9f-78fb4af47acd/scratchpad/verify_search_nana_memory.py)"
+      "Bash(rm -f /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/08a9791a-5889-4293-8b9f-78fb4af47acd/scratchpad/verify_search_nana_memory.py)",
+      "Bash(git -C . diff --stat HEAD -- student_parts/week05_load_kanas_past_conversations.py student_parts_baseline/week04_retrieve_nanas_memory.py)",
+      "Bash(cp student_parts/week04_retrieve_nanas_memory.py /tmp/claude-1000/-mnt-c-Users-----kangwon-clone/aa4ee1b3-6685-4192-b685-3e1bd345d641/scratchpad/week04_backup_with_markers.py)",
+      "Bash(sed -i '550,928d;1d' student_parts/week04_retrieve_nanas_memory.py)",
+      "Bash(echo \"grep exit: $?\")",
+      "Bash(sed 's/\\\\$$//')",
+      "Bash(sqlite3 data/kanana_app.sqlite3 \"SELECT schedule_id, request_id, title, date, start_time, end_time, source, created_at FROM schedules WHERE title IN \\('개인 코칭','분기 리뷰 팀 회의'\\) ORDER BY title, created_at;\")",
+      "Bash(git ls-remote *)",
+      "Bash(gh pr *)",
+      "Bash(bash -n run.sh)"
     ]
   }
 }
