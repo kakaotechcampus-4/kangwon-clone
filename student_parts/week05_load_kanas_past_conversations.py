@@ -334,7 +334,18 @@ def extract_schedules_from_history(member_names: list[str], date_from: str, date
     """외부 SQLite 이전 대화에서 멤버별 일정을 추출합니다."""
 
     # TODO: call_mcp_tool_sync("extract_schedules_from_history", args)를 호출해 외부 멤버 busy-time rows를 반환하세요.
-    ...
+    
+    # 이름 정규화와 날짜(ISO datetime -> 날짜) 정리는 외부 store 경계에서 이미 처리하므로, 중복 변환하지 않고 인자를 그대로 넘김
+    # MCP 결과로 rows(member_name/title/date/start_time/end_time/notes), schedule_summary가 들어있고,
+    # 이미 JSON 문자열이므로 가공 없이 그대로 반환
+    return call_mcp_tool_sync(
+        "extract_schedules_from_history",
+        {
+            "member_names": member_names,
+            "date_from": date_from,
+            "date_to": date_to,
+        },
+    )
 
 
 @tool(args_schema=CreateSharedScheduleInput)
