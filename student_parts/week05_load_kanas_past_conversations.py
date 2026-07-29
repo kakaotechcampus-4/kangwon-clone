@@ -314,7 +314,19 @@ def load_conversation_messages(conversation_id: str) -> str:
     """외부 SQLite 데이터베이스에서 특정 이전 대화의 모든 메시지를 불러옵니다."""
 
     # TODO: call_external_tool_payload("load_conversation_messages", {"conversation_id": ...}) 결과를 JSON으로 반환하세요.
-    ...
+    
+    # MCP 결과 문자열을 dict로 파싱하여 반환
+    # call_external_tool_payload의 결과로 dict를 받으므로
+    # json_payload로 다시 JSON 문자열로 변환하여 tool 반환 규격을 맞춤
+    payload = call_external_tool_payload(
+        "load_conversation_messages",
+        {
+            "conversation_id": conversation_id
+        },
+    )
+
+    # Message의 sender/content/created_at과 시간 순서를 보존해야 하므로 가공 없이 payload 넘김
+    return json_payload(payload)
 
 
 @tool(args_schema=ExtractSchedulesFromHistoryInput)
