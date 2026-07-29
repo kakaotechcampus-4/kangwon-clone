@@ -481,7 +481,19 @@ def delete_shared_schedule(
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
     # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    
+    # create_shared_schedule에서 보존해 둔 두 값(schedule_id, source_conversation_id)이 삭제 대상을 찾는 기준이 됨
+    #   두 인자는 AND가 아닌 OR 조건으로, 둘 중 하나만 넘겨도 해당 row를 삭제
+    #   둘 다 없으면 store가 아무것도 지우지 않음 (전체 삭제 방지 장치) -> wrapper에서 별도 방어 불필요
+    # MCP 결과 = {ok, tool_name, deleted_count, deleted} JSON 문자열 -> 가공 없이 그대로 반환
+    return call_mcp_tool_sync(
+        "delete_shared_schedule",
+        {
+            "schedule_id": schedule_id,
+            "source_conversation_id": source_conversation_id,
+        },
+    )
+
 
 
 @tool(args_schema=ListSharedSchedulesInput)
