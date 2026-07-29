@@ -452,7 +452,25 @@ def create_shared_schedule(
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
     # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    
+    # 인자 8개를 변환 없이 그대로 전달 (이름/날짜/빈 값 정규화는 store가 한 번만 처리)
+    #   schedule_id 없음 -> 새 row 생성 (sync_status: "created")
+    #   schedule_id 있음 -> 같은 id row를 갱신 (sync_status: "updated")
+    #   schedule_id / source_conversation_id -> 나중에 삭제 또는 갱신 시 row를 찾을 때 필요하므로 보존
+    # MCP 결과 = {ok, tool_name, shared_schedule} JSON 문자열 -> 가공 없이 그대로 반환
+    return call_mcp_tool_sync(
+        "create_shared_schedule",
+        {
+            "member_name": member_name,
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "notes": notes,
+            "source_conversation_id": source_conversation_id,
+            "schedule_id": schedule_id,
+        },
+    )
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
