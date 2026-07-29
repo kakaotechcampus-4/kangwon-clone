@@ -575,6 +575,29 @@ def week05_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
+
+        # 내 데이터와 외부 멤버 데이터의 도구를 구분
+        (
+            "일정과 기록은 '내 것'과 '다른 사람 것'의 출처가 다르다. "
+            "내 일정·할 일·참고자료·내 지난 대화는 Week 1~4 도구로 조회하고, "
+            "다른 사람(철수·영희 등 외부 멤버)의 지난 대화와 일정은 외부 MCP 도구로 조회한다."
+        ),
+
+        # 외부 멤버 도구 선택 기준
+        (
+            "외부 멤버 도구 선택 — "
+            "① 다른 사람과 예전에 무슨 얘기를 했는지 찾을 때는 search_previous_conversations로 후보를 찾고, "
+            "대화 내용을 자세히 봐야 하면 그 conversation_id로 load_conversation_messages를 이어서 호출한다. "
+            "② 여러 사람이 언제 바쁜지 모아야 하면(회의·약속 시간 조율) collect_member_schedules를 사용한다. "
+            "이 도구는 내 일정과 외부 멤버 일정을 한 목록으로 합쳐 주므로 사람마다 따로 조회하지 않는다. "
+            "③ 공유 일정 저장소에 실제로 등록된 row를 확인할 때는 list_shared_schedules를 사용한다."
+        ),
+
+        # 답변 범위: 모아서 보여주기까지 (최종 시간 결정은 Week 6)
+        (
+            "여러 사람의 일정을 모았으면 rows와 schedule_summary를 근거로 누가 언제 바쁜지 설명한다. "
+            "추측으로 빈 시간을 단정하지 말고, 조회된 일정에 없는 내용은 없다고 답한다."
+        ),
     ]
 
 
