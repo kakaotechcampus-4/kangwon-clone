@@ -189,8 +189,29 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
 def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    ...
+    # 1. 저장된 일정과 임시 일정을 불러오기
+    stored_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules()
+    session_id = current_session_scope()
+    temp_schedules = [schedule for schedule in PERSONAL_SCHEDULES if _schedule_scope(schedule) == session_id]
+
+    # 2. 두 스케줄을 id, schedule_id를 비교하여 중복되지 않게끔 합침.
+    temp_ids = {schedule["id"] for schedule in temp_schedules}
+    matched_temp_ids = set()
+
+    schedules = []
+    for schedule in stored_schedules:
+        # 2-1. 저장된 스케줄이 임시 스케줄에도 있다면 (이미 SQLite로 저장됨) -> 저장된 버전을 사용하고, 매칭된 임시 id로 표시
+        if schedule.get("schedule_id") in temp_ids:
+            matched_temp_ids.add(schedule["schedule_id"])
+        # 2-2. 저장된 스케줄만 있다면 -> 그대로 사용
+        schedules.append(schedule)
+
+    # 3. 아직 SQLite에 저장되지 않은 임시 스케줄만 추가
+    for schedule in temp_schedules:
+        if schedule["id"] not in matched_temp_ids:
+            schedules.append(schedule)
+
+    return schedules
 
 
 def json_payload(payload: dict[str, Any]) -> str:
