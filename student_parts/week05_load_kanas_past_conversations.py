@@ -295,8 +295,19 @@ def search_previous_conversations(
     """외부 SQLite 데이터베이스에 저장된 이전 대화를 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
     # TODO: call_mcp_tool_sync("search_previous_conversations", args)를 호출하고 결과 문자열을 반환하세요.
-    ...
-
+    
+    # 외부 대화 검색은 MCP 서버(mcp_server/sqlite_mcp_server.py)가 담당
+    # member_names는 []와 None의 의미가 달라 인자 변환 없이 그대로 전달
+    #   None -> 전체 멤버 검색
+    #   [] -> 멤버를 지정했으나 유효한 이름이 없음
+    return call_mcp_tool_sync(
+        "search_previous_conversations",
+        {
+            "query": query,
+            "member_names": member_names,
+            "limit": limit,
+        }
+    )
 
 @tool(args_schema=LoadConversationMessagesInput)
 def load_conversation_messages(conversation_id: str) -> str:
