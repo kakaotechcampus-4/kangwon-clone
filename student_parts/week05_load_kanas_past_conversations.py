@@ -382,7 +382,12 @@ def search_previous_conversations(
     member_names: list[str] | None = None,
     limit: int = 5,
 ) -> str:
-    """외부 SQLite 데이터베이스에 저장된 이전 대화를 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
+    """
+    외부 SQLite에 저장된 '다른 사람(외부 멤버)'의 지난 대화를 검색합니다.
+    팀원·동료가 예전에 남긴 얘기, '누가 뭐라고 했는지'를 찾을 때 씁니다.
+    나와 나눈 대화를 찾는 search_conversation_messages와는 다른 저장소입니다.
+    query에는 긴 문장 대신 짧은 핵심 명사 하나를 넣어야 매칭이 잘 됩니다.
+    """
 
     # TODO: call_mcp_tool_sync("search_previous_conversations", args)를 호출하고 결과 문자열을 반환하세요.
     
@@ -401,7 +406,11 @@ def search_previous_conversations(
 
 @tool(args_schema=LoadConversationMessagesInput)
 def load_conversation_messages(conversation_id: str) -> str:
-    """외부 SQLite 데이터베이스에서 특정 이전 대화의 모든 메시지를 불러옵니다."""
+    """
+    외부 대화 하나의 전체 메시지를 시간순으로 불러옵니다.
+    conversation_id는 search_previous_conversations 결과 rows에서 얻습니다.
+    (사용자에게 conversation_id를 되묻지 말고 먼저 검색으로 찾습니다)
+    """
 
     # TODO: call_external_tool_payload("load_conversation_messages", {"conversation_id": ...}) 결과를 JSON으로 반환하세요.
     
@@ -449,7 +458,11 @@ def create_shared_schedule(
     source_conversation_id: str | None = None,
     schedule_id: str | None = None,
 ) -> str:
-    """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
+    """
+    외부 공유 일정 저장소에 일정을 등록하거나 갱신합니다.
+    다른 사람 이름으로 '공유 일정'을 만들어 달라는 요청에 사용합니다.
+    내 개인 일정을 앱 DB에 저장하는 save_structured_request와는 다른 저장소입니다.
+    """
 
     # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
     
@@ -478,7 +491,11 @@ def delete_shared_schedule(
     schedule_id: str | None = None,
     source_conversation_id: str | None = None,
 ) -> str:
-    """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
+    """
+    외부 공유 일정 저장소에서 일정을 삭제합니다.
+    '공유 일정'을 지워 달라는 요청에 사용하며,
+    앱 개인 일정을 지우는 personal_delete_saved_schedules와는 다른 저장소입니다.
+    """
 
     # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
     
@@ -504,7 +521,11 @@ def list_shared_schedules(
     source_conversation_id: str | None = None,
     limit: int = 50,
 ) -> str:
-    """외부 MCP 공유 일정 저장소에 등록된 일정을 조회합니다. 필터가 없으면 기본 공유 일정을 반환합니다."""
+    """
+    외부 공유 일정 저장소에 등록된 일정을 조회합니다. 필터가 없으면 기본 공유 일정을 반환합니다.
+    앱에 저장된 내 일정 목록(personal_list_saved_schedules)과는 다른 저장소입니다.
+    '공유 일정'이 등록돼 있는지 확인할 때 사용합니다.
+    """
 
     # TODO: call_mcp_tool_sync("list_shared_schedules", args)로 공유 일정 저장소 rows를 조회하세요.
     
@@ -577,27 +598,48 @@ def week05_prompt_parts() -> list[str]:
         # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
 
         # 내 데이터와 외부 멤버 데이터의 도구를 구분
-        (
-            "일정과 기록은 '내 것'과 '다른 사람 것'의 출처가 다르다. "
-            "내 일정·할 일·참고자료·내 지난 대화는 Week 1~4 도구로 조회하고, "
-            "다른 사람(철수·영희 등 외부 멤버)의 지난 대화와 일정은 외부 MCP 도구로 조회한다."
-        ),
+          (
+              "일정과 기록은 '내 것'과 '다른 사람 것'의 출처가 다르다. "
+              "내 일정·할 일·참고자료·나와 나눈 지난 대화는 Week 1~4 도구로 조회하고, "
+              "다른 사람(철수·영희 등 외부 멤버)의 지난 대화와 일정은 외부 MCP 도구로 조회한다. "
+              "search_conversation_messages는 '나와 나눈' 대화 전용이므로, "
+              "다른 사람 이름이나 '팀원·동료'가 나오면 search_previous_conversations를 쓴다."
+          ),
 
-        # 외부 멤버 도구 선택 기준
-        (
-            "외부 멤버 도구 선택 — "
-            "① 다른 사람과 예전에 무슨 얘기를 했는지 찾을 때는 search_previous_conversations로 후보를 찾고, "
-            "대화 내용을 자세히 봐야 하면 그 conversation_id로 load_conversation_messages를 이어서 호출한다. "
-            "② 여러 사람이 언제 바쁜지 모아야 하면(회의·약속 시간 조율) collect_member_schedules를 사용한다. "
-            "이 도구는 내 일정과 외부 멤버 일정을 한 목록으로 합쳐 주므로 사람마다 따로 조회하지 않는다. "
-            "③ 공유 일정 저장소에 실제로 등록된 row를 확인할 때는 list_shared_schedules를 사용한다."
-        ),
+          # 외부 멤버 도구 선택 기준
+          (
+              "외부 멤버 도구 선택 — "
+              "① 다른 사람이 예전에 한 얘기('팀원이 남긴 얘기', '누가 뭐라고 했는지')를 찾을 때는 "
+              "search_previous_conversations로 후보를 찾고, 내용을 더 봐야 하면 그 conversation_id로 "
+              "load_conversation_messages를 이어서 호출한다. "
+              "② 여러 사람이 언제 바쁜지 모아야 하면(회의·약속 시간 조율) collect_member_schedules를 사용한다. "
+              "이 도구는 내 일정과 외부 멤버 일정을 한 목록으로 합쳐 주므로 사람마다 따로 조회하지 않는다. "
+              "③ '공유 일정' 요청은 공유 저장소 도구를 쓴다. "
+              "조회는 list_shared_schedules, 등록은 create_shared_schedule, 삭제는 delete_shared_schedule이다."
+          ),
 
-        # 답변 범위: 모아서 보여주기까지 (최종 시간 결정은 Week 6)
-        (
-            "여러 사람의 일정을 모았으면 rows와 schedule_summary를 근거로 누가 언제 바쁜지 설명한다. "
-            "추측으로 빈 시간을 단정하지 말고, 조회된 일정에 없는 내용은 없다고 답한다."
-        ),
+          # 저장소 구분: 앱 개인 DB vs 외부 공유 저장소
+          (
+              "저장소 구분 — 내 개인 일정은 앱 DB(save_structured_request 등)에 저장하고, "
+              "'공유 일정'은 그와 다른 외부 공유 저장소에 저장한다. "
+              "다른 사람 이름으로 공유 일정을 등록·삭제해 달라는 요청을 개인 일정 저장·삭제 도구로 처리하지 않는다. "
+              "공유 저장소에 등록된 목록을 물으면 내 일정 목록 도구가 아니라 list_shared_schedules로 조회한다."
+          ),
+
+          # 되묻지 말고 검색 먼저 + 검색어는 짧은 핵심어
+          (
+              "외부 대화·일정 요청에도 되묻기보다 검색을 먼저 한다. "
+              "대화를 특정하지 못해도 conversation_id를 사용자에게 묻지 말고 "
+              "search_previous_conversations로 후보를 찾은 뒤 필요한 대화를 골라 이어서 조회한다. "
+              "검색어에는 긴 문장을 그대로 넣지 말고 짧은 핵심 명사 하나를 넣는다."
+          ),
+
+          # 답변 범위 (최종 회의 시간 결정은 Week 6)
+          (
+              "여러 사람의 일정을 모았으면 rows와 schedule_summary를 근거로 누가 언제 바쁜지 설명한다. "
+              "검색 결과에 내용이 있으면 그 내용을 근거로 답하고, 결과가 비었을 때만 없다고 답한다. "
+              "추측으로 빈 시간을 단정하지 않는다."
+          ),
     ]
 
 
