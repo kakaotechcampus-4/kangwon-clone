@@ -341,13 +341,18 @@ def _collect_member_schedules(
         )
 
     # 3. 외부 멤버 일정: MCP tool 결과(JSON 문자열)을 dict로 읽어 rows만 꺼냄
-    #   멤버 이름이 하나도 없으면 조회할 대상이 없으므로 MCP 호출 생략
-    if normalized_member_names:
+    #   "나"는 2번에서 앱 DB 기준으로 이미 담음
+    #   그런데 앱이 내 일정을 공유 저장소에도 member_name="나"로 자동 동기화하기 때문에 그대로 조회하면 같은 일정이 두 번 들어감
+    #   -> 외부 조회 대상에서 "나"를 제외 (내 일정의 기준 출처는 앱 DB)
+    # 제외 후 조회할 이름이 없으면 MCP 호출 생략
+    
+    external_member_names = [name for name in normalized_member_names if name != "나"]
+    if external_member_names:
         payload = json.loads(
             call_mcp_tool_sync(
                 "extract_schedules_from_history",
                 {
-                    "member_names": normalized_member_names,
+                    "member_names": external_member_names,
                     "date_from": normalized_date_from,
                     "date_to": normalized_date_to,
                 },
