@@ -1,0 +1,50 @@
+[
+  {
+    "id": "previous_conversation_search_1",
+    "query": "철수랑 예전에 무슨 얘기했었지?",
+    "query_type": "previous_conversation_search",
+    "expected_tools": ["search_previous_conversations"]
+  },
+  {
+    "id": "own_conversation_vs_previous_conversation_1",
+    "query": "저번 대화에서 사이드 프로젝트 API 설계 얘기했었는데 내가 뭐라고 했었지?",
+    "query_type": "own_conversation_search",
+    "expected_tools": ["search_conversation_messages"],
+    "note": "내 혼자 대화(Week4 conversation RAG)와 팀원과의 대화(Week5 previous_conversations)를 혼동하지 않는지 확인."
+  },
+  {
+    "id": "previous_conversation_detail_1",
+    "query": "철수랑 예전에 나눈 대화 내용 자세히 보여줘",
+    "query_type": "previous_conversation_detail",
+    "expected_tools": ["search_previous_conversations", "load_conversation_messages"],
+    "match": "any",
+    "note": "검색만으로 충분히 답할 수도 있고, conversation_id로 전체 메시지를 한 번 더 불러올 수도 있어 any로 판정."
+  },
+  {
+    "id": "extract_schedules_1",
+    "query": "철수랑 영희 이번 달에 언제 바쁜지 좀 알아봐줘",
+    "query_type": "extract_schedules_from_history",
+    "expected_tools": ["extract_schedules_from_history", "collect_member_schedules"],
+    "match": "any",
+    "note": "collect_member_schedules는 내부적으로 extract_schedules_from_history를 그대로 호출하고 내 일정을 더 얹어서 반환하므로, 이 tool이 불려도 철수/영희 busy time 정보는 빠지지 않음. 둘 중 하나만 불려도 통과."
+  },
+  {
+    "id": "list_shared_schedules_1",
+    "query": "공유 일정에 등록된 거 뭐 있어?",
+    "query_type": "list_shared_schedules",
+    "expected_tools": ["list_shared_schedules"]
+  },
+  {
+    "id": "collect_member_schedules_1",
+    "query": "나랑 철수 이번 주에 언제 시간 맞을지 일정 좀 모아서 보여줘",
+    "query_type": "collect_member_schedules",
+    "expected_tools": ["collect_member_schedules"]
+  },
+  {
+    "id": "personal_only_schedule_1",
+    "query": "내 일정 뭐 있어?",
+    "query_type": "personal_schedule_only",
+    "expected_tools": ["personal_list_saved_schedules"],
+    "note": "다른 멤버 언급이 없으면 Week5 MCP tool로 넘어가지 않고 Week3 tool을 써야 함."
+  }
+]
