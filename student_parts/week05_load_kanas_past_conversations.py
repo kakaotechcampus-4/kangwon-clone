@@ -501,7 +501,21 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
     # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
-    ...
+    
+    # helper 2개 사용
+    #   _personal_schedules_for_current_scope() -> "나"의 일정(SQLite 저장분 + 현재 대화 임시분)
+    #   _collect_member_schedules(...) -> 위 내 일정 + 외부 멤버 일정을 같은 row 구조로 병합
+    # -> 내 일정 조회 출처는 tool이 결정, 병합 규칙은 helper가 담당
+    payload = _collect_member_schedules(
+        member_names=member_names,
+        date_from=date_from,
+        date_to=date_to,
+        personal_schedules=_personal_schedules_for_current_scope(),
+    )
+
+    # helper 결과에 이미 member_names/date_from/date_to/rows/schedule_summary가 들어 있으므로
+    # key를 별도로 만들지 않고 그대로 JSON 문자열로 변환해 반환
+    return json_payload(payload)
 
 
 def week05_tools() -> list[Any]:
