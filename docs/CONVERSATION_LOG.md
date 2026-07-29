@@ -4,9 +4,6 @@ Claude와 나눈 작업 대화를 시간순으로 요약해 기록하는 문서�
 
 ## 현재 상태 (마지막 갱신 기준)
 
-- 브랜치: `yongbin/week5` (base는 `yongbin/final`). Week4 PR #106 머지 완료, 5주차 강의자료 동기화 완료
-- Week 5: 메인+공통과제 구현 완료(MCP wrapper tool 5 + helper 2 + prompt), 추가과제(create/delete_shared_schedule)는 스텁 유지+`week05_tools()`에서 제외. 검증 전부 임계값 통과 — 계약검증 15/15(100%), tool_inventory PASS, golden external 83.3%/control 오호출 0. `5week_docs/`에 분석·검증 문서, `checks/`에 week05_contract_check.py·week05_golden.py 추가. (로컬 커밋만, push/PR은 사용자 복귀 후)
-- (이하 Week4 이력)
 - 브랜치: `yongbin/week4` (base는 `yongbin/final`)
 - Week 3: 메인+추가과제 전부 구현, PR #74에 반영·머지 완료
 - Week 4: 메인과제 3개 tool + 심화과제 `search_conversation_messages` 계열 3개 함수 모두 구현 완료 (`search_nana_memory`는 범위 밖 스텁 유지). 멘토 지적(스텁 노출)은 구현으로 해소됨
