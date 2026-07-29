@@ -189,8 +189,19 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
 def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    ...
+    schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(limit=200)
+
+    # 같은 일정이 SQLite에도 임시 리스트에도 있으면 저장된 쪽을 기준으로 본다.
+    saved_ids = {row.get("schedule_id") for row in schedules}
+    scope = current_session_scope()
+    for schedule in PERSONAL_SCHEDULES:
+        # 다른 대화에서 만든 임시 일정까지 끌어오면 남의 일정이 내 busy time으로 섞임
+        if _schedule_scope(schedule) != scope:
+            continue
+        if schedule.get("id") in saved_ids:
+            continue
+        schedules.append(schedule)
+    return schedules
 
 
 def json_payload(payload: dict[str, Any]) -> str:
@@ -281,9 +292,46 @@ def _collect_member_schedules(
     personal_schedules: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
+    normalized_members = normalize_external_member_names(member_names)
+    normalized_from, normalized_to = normalize_external_schedule_date_bounds(
+        member_names, date_from, date_to
+    )
 
-    # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
-    ...
+    rows: list[dict[str, Any]] = []
+    for schedule in personal_schedules:
+        # 앱 row와 1주차 임시 row 키가 달라 어댑터를 통과시켜 같은 방식으로 읽는다.
+        request = _structured_request_from_schedule_row(schedule)
+        if not request.date:
+            continue
+        rows.append(
+            {
+                "member_name": "나",
+                "title": request.title or "제목 없음",
+                "date": request.date,
+                "start_time": request.start_time or "미정",
+                "end_time": request.end_time or "미정",
+                "notes": "",
+            }
+        )
+
+    payload = json.loads(
+        call_mcp_tool_sync(
+            "extract_schedules_from_history",
+            {
+                "member_names": normalized_members,
+                "date_from": normalized_from,
+                "date_to": normalized_to,
+            },
+        )
+    )
+    rows.extend(payload.get("rows", []))
+
+    return {
+        "ok": True,
+        "tool_name": "collect_member_schedules",
+        "rows": rows,
+        "schedule_summary": external_schedule_summary(rows),
+    }
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
@@ -294,24 +342,31 @@ def search_previous_conversations(
 ) -> str:
     """외부 SQLite 데이터베이스에 저장된 이전 대화를 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
 
-    # TODO: call_mcp_tool_sync("search_previous_conversations", args)를 호출하고 결과 문자열을 반환하세요.
-    ...
+    return call_mcp_tool_sync(
+        "search_previous_conversations",
+        {"query": query, "member_names": member_names, "limit": limit},
+    )
 
 
 @tool(args_schema=LoadConversationMessagesInput)
 def load_conversation_messages(conversation_id: str) -> str:
     """외부 SQLite 데이터베이스에서 특정 이전 대화의 모든 메시지를 불러옵니다."""
 
-    # TODO: call_external_tool_payload("load_conversation_messages", {"conversation_id": ...}) 결과를 JSON으로 반환하세요.
-    ...
+    payload = call_external_tool_payload(
+        "load_conversation_messages",
+        {"conversation_id": conversation_id},
+    )
+    return json_payload(payload)
 
 
 @tool(args_schema=ExtractSchedulesFromHistoryInput)
 def extract_schedules_from_history(member_names: list[str], date_from: str, date_to: str) -> str:
     """외부 SQLite 이전 대화에서 멤버별 일정을 추출합니다."""
 
-    # TODO: call_mcp_tool_sync("extract_schedules_from_history", args)를 호출해 외부 멤버 busy-time rows를 반환하세요.
-    ...
+    return call_mcp_tool_sync(
+        "extract_schedules_from_history",
+        {"member_names": member_names, "date_from": date_from, "date_to": date_to},
+    )
 
 
 @tool(args_schema=CreateSharedScheduleInput)
@@ -352,16 +407,30 @@ def list_shared_schedules(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 등록된 일정을 조회합니다. 필터가 없으면 기본 공유 일정을 반환합니다."""
 
-    # TODO: call_mcp_tool_sync("list_shared_schedules", args)로 공유 일정 저장소 rows를 조회하세요.
-    ...
+    return call_mcp_tool_sync(
+        "list_shared_schedules",
+        {
+            "member_names": member_names,
+            "date_from": date_from,
+            "date_to": date_to,
+            "source_conversation_id": source_conversation_id,
+            "limit": limit,            
+        }
+    )
 
 
 @tool(args_schema=CollectMemberSchedulesInput)
 def collect_member_schedules(member_names: list[str], date_from: str, date_to: str) -> str:
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
-    # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
-    ...
+    return json_payload(
+        _collect_member_schedules(
+            member_names=member_names,
+            date_from=date_from,
+            date_to=date_to,
+            personal_schedules=_personal_schedules_for_current_scope(),
+        )
+    )
 
 
 def week05_tools() -> list[Any]:
@@ -390,7 +459,28 @@ def week05_prompt_parts() -> list[str]:
 
     return [
         *week04_prompt_parts(),
-        # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
+        (
+            # 4주차까지 '내' 기록이었는데 5주차부터는 남의 데이터가 들어온다
+            # 이 경계를 확실하게 하지 않으면 "시우 일정 알려줘"에 내 DB를 찾게된다.
+            "내 일정과 내 기억은 이전 주차 도구로, 다른 사람의 대화와 일정은 "
+            "MCP 도구로 찾는다. 둘은 저장소가 다르므로 섞어 쓰지 않는다. "
+            "여러 사람의 바쁜 시간을 한 번에 모아야 하면 collect_member_schedules를 쓴다. "
+            "이 도구가 내 일정까지 같이 넣어주므로 member_names에는 나를 빼고 상대방 이름만 넣는다."
+        ),
+        (
+            # 4주차 벡터 검색과 규칙이 반대라 여기서 짚어주기로 했다.
+            "search_previous_conversations의 query 는 부분 문자열로 대조되므로 "
+            "사용자 문장을 그대로 넣으면 아무것도 못 찾는다. '회의', '발표'처럼 짧은 핵심 명사만 넣고, "
+            "한 번에 못 찾으면 다른 명사로 바꿔서 다시 검색한다. "
+            # conversation_id는 검색 결과에만 있는 값이다. 지어낼 수 있는 종류의 값이라 명시했다.
+            "대화 전문이 필요하면 검색 결과의 conversation_id로 load_conversation_messages를 호출한다. "
+            "conversation_id를 추측해서 만들지 않는다."
+        ),
+        (
+            # 남이 한 말은 저장소가 다르다는 걸 확실하게 해줘야 섞이지 않음
+            "다른 사람이 예전에 뭐라고 했는지는 내 대화 기록이 아니라 "
+            "search_previous_conversations로 찾는다. search_conversation_messages는 내가 한 말만 있다."
+        )
     ]
 
 
