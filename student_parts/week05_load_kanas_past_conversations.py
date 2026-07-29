@@ -303,8 +303,39 @@ def _collect_member_schedules(
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
-    # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
-    ...
+    # 1. 외부 MCP 일정 rows 파싱
+    raw = call_mcp_tool_sync("extract_schedules_from_history", {
+        "member_names": member_names,
+        "date_from": date_from,
+        "date_to": date_to,
+    })
+    external_result = json.loads(raw)
+    external_rows = external_result.get("rows", [])
+
+    # 2. 내 일정을 외부 MCP 일정과 같은 구조로 변환
+    my_rows = []
+    for schedule in personal_schedules:
+        structured = _structured_request_from_schedule_row(schedule)
+        my_rows.append({
+            "member_name" : "나",
+            "title": structured.title,
+            "date": structured.date,
+            "start_time": structured.start_time,
+            "end_time": structured.end_time,
+            "notes": None,
+        })
+
+    # 3. 두 rows를 합치고, LLM이 이해하기 쉬운 형태의 요약 생성
+    rows = my_rows + external_rows
+    schedule_summary = external_schedule_summary(rows)
+
+    return {
+        "ok": True,
+        "tool_name": "collect_member_schedules",
+        "rows": rows,
+        "schedule_summary": schedule_summary,
+    }
+
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
