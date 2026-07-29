@@ -356,8 +356,17 @@ def list_shared_schedules(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 등록된 일정을 조회합니다. 필터가 없으면 기본 공유 일정을 반환합니다."""
 
-    # TODO: call_mcp_tool_sync("list_shared_schedules", args)로 공유 일정 저장소 rows를 조회하세요.
-    ...
+    args = {"limit": limit}
+    # 필터에 값이 있을 때만 추가 — 전부 생략되면 기본 공유 일정으로 fallback
+    if member_names:
+        args["member_names"] = member_names
+    if date_from:
+        args["date_from"] = date_from
+    if date_to:
+        args["date_to"] = date_to
+    if source_conversation_id:
+        args["source_conversation_id"] = source_conversation_id
+    return call_mcp_tool_sync("list_shared_schedules", args)
 
 
 @tool(args_schema=CollectMemberSchedulesInput)
