@@ -535,8 +535,10 @@ def list_shared_schedules(
 def collect_member_schedules(member_names: list[str], date_from: str, date_to: str) -> str:
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
-    # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
-    ...
+    my_schedule = _personal_schedules_for_current_scope()
+    external_schedule = _collect_member_schedules(member_names= member_names, date_from= date_from, date_to= date_to, personal_schedules= my_schedule)
+    
+    return json_payload(external_schedule)
 
 
 # [공통] week05_tools()
