@@ -299,7 +299,46 @@ def _collect_member_schedules(
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
-    ...
+    normalized_member_names = normalize_external_member_names(member_names=member_names)
+    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
+        member_names=member_names,
+        date_from=date_from,
+        date_to=date_to
+    )
+
+    args = {
+        "member_names": normalized_member_names,
+        "date_from": normalized_date_from,
+        "date_to": normalized_date_to
+    }
+    result = json.loads(call_mcp_tool_sync("extract_schedules_from_history", args))
+    mcp_rows = result.get("rows", [])
+
+    personal_rows: list[dict[str, Any]] = []
+    for schedule in personal_schedules:
+        structured_schedule = _structured_request_from_schedule_row(schedule)
+        schedule_date = structured_schedule.date
+
+        if not schedule_date:
+            continue
+        if normalized_date_from <= schedule_date <= normalized_date_to:
+            personal_rows.append(
+                {
+                    "member_name": "나",
+                    "title": structured_schedule.title,
+                    "date": schedule_date,
+                    "start_time": structured_schedule.start_time,
+                    "end_time": structured_schedule.end_time,
+                    "notes": schedule.get("notes", "")
+                }
+            )
+
+    rows = [*mcp_rows, *personal_rows]
+
+    return {
+        "rows": rows,
+        "schedule_summary": external_schedule_summary(rows)
+    }
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
@@ -402,7 +441,14 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
     # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
-    ...
+    result = _collect_member_schedules(
+        member_names=member_names,
+        date_from=date_from,
+        date_to=date_to,
+        personal_schedules= _personal_schedules_for_current_scope()
+    )
+
+    return json_payload(result)
 
 
 def week05_tools() -> list[Any]:
