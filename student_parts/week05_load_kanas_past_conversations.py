@@ -478,9 +478,37 @@ def week05_system_prompt() -> str:
 def week05_prompt_parts() -> list[str]:
     """1~5주차 system prompt 조각을 누적합니다."""
 
+    week05_prompt = """
+        [조회]
+        1. 사용자가 전에 다른 사용자와 나눈 대화 내용을 묻고 있을 때
+            - search_previous_conversations를 사용하여 해당 키워드로 나눈 대화의 id 목록을 파악하세요
+            - load_conversation_messages에 search_previous_conversations로 찾은 id를 전달하여 대화 맥락을 파악하고 정리하여 사용자에게 전달하세요.
+            - search_previous_conversations 결과가 비어 있으면 곧바로 모른다고 답하지 말고, 키워드를 바꿔 한 번 더 시도한 뒤에도 없으면 대화 기록이 없다고 솔직히 답하세요.
+
+        2. 사용자가 다른 사용자의 일정에 대해 알고 싶어할 때
+            - extract_schedules_from_history를 호출하여 특정 멤버의 일정을 조회하세요.
+            - 다른 사용자가 이전에 나눈 대화의 내용보단 일정이나 바쁜 시간이 필요한 상황에서 사용하세요.
+            - 조회 결과 rows가 비어 있으면 추측하지 말고 해당 기간에 파악된 일정이 없다고 답하세요.
+
+        3. 사용자가 본인과 다른 사람의 일정의 정보에 대해 같이 알고 싶어 할 때
+            - 단순히 등록된 공식 일정을 요청할 때는 list_shared_schedules를 호출하여 본인과 다른 사람의 등록된 일정을 조회하여 사용자에게 제시하세요.
+            - 새로운 일정 등록을 위해 나와 다른 멤버의 바쁜 시간의 리스트가 필요하다면 collect_member_schedules를 호출하여 나와 다른 멤버의 바쁜 시간 / 여유 시간을 알아내어 답변에 참고하세요.
+
+        [등록]
+        1. 사용자가 "본인(나)"의 일정을 새로 확정하거나 저장하고 싶어 하면 create_shared_schedule가 아니라
+           Week 1~3의 개인 일정 tool(personal_create_schedule 등)을 호출하세요. 그렇게 저장된 내 일정은
+           공유 캘린더에 자동으로 동기화되므로 create_shared_schedule로 다시 등록하면 같은 일정이 중복 생성됩니다.
+           
+        2. create_shared_schedule는 "다른 멤버"의 일정을 공유 캘린더에 직접 등록해야 하거나, 공유 캘린더에
+           이미 등록된 row 내용이 잘못돼 직접 고쳐야 할 때만 호출하세요.
+
+        3. 사용자가 등록했던 공유캘린더의 일정을 취소하고 싶어 한다면 delete_shared_schedule를 호출하세요.
+            - schedule_id나 source_conversation_id가 명확하지 않으면 먼저 list_shared_schedules로 대상을 확인한 뒤 삭제하세요.
+    """
+
     return [
         *week04_prompt_parts(),
-        # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
+        week05_prompt
     ]
 
 
