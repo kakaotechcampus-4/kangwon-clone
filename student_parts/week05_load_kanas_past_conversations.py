@@ -199,8 +199,19 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
 def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    ...
+    sql_saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules()
+    this_session_schedules = PERSONAL_SCHEDULES
+    
+    sql_saved_schedules_id = [schedule["schedule_id"] for schedule in sql_saved_schedules]
+    
+    new_schedules_list = sql_saved_schedules.copy()
+    
+    for schedule in this_session_schedules:
+        if _schedule_scope(schedule) == current_session_scope() and schedule["id"] not in sql_saved_schedules_id:
+            new_schedules_list.append(schedule)
+    
+    
+    return new_schedules_list
 
 
 # [공통] json_payload(payload)
