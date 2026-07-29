@@ -190,8 +190,27 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
     # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    ...
+    
+    # 1. week3+ SQLite에 저장된 일정 (대화가 바뀌어도 남아 있는 영속 일정)
+    #   list_schedules의 limit 기본값은 12이고, 일정 12개는 너무 적어서 바쁜 시간이 누락될 가능성 있음
+    #   누락을 방지하기 위해 적절한 크기의 수가 필요함
+    #   이는 ListSharedSchedulesInput.limit: int = Field(default=50, ge=1, le=200)이므로 200을 상한으로 결정함
+    saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(limit=200)
 
+    # 2. week1 임시 일정(PERSONAL_SCHEDULES): 메모리 저장이므로 2번 필터링
+    #   session_id != 현재 대화             -> 다른 대화의 임시 일정이므로 제외
+    #   id가 SQLite schedule_id에 이미 있음  -> 같은 일정이 저장까지 끝난 것이므로 제외(중복 방지)
+    saved_ids = {str(schedule.get("schedule_id")) for schedule in saved_schedules}
+    current_scope = current_session_scope()
+    pending_schedules = [
+        schedule
+        for schedule in PERSONAL_SCHEDULES
+        # (session_id == 현재 대화: 현재 대화인가) and (id가 SQLite schedule_id에 없음: 영속 저장이 되어 있지 않은가)
+        if _schedule_scope(schedule) == current_scope and str(schedule.get("id")) not in saved_ids
+    ]
+
+    # 3. 저장 일정 + 아직 저장 안된 현재 대화 임시 일정
+    return [*saved_schedules, *pending_schedules]
 
 def json_payload(payload: dict[str, Any]) -> str:
     """도구 반환용 dict를 한글이 깨지지 않는 JSON 문자열로 변환합니다."""
