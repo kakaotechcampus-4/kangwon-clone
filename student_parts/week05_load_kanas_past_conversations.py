@@ -194,7 +194,7 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     # 1. week3+ SQLite에 저장된 일정 (대화가 바뀌어도 남아 있는 영속 일정)
     #   list_schedules의 limit 기본값은 12이고, 일정 12개는 너무 적어서 바쁜 시간이 누락될 가능성 있음
     #   누락을 방지하기 위해 적절한 크기의 수가 필요함
-    #   이는 ListSharedSchedulesInput.limit: int = Field(default=50, ge=1, le=200)이므로 200을 상한으로 결정함
+    #   list_schedules 자체에는 상한 제약이 없지만, 이 프로젝트가 일정 조회 상한으로 쓰는 값(공유 일정 조회 스키마의 le=200)에 맞춰 200으로 정함
     saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(limit=200)
 
     # 2. week1 임시 일정(PERSONAL_SCHEDULES): 메모리 저장이므로 2번 필터링
@@ -211,6 +211,7 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
 
     # 3. 저장 일정 + 아직 저장 안된 현재 대화 임시 일정
     return [*saved_schedules, *pending_schedules]
+
 
 def json_payload(payload: dict[str, Any]) -> str:
     """도구 반환용 dict를 한글이 깨지지 않는 JSON 문자열로 변환합니다."""
@@ -304,7 +305,7 @@ def _collect_member_schedules(
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
 
     # 출처가 다른 두 일정을 같은 row 구조로 통일하여 한 배열에 담기
-    #   내 일정(personal_schedules) -> member_name에 "나"를 붙여 반환
+    #   내 일정(personal_schedules) -> member_name에 "나"를 붙여 변환
     #   외부 멤버(MCP extract_...)  -> rows 그대로 사용
     # 공통 row 구조: member_name / title / date / start_time / end_time / notes
     # 왜? -> LLM이 "누가 언제 바쁜지"를 한 목록으로 읽기 위하여
