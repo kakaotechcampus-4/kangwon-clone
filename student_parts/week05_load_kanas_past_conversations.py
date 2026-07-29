@@ -472,7 +472,7 @@ def week05_prompt_parts() -> list[str]:
         Week 5에서는 외부 멤버의 이전 대화와 일정 정보를 SQLite에 직접 접근하지 않고 MCP tool을 통해 조회한다.
 
         - 외부 멤버의 과거 대화를 찾을 때는 search_previous_conversations를 사용한다.
-        - search_previous_conversations의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣고, 알고 있는 멤버 이름은 member_names에 전달한다.
+        - search_previous_conversations의 query에는 사용자가 찾는 핵심 명사나 짧은 구를 넣고(핵심 명사를 우선하여 사용한다.), 알고 있는 멤버 이름은 member_names에 전달한다.
         - 검색 결과 중 특정 대화의 자세한 내용이 필요할 때 conversation_id를 사용해 load_conversation_messages를 호출한다.
         - 외부 멤버의 일정이나 바쁜 시간이 필요할 때는 extract_schedules_from_history를 사용한다.
         - 내 일정과 외부 멤버의 일정을 같은 날짜 범위에서 함께 확인해야 할 때는 collect_member_schedules를 사용한다.
@@ -480,6 +480,10 @@ def week05_prompt_parts() -> list[str]:
         - Week 5에서는 여러 사람의 바쁜 시간을 수집하고 설명하는 데까지만 수행한다.
 
         개인 저장/RAG는 Week 4의 도구로, 외부 멤버 대화와 일정은 MCP wrapper로 처리한다.
+
+        **주의사항**
+        - search_previous_conversations과 load_conversation_messages를 동시에 호출하지 않는다.
+  
         """
     ]
 
