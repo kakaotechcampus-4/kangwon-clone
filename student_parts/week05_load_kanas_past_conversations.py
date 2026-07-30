@@ -10,11 +10,7 @@ from pydantic import BaseModel, Field
 from fixed.app_store import AppSQLiteStore
 from fixed.config import CONFIG
 from fixed.external_mcp import call_external_tool_payload
-from fixed.external_people_store import (
-    external_schedule_summary,
-    normalize_external_member_names,
-    normalize_external_schedule_date_bounds,
-)
+from fixed.external_people_store import external_schedule_summary
 from fixed.llm import chat_model
 from fixed.mcp_client import (
     call_local_mcp_tool,
@@ -58,9 +54,9 @@ _WEEK05_AGENT: Any | None = None
 #     call_mcp_tool_sync(tool_name, args)를 사용합니다.
 #   - load_conversation_messages는 fixed/external_mcp.py의 call_external_tool_payload(...)를 사용해
 #     외부 tool payload를 dict로 받은 뒤 json_payload()로 감쌉니다.
-#   - 멤버 이름/날짜 정규화와 요약은 fixed/external_people_store.py의
-#     normalize_external_member_names(), normalize_external_schedule_date_bounds(),
-#     external_schedule_summary()를 사용합니다.
+#   - 멤버 이름/날짜 정규화는 ExternalPeopleSQLiteStore.extract_schedules_from_history 내부(외부
+#     SQLite store/MCP 경계)에서 한 번만 처리되므로 이 파일의 wrapper는 원본 인자를 그대로 넘깁니다.
+#     요약은 fixed/external_people_store.py의 external_schedule_summary()를 사용합니다.
 #   - 내 일정 수집은 _personal_schedules_for_current_scope()에서 처리합니다. 이 helper는
 #     fixed/app_store.py의 AppSQLiteStore(CONFIG.app_db_path).list_schedules(...)와
 #     student_parts/week01_wake_up_nana.py의 PERSONAL_SCHEDULES 중 현재 대화 범위 row를 합칩니다.
@@ -149,7 +145,7 @@ _WEEK05_AGENT: Any | None = None
 #
 #   - [메인] _collect_member_schedules(...)
 #     내 일정과 외부 멤버 일정을 같은 member_name/title/date/start_time/end_time/notes row 구조로 합칩니다.
-#     외부 멤버 이름과 날짜 범위는 fixed/external_people_store.py helper로 정규화합니다.
+#     외부 멤버 이름/날짜 정규화는 MCP store 내부에서 이미 처리되므로 원본 값을 그대로 넘깁니다.
 #
 #   - [메인] search_previous_conversations(...)
 #     외부 SQLite/MCP 서버에 저장된 과거 대화를 검색합니다. wrapper는 query/member_names/limit를 넘기고 결과 문자열을 그대로 반환합니다.
@@ -190,13 +186,23 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(200)
+    saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
+        limit=200, date_from=date_from, date_to=date_to
+    )
 
-    scoped_temp_schedules = [i for i in PERSONAL_SCHEDULES if _schedule_scope(i) == current_session_scope()]
+    scoped_temp_schedules = [
+        i
+        for i in PERSONAL_SCHEDULES
+        if _schedule_scope(i) == current_session_scope()
+        and (not date_from or i["date"] >= date_from)
+        and (not date_to or i["date"] <= date_to)
+    ]
 
     saved_schedule_ids = [i["schedule_id"] for i in saved_schedules]
 
@@ -296,17 +302,14 @@ def _collect_member_schedules(
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
-    normalized_member_names = normalize_external_member_names(member_names)
-    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
-        member_names, date_from, date_to
-    )
-
+    # 정규화(member_names/date_from/date_to)는 ExternalPeopleSQLiteStore.extract_schedules_from_history
+    # 내부에서 이미 한 번 처리되므로(외부 SQLite store/MCP 경계에서 한 번만 처리) 여기서는 원본 값을 그대로 넘긴다.
     external_result = call_mcp_tool_sync(
         "extract_schedules_from_history",
         {
-            "member_names": normalized_member_names,
-            "date_from": normalized_date_from,
-            "date_to": normalized_date_to,
+            "member_names": member_names,
+            "date_from": date_from,
+            "date_to": date_to,
         },
     )
 
@@ -413,7 +416,7 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
     # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
-    my_plan = _personal_schedules_for_current_scope()
+    my_plan = _personal_schedules_for_current_scope(date_from=date_from, date_to=date_to)
     result = _collect_member_schedules(member_names=member_names, date_from=date_from, date_to= date_to, personal_schedules=my_plan)
 
     return json_payload(result)
@@ -444,6 +447,11 @@ def week05_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         """
+        예전 주차 프롬프트에 "이번 주(Week 2)에는 외부 멤버 일정 조율을 하지 않는다"는 문장이
+        남아있는데, 그건 Week 2 시점 얘기고 지금(Week 5)부터는 완전히 바뀌었어. 이제부터 팀원의
+        예전 대화, busy-time, 공유 일정을 MCP tool로 조회할 수 있으니, 그 옛 문장을 이유로
+        아래 tool들을 거부하거나 "이번 주 범위 밖"이라고 답하면 안 돼.
+
         이제부터 "우리 앱 안의 내 데이터"와 "외부 팀원 시스템의 데이터"를 명확히 구분해야 해.
 
         - "내가 예전에 이 앱에서 뭐라고 말했었지?"처럼 나 혼자 이 앱과 나눈 대화를 찾을 때는
