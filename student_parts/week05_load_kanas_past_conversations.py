@@ -437,7 +437,10 @@ def list_shared_schedules(
 def collect_member_schedules(member_names: list[str], date_from: str, date_to: str) -> str:
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
-    personal_schedules = _personal_schedules_for_current_scope()
+    personal_schedules = _personal_schedules_for_current_scope(
+        date_from=date_from,
+        date_to=date_to
+    )
     payload = _collect_member_schedules(
         member_names=member_names,
         date_from=date_from,
