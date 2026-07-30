@@ -187,16 +187,31 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    date_from: str | None = None,
+    date_to: str | None = None
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    saved = SQLITE_STORE.list_schedules()
+    saved = SQLITE_STORE.list_schedules(limit=50, date_from=date_from, date_to=date_to)
 
     current = current_session_scope()
     temp = [schedule
             for schedule in PERSONAL_SCHEDULES
             if _schedule_scope(schedule) == current
             ]
+
+    def check_range(schedule: dict[str, Any]) -> bool:
+        date = schedule.get("date")
+        if date is None:
+            return True
+        if date_from is not None and date < date_from:
+            return False
+        if date_to is not None and date > date_to:
+            return False
+        return True
+
+    temp = [s for s in temp if check_range(s)]
 
     saved_ids = {row.get("schedule_id") for row in saved}
     not_duplicated_temp = [
@@ -374,7 +389,6 @@ def create_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
-
     args = {
         "member_name": member_name,
         "title": title,
@@ -462,7 +476,7 @@ def week05_prompt_parts() -> list[str]:
         (
             "당신은 이제 외부 멤버들의 과거 대화와 공유 일정에도 접근 가능합니다. "
             "나(사용자)의 개인 일정 저장 및 검색은 이전 주차 도구를 그대로 쓰고, "
-            "다른 사람들의 대화나 일정을 다뤄야 할 때만 Week 5 MCP 도구를 사용합니다.\n"
+            "다른 사람들의 대화나 일정을 다뤄야 할 때만 Week5 MCP 도구를 사용합니다.\n"
             "과거 대화 내용을 찾아야 하면 search_previous_conversations로 검색하고, "
             "특정 대화의 전체 메시지가 필요하면 그 conversation_id로 load_conversation_messages를 호출합니다. "
             "검색 query에는 긴 문장이 아니라 핵심 명사나 짧은 구만 넣습니다.\n"
