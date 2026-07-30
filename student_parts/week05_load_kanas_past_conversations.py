@@ -282,6 +282,17 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         original_text=str(row.get("title") or ""),
     )
 
+def _is_date_in_range(date: str | None, date_from: str, date_to: str) -> bool:
+    """일정 날짜가 조회 범위 안에 있는지 확인합니다. 날짜가 없으면 범위 밖으로 봅니다."""
+
+    if not date:
+        return False
+    if date_from and date < date_from:
+        return False
+    if date_to and date > date_to:
+        return False
+    return True
+
 
 def _collect_member_schedules(
     *,
@@ -316,11 +327,7 @@ def _collect_member_schedules(
     my_rows = []
     for schedule in personal_schedules:
         request = _structured_request_from_schedule_row(schedule)
-        if not request.date:
-            continue
-        if date_from and request.date < date_from:
-            continue
-        if date_to and request.date > date_to:
+        if not _is_date_in_range(request.date, date_from, date_to):
             continue
         my_rows.append(
             {
