@@ -30,7 +30,7 @@ from student_parts.week04_retrieve_nanas_memory import week04_prompt_parts, week
 
 
 _WEEK05_AGENT: Any | None = None
-
+SQLITE_STORE = AppSQLiteStore(CONFIG.app_db_path)
 
 # [5주차 수강생 구현 가이드]
 #
@@ -186,11 +186,11 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(date_from: str | None = None, date_to: str | None = None) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
     #SQLite DB열어서 저장된 일정 가져오기
-    saved = AppSQLiteStore(CONFIG.app_db_path).list_schedules()
+    saved = SQLITE_STORE.list_schedules(limit=200, date_from=date_from, date_to=date_to)    
     #저장될 일정들 에서 schedule_id 값만 뽑아옴.
     saved_ids = {s.get("schedule_id") for s in saved}
     #임시일정이 현재 대화중&DB에 없으면 임시로 들어감.
@@ -290,10 +290,8 @@ def _collect_member_schedules(
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
-    #이름, 날짜 정규화
-    names = normalize_external_member_names(member_names)
-    date_from, date_to = normalize_external_schedule_date_bounds(member_names, date_from, date_to)
-    args = {"member_names":names, "date_from":date_from, "date_to":date_to}
+    # 정규화는 MCP 경계에서 처리 -> wrapper는 원본 넘김
+    args = {"member_names": member_names, "date_from": date_from, "date_to": date_to}
     #[AI-assitant](json으로 반환 해주는데 왜 load로 dict꺼내기?) 
     #call_mcp~가 문자열반환 -> 안에서 일정 꺼내서 합쳐야함 (문자열은 인덱싱안됨) 안에 'rows' 키 꺼내야해서 dict형태 변환.
     external = json.loads(call_mcp_tool_sync("extract_schedules_from_history", args))
@@ -398,7 +396,7 @@ def list_shared_schedules(
 def collect_member_schedules(member_names: list[str], date_from: str, date_to: str) -> str:
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
-    personal = _personal_schedules_for_current_scope()
+    personal = _personal_schedules_for_current_scope(date_from, date_to)
     # 합치기
     result = _collect_member_schedules(
         member_names=member_names, date_from=date_from,
