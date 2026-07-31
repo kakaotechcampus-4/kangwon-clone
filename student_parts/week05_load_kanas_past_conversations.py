@@ -303,6 +303,13 @@ def _collect_member_schedules(
         request = _structured_request_from_schedule_row(schedule)
         if not request.date:
             continue
+        # 외부 멤버는 MCP가 date_from/date_to로 걸러서 주는데 내 일정만 안 걸리면
+        # 7월 범위를 물었는데 8월 일정이 섞인 rows가 나간다.
+        # 합치는 쪽에서 같은 기준 적용하고 helper 시그니처는 과제가 정한 것이기 때문에 건드리지 않고, 범위를 아는 이 함수에서 거르기로 한다.
+        if normalized_from and request.date < normalized_from:
+            continue
+        if normalized_to and request.date > normalized_to:
+            continue
         rows.append(
             {
                 "member_name": "나",
@@ -381,9 +388,21 @@ def create_shared_schedule(
     schedule_id: str | None = None,
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
-
-    # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    # 정규화도 검증도 하지 않게함: MCP 쪽 스키마와 인자 이름이 같아 그대로 넘김
+    # wrapper가 값을 다루기 시작하면 어디까지 다룰지 기준이 없어짐
+    return call_mcp_tool_sync(
+        "create_shared_schedule",
+        {
+            "member_name": member_name,
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "notes": notes,
+            "source_conversation_id": source_conversation_id,
+            "schedule_id": schedule_id,
+        },
+    )
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -392,9 +411,14 @@ def delete_shared_schedule(
     source_conversation_id: str | None = None,
 ) -> str:
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
-
-    # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    # 둘 중 아무것도 없으면 조건 없는 삭제가 되는데, 판단은 MCP쪽이 하기 때문에 여기서 막지 않는 것으로 설정했다.
+    return call_mcp_tool_sync(
+        "delete_shared_schedule",
+        {
+            "schedule_id": schedule_id,
+            "source_conversation_id": source_conversation_id,
+        },
+    )
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -414,8 +438,8 @@ def list_shared_schedules(
             "date_from": date_from,
             "date_to": date_to,
             "source_conversation_id": source_conversation_id,
-            "limit": limit,            
-        }
+            "limit": limit,
+        },
     )
 
 
@@ -466,6 +490,10 @@ def week05_prompt_parts() -> list[str]:
             "MCP 도구로 찾는다. 둘은 저장소가 다르므로 섞어 쓰지 않는다. "
             "여러 사람의 바쁜 시간을 한 번에 모아야 하면 collect_member_schedules를 쓴다. "
             "이 도구가 내 일정까지 같이 넣어주므로 member_names에는 나를 빼고 상대방 이름만 넣는다."
+            # '공유 일정'이라는 말만으로는 3주차 내 일정 목록 도구로 가버린다. 저장소 이름을 도구에 직접 묶어준다.
+            "'공유 일정'은 외부 공유 저장소를 뜻하므로 내 일정 목록 도구가 아니라 "
+            "list_shared_schedules로 조회하고, 공유 저장소에 직접 등록과 삭제할 때는 "
+            "create_shared_schedule / delete_shared_schedule을 쓴다."
         ),
         (
             # 4주차 벡터 검색과 규칙이 반대라 여기서 짚어주기로 했다.
