@@ -290,10 +290,15 @@ def _collect_member_schedules(
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
+    normalized_member_names = normalize_external_member_names(member_names)
+    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
+        member_names, date_from, date_to
+    )
+
     personal_rows = []
     for schedule in personal_schedules:
         structured = _structured_request_from_schedule_row(schedule)
-        if structured.date and not (date_from <= structured.date <= date_to):
+        if structured.date and not (normalized_date_from <= structured.date <= normalized_date_to):
             continue
         personal_rows.append(
             {
@@ -306,10 +311,6 @@ def _collect_member_schedules(
             }
         )
 
-    normalized_member_names = normalize_external_member_names(member_names)
-    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
-        member_names, date_from, date_to
-    )
     external_payload = json.loads(
         call_mcp_tool_sync(
             "extract_schedules_from_history",
