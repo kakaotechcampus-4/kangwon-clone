@@ -392,7 +392,14 @@ def search_previous_conversations(
     외부 SQLite에 저장된 '다른 사람(외부 멤버)'의 지난 대화를 검색합니다.
     팀원·동료가 예전에 남긴 얘기, '누가 뭐라고 했는지'를 찾을 때 씁니다.
     나와 나눈 대화를 찾는 search_conversation_messages와는 다른 저장소입니다.
-    query에는 긴 문장 대신 짧은 핵심 명사 하나를 넣어야 매칭이 잘 됩니다.
+
+    query는 저장된 메시지 원문에 그대로 들어 있는 연속된 낱말이어야 합니다.
+    서버가 부분 문자열로만 대조하므로 조사·서술어가 붙거나 낱말 순서가 다르면 0건이 됩니다.
+      "온보딩 세션" (O)  /  "하린 온보딩" (X, 원문은 "하린: ... 온보딩 세션 ...")
+      "데이터 정리" (O)  /  "데이터 정리를 언제" (X)
+    사람 이름은 query에 넣지 말고 member_names로 넘깁니다.
+    0건이 나오면 query를 더 짧은 명사 하나로 줄여 한 번 더 검색합니다.
+    그래도 0건이면 query를 비우고 member_names만으로 그 사람의 대화를 가져올 수 있습니다.
     """
 
     # TODO: call_mcp_tool_sync("search_previous_conversations", args)를 호출하고 결과 문자열을 반환하세요.
@@ -436,7 +443,10 @@ def load_conversation_messages(conversation_id: str) -> str:
 
 @tool(args_schema=ExtractSchedulesFromHistoryInput)
 def extract_schedules_from_history(member_names: list[str], date_from: str, date_to: str) -> str:
-    """외부 SQLite 이전 대화에서 멤버별 일정을 추출합니다."""
+    """외부 SQLite 이전 대화에서 '외부 멤버'의 일정만 추출합니다.
+
+    내 일정은 포함되지 않으므로, 요청에 "나"가 함께 있으면 collect_member_schedules를 씁니다.
+    """
 
     # TODO: call_mcp_tool_sync("extract_schedules_from_history", args)를 호출해 외부 멤버 busy-time rows를 반환하세요.
     
@@ -555,7 +565,13 @@ def list_shared_schedules(
 
 @tool(args_schema=CollectMemberSchedulesInput)
 def collect_member_schedules(member_names: list[str], date_from: str, date_to: str) -> str:
-    """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
+    """내 일정과 다른 사람들의 일정을 하나의 목록으로 모읍니다.
+
+    여러 사람이 언제 바쁜지 확인할 때(회의·약속 시간 조율) 이 도구 하나로 처리하며,
+    사람마다 따로 조회하지 않습니다.
+    member_names에 "나"를 포함하면 내 일정까지 같은 목록에 합쳐집니다.
+    date_from·date_to 범위는 외부 멤버뿐 아니라 내 일정에도 그대로 적용됩니다.
+    """
 
     # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
     
@@ -603,49 +619,37 @@ def week05_prompt_parts() -> list[str]:
         *week04_prompt_parts(),
         # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
 
-        # 내 데이터와 외부 멤버 데이터의 도구를 구분
-          (
-              "일정과 기록은 '내 것'과 '다른 사람 것'의 출처가 다르다. "
-              "내 일정·할 일·참고자료·나와 나눈 지난 대화는 Week 1~4 도구로 조회하고, "
-              "다른 사람(철수·영희 등 외부 멤버)의 지난 대화와 일정은 외부 MCP 도구로 조회한다. "
-              "search_conversation_messages는 '나와 나눈' 대화 전용이므로, "
-              "다른 사람 이름이나 '팀원·동료'가 나오면 search_previous_conversations를 쓴다."
-          ),
+        # 출처 3분법 — 도구 하나의 설명으로는 담을 수 없는 구분만 여기 둔다
+        #   개별 도구가 "어느 저장소인지"는 각 tool docstring에 적혀 있다
+        (
+            "요청을 받으면 출처부터 가른다. "
+            "내 일정·할 일·참고자료·나와 나눈 대화는 Week 1~4 도구, "
+            "다른 사람의 지난 대화와 일정은 외부 MCP 도구, "
+            "'공유 일정'은 그 둘과 또 다른 외부 공유 저장소를 쓴다. "
+            "어느 저장소인지는 각 도구 설명에 적혀 있으니 그에 따른다."
+        ),
 
-          # 외부 멤버 도구 선택 기준
-          (
-              "외부 멤버 도구 선택 — "
-              "① 다른 사람이 예전에 한 얘기('팀원이 남긴 얘기', '누가 뭐라고 했는지')를 찾을 때는 "
-              "search_previous_conversations로 후보를 찾고, 내용을 더 봐야 하면 그 conversation_id로 "
-              "load_conversation_messages를 이어서 호출한다. "
-              "② 여러 사람이 언제 바쁜지 모아야 하면(회의·약속 시간 조율) collect_member_schedules를 사용한다. "
-              "이 도구는 내 일정과 외부 멤버 일정을 한 목록으로 합쳐 주므로 사람마다 따로 조회하지 않는다. "
-              "③ '공유 일정' 요청은 공유 저장소 도구를 쓴다. "
-              "조회는 list_shared_schedules, 등록은 create_shared_schedule, 삭제는 delete_shared_schedule이다."
-          ),
+        # 화자가 특정되지 않은 요청 — 두 저장소에 걸쳐 있어 도구 설명으로는 담기지 않는다
+        (
+            "'지난 대화', '예전 얘기'처럼 누가 말했는지 드러나지 않으면 "
+            "내 대화인지 다른 사람 대화인지 알 수 없다. "
+            "한쪽이 0건이면 반대쪽도 확인하고, 두 곳 다 비었을 때만 없다고 답한다."
+        ),
 
-          # 저장소 구분: 앱 개인 DB vs 외부 공유 저장소
-          (
-              "저장소 구분 — 내 개인 일정은 앱 DB(save_structured_request 등)에 저장하고, "
-              "'공유 일정'은 그와 다른 외부 공유 저장소에 저장한다. "
-              "다른 사람 이름으로 공유 일정을 등록·삭제해 달라는 요청을 개인 일정 저장·삭제 도구로 처리하지 않는다. "
-              "공유 저장소에 등록된 목록을 물으면 내 일정 목록 도구가 아니라 list_shared_schedules로 조회한다."
-          ),
+        # 행동 원칙 — 전 도구 공통
+        (
+            "되묻지 말고 먼저 조회한다. "
+            "어떤 도구로 처리할지 판단했으면 그 판단을 설명하지 말고 그 도구를 호출한다. "
+            "지시대명사('그거', '아까 그것')가 가리키는 대상은 검색으로 확정하고, "
+            "질문 문구를 그대로 제목으로 쓰지 않는다."
+        ),
 
-          # 되묻지 말고 검색 먼저 + 검색어는 짧은 핵심어
-          (
-              "외부 대화·일정 요청에도 되묻기보다 검색을 먼저 한다. "
-              "대화를 특정하지 못해도 conversation_id를 사용자에게 묻지 말고 "
-              "search_previous_conversations로 후보를 찾은 뒤 필요한 대화를 골라 이어서 조회한다. "
-              "검색어에는 긴 문장을 그대로 넣지 말고 짧은 핵심 명사 하나를 넣는다."
-          ),
-
-          # 답변 범위 (최종 회의 시간 결정은 Week 6)
-          (
-              "여러 사람의 일정을 모았으면 rows와 schedule_summary를 근거로 누가 언제 바쁜지 설명한다. "
-              "검색 결과에 내용이 있으면 그 내용을 근거로 답하고, 결과가 비었을 때만 없다고 답한다. "
-              "추측으로 빈 시간을 단정하지 않는다."
-          ),
+        # 답변 근거 — 전 도구 공통
+        (
+            "rows와 schedule_summary를 근거로 답한다. "
+            "0건이면 도구 설명에 적힌 대로 한 번 더 시도하고, 그러고도 비었을 때만 없다고 답한다. "
+            "추측으로 빈 시간을 단정하지 않는다."
+        ),
     ]
 
 
