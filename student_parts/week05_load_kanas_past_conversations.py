@@ -189,10 +189,13 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    sqlite_schedules = _store().list_schedules(limit=1000)
+    sqlite_schedules = _store().list_schedules(limit=100, date_from=date_from, date_to=date_to)
     sqlite_schedule_ids = {
         schedule.get("schedule_id")
         for schedule in sqlite_schedules
@@ -447,7 +450,7 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
         member_names=member_names,
         date_from=date_from,
         date_to=date_to,
-        personal_schedules=_personal_schedules_for_current_scope(),
+        personal_schedules=_personal_schedules_for_current_scope(date_from, date_to),
     )
 
     return json_payload(result)
