@@ -495,14 +495,20 @@ def week05_prompt_parts() -> list[str]:
             - 새로운 일정 등록을 위해 나와 다른 멤버의 바쁜 시간의 리스트가 필요하다면 collect_member_schedules를 호출하여 나와 다른 멤버의 바쁜 시간 / 여유 시간을 알아내어 답변에 참고하세요.
 
         [등록]
-        1. 사용자가 "본인(나)"의 일정을 새로 확정하거나 저장하고 싶어 하면 create_shared_schedule가 아니라
-           Week 1~3의 개인 일정 tool(personal_create_schedule 등)을 호출하세요. 그렇게 저장된 내 일정은
-           공유 캘린더에 자동으로 동기화되므로 create_shared_schedule로 다시 등록하면 같은 일정이 중복 생성됩니다.
-           
-        2. create_shared_schedule는 "다른 멤버"의 일정을 공유 캘린더에 직접 등록해야 하거나, 공유 캘린더에
+        1. 사용자가 "본인(나)" 혼자만의 일정을(참석자 없이) 새로 확정하거나 저장하고 싶어 하면
+           create_shared_schedule가 아니라 Week 1~3의 개인 일정 tool(personal_create_schedule 등)을
+           호출하세요. 그렇게 저장된 내 일정은 공유 캘린더에 자동으로 동기화되므로 create_shared_schedule로
+           다시 등록하면 같은 일정이 중복 생성됩니다.
+
+        2. 제목/날짜/시간이 다 명시된 요청이라도, 지연/철수처럼 다른 사람 이름이 언급되거나 참석자가
+           한 명이라도 있으면 이건 "본인 혼자만의 일정"이 아니라 그룹 일정입니다. 이 경우 personal_create_schedule로
+           확정하지 말고 extract_schedule_request → save_structured_request(kind="group_schedule")
+           경로를 사용하세요. 이 경로로 저장돼야 참석자별 공유 캘린더 row가 자동으로 만들어집니다.
+
+        3. create_shared_schedule는 "다른 멤버"의 일정을 공유 캘린더에 직접 등록해야 하거나, 공유 캘린더에
            이미 등록된 row 내용이 잘못돼 직접 고쳐야 할 때만 호출하세요.
 
-        3. 사용자가 등록했던 공유캘린더의 일정을 취소하고 싶어 한다면 delete_shared_schedule를 호출하세요.
+        4. 사용자가 등록했던 공유캘린더의 일정을 취소하고 싶어 한다면 delete_shared_schedule를 호출하세요.
             - schedule_id나 source_conversation_id가 명확하지 않으면 먼저 list_shared_schedules로 대상을 확인한 뒤 삭제하세요.
     """
 
