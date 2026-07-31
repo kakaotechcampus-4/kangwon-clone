@@ -342,7 +342,10 @@ def search_previous_conversations(
     member_names: list[str] | None = None,
     limit: int = 5,
 ) -> str:
-    """외부 SQLite 데이터베이스에 저장된 이전 대화를 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다."""
+    """외부 SQLite 데이터베이스에 저장된 이전 대화를 검색합니다. query에는 LLM이 고른 짧은 핵심 명사나 구를 넣습니다.
+    query만으로는 단순 부분 일치 검색이라 실패할 수 있으니 member_names로 먼저 좁히고, query는 보조로만 씁니다.
+    member_names와 query는 AND로 같이 적용됩니다. 대화 내용에 있을지 확신 없는 단어(예: '회의', '일정')를 query에 넣지 말고, 처음엔 query를 빈 문자열로 비워서 그 팀원의 대화를 넓게 찾아봅니다. 결과가 비어 있으면 query를 더 짧고 일반적인 단어로 바꿔 한 번 더 시도합니다.
+    """
 
     args = {
         "query": query,
@@ -477,8 +480,7 @@ def week05_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         "Week 5부터는 외부 팀원과의 이전 대화나 일정을 다뤄야 하면 아래 MCP wrapper tool을 사용해.",
-        "1. 팀원 이름이 언급되면 member_names에 그 이름을 넣어서 search_previous_conversations를 호출해. query만으로는 단순 부분 일치 검색이라 실패할 수 있으니 member_names로 먼저 좁히고, query는 보조로만 써.",
-        "1-1. member_names와 query는 AND로 같이 적용돼. 대화 내용에 있을지 확신 없는 단어(예: '회의', '일정')를 query에 넣지 말고, 처음엔 query를 빈 문자열로 비워서 그 팀원의 대화를 넓게 찾아봐. 결과가 비어 있으면 query를 더 짧고 일반적인 단어로 바꿔 한 번 더 시도해.",
+        "1. 팀원 이름이 언급되면 member_names에 그 이름을 넣어서 search_previous_conversations를 호출해.",
         "2. search_previous_conversations 결과에서 더 구체적인 내용이 필요하면 conversation_id로 load_conversation_messages를 호출해서 그 대화의 메시지를 전부 읽어.",
         "3. 팀원의 바쁜 시간/일정을 날짜 범위로 알아야 하면 extract_schedules_from_history를 member_names/date_from/date_to와 함께 호출해.",
         "4. 공유 일정 저장소에 이미 등록된 row 자체를 확인할 때는 list_shared_schedules를 사용해.",
