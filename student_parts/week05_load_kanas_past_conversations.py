@@ -474,8 +474,8 @@ def week05_tools() -> list[Any]:
         search_previous_conversations,
         load_conversation_messages,
         extract_schedules_from_history,
-        # create_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
-        # delete_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
+        create_shared_schedule,
+        delete_shared_schedule,
         list_shared_schedules,
         collect_member_schedules,
     ]
