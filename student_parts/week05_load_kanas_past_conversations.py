@@ -309,15 +309,17 @@ def _collect_member_schedules(
     member_names = normalize_external_member_names(member_names)
     date_from, date_to = normalize_external_schedule_date_bounds(member_names, date_from, date_to)
 
-    raw = call_mcp_tool_sync(
-        "extract_schedules_from_history",
-        {
-            "member_names": member_names,
-            "date_from": date_from,
-            "date_to": date_to,
-        },
-    )
-    external_rows = json.loads(raw).get("rows", [])
+    external_rows = []
+    if member_names:
+        raw = call_mcp_tool_sync(
+            "extract_schedules_from_history",
+            {
+                "member_names": member_names,
+                "date_from": date_from,
+                "date_to": date_to,
+            },
+        )
+        external_rows = json.loads(raw).get("rows", [])
 
     my_rows = []
     for row in personal_schedules:
@@ -333,7 +335,15 @@ def _collect_member_schedules(
             })
 
     rows = my_rows + external_rows
-    return {"rows": rows, "schedule_summary": external_schedule_summary(rows)}
+    return {
+        "ok": True,
+        "tool_name": "collect_member_schedules",
+        "member_names": member_names,
+        "date_from": date_from,
+        "date_to": date_to,
+        "rows": rows,
+        "schedule_summary": external_schedule_summary(rows),
+    }
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
