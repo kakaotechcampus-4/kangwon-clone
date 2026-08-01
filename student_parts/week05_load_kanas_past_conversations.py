@@ -197,10 +197,14 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
 #     - 내 일정 수집은 _personal_schedules_for_current_scope()에서 처리합니다. 이 helper는
 #       fixed/app_store.py의 AppSQLiteStore(CONFIG.app_db_path).list_schedules(...)와
 #       student_parts/week01_wake_up_nana.py의 PERSONAL_SCHEDULES 중 현재 대화 범위 row를 합칩니다.
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    date_from=None, date_to=None
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    sql_saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules()
+    sql_saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
+        limit=50, date_from=date_from, date_to=date_to
+    )
     this_session_schedules = PERSONAL_SCHEDULES
 
     sql_saved_schedules_id = [
@@ -557,7 +561,9 @@ def collect_member_schedules(
 ) -> str:
     """내 일정과 다른 사람들의 일정을 MCP SQLite 기록에서 모읍니다."""
 
-    my_schedule = _personal_schedules_for_current_scope()
+    my_schedule = _personal_schedules_for_current_scope(
+        date_to=date_to, date_from=date_from
+    )
     external_schedule = _collect_member_schedules(
         member_names=member_names,
         date_from=date_from,
