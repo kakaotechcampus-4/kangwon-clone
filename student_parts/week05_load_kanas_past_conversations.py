@@ -193,15 +193,15 @@ def _personal_schedules_for_current_scope(
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
     saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
-        limit=200, date_from=date_from, date_to=date_to
+        limit=200, kind="personal_schedule", date_from=date_from, date_to=date_to
     )
 
     scoped_temp_schedules = [
         i
         for i in PERSONAL_SCHEDULES
         if _schedule_scope(i) == current_session_scope()
-        and (not date_from or i["date"] >= date_from)
-        and (not date_to or i["date"] <= date_to)
+        and (not date_from or i.get("date", "") >= date_from)
+        and (not date_to or i.get("date", "") <= date_to)
     ]
 
     saved_schedule_ids = [i["schedule_id"] for i in saved_schedules]
