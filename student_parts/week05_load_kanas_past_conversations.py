@@ -71,21 +71,33 @@ def json_payload(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False)
 
 
+class MCPToolError(Exception):
+    """MCP tool 호출이 실패했거나 응답 형식이 예상과 다를 때 발생시킵니다."""
+
 def _parse_mcp_rows(result: str) -> list[dict[str, Any]]:
-    """MCP tool의 JSON 문자열 결과를 row list로 안전하게 파싱합니다."""
+    """MCP tool의 JSON 문자열 결과에서 rows를 꺼냅니다.
+
+    ok=false 이거나 응답 형식이 예상과 다르면 예외를 던져 호출자가 실패를
+    알 수 있게 합니다. 실제로 rows가 비어 있는 경우(ok=true, rows=[])만
+    빈 리스트를 반환합니다.
+    """
 
     try:
         parsed = json.loads(result)
-    except (TypeError, json.JSONDecodeError):
-        return []
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise MCPToolError(f"MCP 응답 JSON 파싱 실패: {result!r}") from exc
 
-    if isinstance(parsed, list):
-        return [row for row in parsed if isinstance(row, dict)]
-    if isinstance(parsed, dict):
-        rows = parsed.get("rows")
-        if isinstance(rows, list):
-            return [row for row in rows if isinstance(row, dict)]
-    return []
+    if not isinstance(parsed, dict):
+        raise MCPToolError(f"예상치 못한 MCP 응답 형식: {result!r}")
+
+    if parsed.get("ok") is False:
+        raise MCPToolError(f"MCP tool 조회 실패: {parsed.get('error', '알 수 없는 오류')}")
+
+    rows = parsed.get("rows")
+    if not isinstance(rows, list):
+        raise MCPToolError(f"MCP 응답에 유효한 rows가 없음: {result!r}")
+
+    return [row for row in rows if isinstance(row, dict)]
 
 
 class SearchPreviousConversationsInput(BaseModel):
@@ -175,7 +187,15 @@ def _collect_member_schedules(
         "extract_schedules_from_history",
         {"member_names": member_names, "date_from": date_from, "date_to": date_to},
     )
-    external_rows = _parse_mcp_rows(external_result)
+    try:
+        external_rows = _parse_mcp_rows(external_result)
+    except MCPToolError as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "rows": [],
+            "schedule_summary": "외부 일정 조회에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        }
 
     normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
         member_names, date_from, date_to
@@ -197,6 +217,7 @@ def _collect_member_schedules(
     rows = [*my_rows, *external_rows]
 
     return {
+        "ok" : True,
         "rows": rows,
         "schedule_summary": external_schedule_summary(rows),
     }
@@ -246,8 +267,17 @@ def create_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
-    # TODO(추가과제, 미구현): call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    args = {
+        "member_name": member_name,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "notes": notes,
+        "source_conversation_id": source_conversation_id,
+        "schedule_id": schedule_id,
+    }
+    return call_mcp_tool_sync("create_shared_schedule", args)
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -257,8 +287,8 @@ def delete_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
-    # TODO(추가과제, 미구현): call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    args = {"schedule_id": schedule_id, "source_conversation_id": source_conversation_id}
+    return call_mcp_tool_sync("delete_shared_schedule", args)
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -305,7 +335,8 @@ def week05_tools() -> list[Any]:
         extract_schedules_from_history,
         list_shared_schedules,
         collect_member_schedules,
-        # create_shared_schedule, delete_shared_schedule 은 추가과제라 목록에서 제외
+        create_shared_schedule,
+        delete_shared_schedule,
     ]
 
 
@@ -322,17 +353,37 @@ def week05_prompt_parts() -> list[str]:
         *week04_prompt_parts(),
         (
             "너는 이제 나(사용자) 뿐 아니라 다른 팀원들의 일정도 함께 조율할 수 있다.\n"
-            "- '철수랑 저번에 얘기한 일정 있어?'처럼 외부 팀원과의 과거 대화를 찾을 때는\n"
-            "  search_previous_conversations로 먼저 검색하고, 특정 대화를 더 자세히 봐야 하면\n"
-            "  load_conversation_messages로 전체 메시지를 불러온다.\n"
-            "- 특정 팀원(들)의 바쁜 시간/일정을 날짜 범위로 조회할 때는\n"
-            "  extract_schedules_from_history를 사용한다.\n"
-            "- 이미 등록된 공유 일정 자체를 조회할 때는 list_shared_schedules를 사용한다.\n"
-            "- '나랑 철수랑 영희랑 이번 주에 언제 다 시간 되는지 봐줘'처럼 여러 사람의 일정을\n"
-            "  한 번에 모아야 할 때는 collect_member_schedules를 사용한다. 이 tool은 내 일정과\n"
-            "  외부 멤버 일정을 이미 합쳐서 반환하므로, 여러 tool을 따로 호출해 직접 합칠 필요는 없다.\n"
-            "- 존재하지 않는 팀원 이름을 물어보면 추측하지 말고, 조회 결과가 비어 있다는 사실을\n"
-            "  그대로 안내한다."
+            "- '철수랑 저번에 얘기한 일정 있어?'처럼 특정 인물의 과거 대화를 찾을 때는\n"
+            "  search_previous_conversations를 member_names에 그 인물만 넣어 호출한다.\n"
+            "  이렇게 인물을 지정해서 검색했는데 conversation_id가 여러 개 나왔다면\n"
+            "  (같은 사람과 나눈 대화가 여러 건 기록된 경우), 어느 시점의 대화인지\n"
+            "  사용자에게 먼저 되묻는다. 임의로 하나를 골라 답하지 않는다.\n"
+            "- 인물을 지정하지 않고 키워드만으로 검색했는데 여러 conversation_id가\n"
+            "  섞여 나온 경우(예: 여러 사람의 대화에 같은 단어가 걸린 경우)도 마찬가지로\n"
+            "  누구의 대화를 말하는 것인지 먼저 되묻는다.\n"
+            "- conversation_id가 정확히 1개로 좁혀졌을 때는, search_previous_conversations의\n"
+            "  결과(대화 제목, 짧은 발췌)만으로 질문에 충분히 답할 수 있는지 먼저 판단한다.\n"
+            "  '그 얘기 언제였지', '누구랑 얘기한 거였지'처럼 날짜/사람 정도만 필요한 질문은\n"
+            "  짧은 결과로 답한다. 반면 '뭐라고 했는지 자세히 말해줘', '그때 정확히 무슨 말\n"
+            "  오갔는지 보여줘'처럼 세부 맥락이나 정확한 표현이 필요한 질문은\n"
+            "  load_conversation_messages로 전체 메시지를 불러온 뒤 답한다.\n"
+            "- 일정을 등록/수정/삭제할 때는 그 일정이 '누구 명의'인지로 tool을 구분한다.\n"
+            "  '나'의 일정을 새로 만들 때는 personal_create_schedule을 사용한다. 이 tool로\n"
+            "  만든 내 일정은 자동으로 외부 공유 일정 저장소에도 동기화되므로,\n"
+            "  create_shared_schedule을 별도로 호출할 필요가 없다.\n"
+            "- 반면 '철수', '영희'처럼 나 이외의 외부 멤버 명의로 일정을 직접 등록하거나\n"
+            "  갱신해야 할 때는 create_shared_schedule을 사용한다. 이 앱은 철수·영희 같은\n"
+            "  외부 멤버의 개인 계정을 갖고 있지 않으므로, personal_create_schedule로는\n"
+            "  '나' 이외의 명의로 일정을 만들 수 없다. member_name에는 반드시 그 외부\n"
+            "  멤버의 실제 이름을 넣고, '나'로 넣지 않는다.\n"
+            "- 이미 등록된 공유 일정 row를 삭제할 때도 마찬가지로 명의를 구분한다.\n"
+            "  '나'의 일정을 지울 때는 personal_delete_schedule을 사용한다(자동으로\n"
+            "  공유 저장소 복사본도 함께 정리된다). 외부 멤버 명의의 공유 일정 row를\n"
+            "  직접 삭제해야 할 때만 delete_shared_schedule을 schedule_id 또는\n"
+            "  source_conversation_id로 호출한다.\n"
+            "- 사용자가 '철수 이름으로 등록해줘'처럼 명시적으로 외부 멤버 명의를 지정했다면,\n"
+            "  결과에서 member_name이 실제로 그 사람 이름으로 등록됐는지 확인하고,\n"
+            "  '나'로 등록됐다면 그것은 요청과 다른 결과이므로 그렇게 답하지 않는다."
         ),
     ]
 
