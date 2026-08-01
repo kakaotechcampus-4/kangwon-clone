@@ -490,7 +490,8 @@ def week05_prompt_parts() -> list[str]:
         - 외부 멤버의 일정이나 바쁜 시간이 필요할 때는 extract_schedules_from_history를 사용한다.
         - 내 일정과 외부 멤버의 일정을 같은 날짜 범위에서 함께 확인해야 할 때는 collect_member_schedules를 사용한다.
         - 외부 공유 일정 저장소에 등록된 row 자체를 확인할 때는 list_shared_schedules를 사용한다.
-        - Week 5에서는 여러 사람의 바쁜 시간을 수집하고 설명하는 데까지만 수행한다.
+        - 사용자가 외부 공유 일정 저장소에 일정을 등록해 달라고 요청하면 create_shared_schedule을 사용한다.
+        - 사용자가 공유 일정 삭제를 요청하면 delete_shared_schedule을 사용한다.
 
         개인 저장/RAG는 Week 4의 도구로, 외부 멤버 대화와 일정은 MCP wrapper로 처리한다.
 
