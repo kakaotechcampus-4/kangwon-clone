@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from langchain.agents import create_agent
@@ -31,6 +32,7 @@ from student_parts.week04_retrieve_nanas_memory import week04_prompt_parts, week
 
 
 _WEEK05_AGENT: Any | None = None
+_VALID_TIME_PATTERN = re.compile(r"([01]\d|2[0-3]):([0-5]\d)")
 
 
 # [5주차 수강생 구현 가이드]
@@ -302,6 +304,7 @@ def _collect_member_schedules(
             continue
         if not (normalized_date_from <= structured.date <= normalized_date_to):
             continue
+        attendee_notes = f"참석자: {', '.join(structured.members)}" if structured.members else row.get("notes")
         my_rows.append(
             {
                 "member_name": PERSONAL_SHARED_MEMBER_NAME,
@@ -309,7 +312,7 @@ def _collect_member_schedules(
                 "date": structured.date,
                 "start_time": structured.start_time,
                 "end_time": structured.end_time,
-                "notes": row.get("notes"),
+                "notes": attendee_notes,
             }
         )
 
@@ -323,7 +326,13 @@ def _collect_member_schedules(
     )
     external_rows = external_payload.get("rows", [])
 
-    rows = my_rows + external_rows
+    rows = [
+        {
+            **row,
+            "end_time": row.get("end_time") if _VALID_TIME_PATTERN.fullmatch(str(row.get("end_time") or "")) else None,
+        }
+        for row in my_rows + external_rows
+    ]
     return {"rows": rows, "schedule_summary": external_schedule_summary(rows)}
 
 
@@ -474,6 +483,16 @@ def week05_prompt_parts() -> list[str]:
 
 날짜는 항상 YYYY-MM-DD 형식으로 tool에 전달하고, 멤버 이름은 사용자가 말한 그대로 넘겨.
 외부 멤버 일정은 실제로 조회한 tool 결과만 근거하고, 조회하지 않은 일정을 절대 추측해서 만들어내지 마.
+
+여러 명과 조율하는 회의 요청에 날짜나 기간이 없으면, tool을 부르기 전에 "언제쯤으로 맞춰볼까요?" 같은 질문 문장으로 사용자에게 자연어로 답변해.
+
+예시:
+- 입력: "소이랑 예전에 나눈 얘기 좀 찾아줘" → search_previous_conversations 호출
+- 입력: "방금 찾은 대화 전체 내용 보여줘" → load_conversation_messages 호출 (검색으로 찾은 conversation_id 사용)
+- 입력: "소이 다음 주 월요일부터 금요일 사이에 언제 바빠?" → extract_schedules_from_history 호출 (member_names=[소이], date_from/date_to 지정)
+- 입력: "공유 일정에 등록된 거 보여줘" → list_shared_schedules 호출
+- 입력: "소이, 유빈이랑 다음 주 월요일부터 금요일 사이에 다 되는 시간 확인해줘" → collect_member_schedules 호출 (member_names=[소이,유빈], date_from/date_to 지정)
+- 입력: "소이, 유빈이랑 회의 잡아줘" (날짜/기간 언급 없음) → "언제쯤으로 맞춰볼까요?" 같은 질문으로 먼저 자연어 답변. 날짜/기간을 알게 되면 그때 collect_member_schedules로 busy-time을 확인해.
         """,
     ]
 
