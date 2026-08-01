@@ -296,8 +296,13 @@ def _collect_member_schedules(
 
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
     my_rows: list[dict[str, Any]] = []
+
+    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds( member_names, date_from, date_to)
+    
     for schedule in personal_schedules:
         structured = _structured_request_from_schedule_row(schedule)
+        if not (normalized_date_from <= structured.date <= normalized_date_to):  
+            continue
         my_rows.append(
             {
                 "member_name": "나",
@@ -309,13 +314,18 @@ def _collect_member_schedules(
             }
         )
 
-    external_payload = json.loads(
-        call_mcp_tool_sync(
-            "extract_schedules_from_history",
-            {"member_names": member_names, "date_from": date_from, "date_to": date_to},
+    normalized_members = normalize_external_member_names(member_names)
+
+    if not normalized_members:
+        external_rows = []
+    else:
+        external_payload = json.loads(
+            call_mcp_tool_sync(
+                "extract_schedules_from_history",
+                {"member_names": member_names, "date_from": date_from, "date_to": date_to},
+            )
         )
-    )
-    external_rows = external_payload.get("rows", [])
+        external_rows = external_payload.get("rows", [])
 
     rows = [*my_rows, *external_rows]
     return {"rows": rows, "schedule_summary": external_schedule_summary(rows)}
@@ -470,6 +480,8 @@ def week05_prompt_parts() -> list[str]:
         "삭제할 때는 나중에 같은 일정을 다시 찾을 수 있도록 등록 시 받은 schedule_id 또는 source_conversation_id를 그대로 사용하세요. ",
         "이 tool들의 결과(rows/schedule_summary)를 그대로 출력하지 말고 자연어로 요약하세요. "
         "member_names나 날짜 범위가 질문 의도와 맞는지 결과를 보기 전에 한 번 더 확인하세요. ",
+        "rows의 start_time 또는 end_time이 '미정'이면 정확한 시간을 알 수 없다는 뜻이니, ",
+        "해당 일정이 있는 날은 시간이 확정되기 전까지 하루 종일 바쁜 것으로 간주해 답변하세요. ",
     ]
 
 
