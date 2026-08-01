@@ -386,7 +386,18 @@ def create_shared_schedule(
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
     # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    args = {
+        "member_name": member_name,
+        "title": title,
+        "date":date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "notes":notes,
+        "source_conversation_id":source_conversation_id,
+        "schedule_id":schedule_id
+        
+    }
+    return call_mcp_tool_sync("create_shared_schedule", args)
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -397,7 +408,11 @@ def delete_shared_schedule(
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
     # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    args = {
+        "schedule_id": schedule_id,
+        "source_conversation_id" : source_conversation_id
+    }
+    return call_mcp_tool_sync("delete_shared_schedule", args)
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -443,8 +458,8 @@ def week05_tools() -> list[Any]:
         search_previous_conversations,
         load_conversation_messages,
         extract_schedules_from_history,
-        # create_shared_schedule,
-        # delete_shared_schedule,
+        create_shared_schedule,
+        delete_shared_schedule,
         list_shared_schedules,
         collect_member_schedules,
     ]
@@ -479,6 +494,8 @@ def week05_prompt_parts() -> list[str]:
         "여러 사람의 일정을 모아 그중 하나를 최종 회의 시간으로 확정해서 답하는 것은 Week 6 범위다. "
         "collect_member_schedules/list_shared_schedules 결과로 각자의 바쁜 시간을 보여주는 것까지만 하고, "
         "네가 임의로 회의 시간을 정해서 확정 답변을 하지 마라.",
+        "일정 저장은 기본적으로 개인 저장소에 하며, 사용자가 공유 저장소나 외부 멤버와의 조율을 명시적으로 언급할 때는 "
+        "create_shared_schedule과 delete_shared_schedule을 사용해라.",
     ]
 
 
