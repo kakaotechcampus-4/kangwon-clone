@@ -200,11 +200,15 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     for schedule in PERSONAL_SCHEDULES:
         if session_id != _schedule_scope(schedule):
             continue
-        if schedule["id"] in saved_ids:
+        if schedule.get("id") in saved_ids:
             continue
         temp_schedules.append(schedule)
 
-    return saved_schedules + temp_schedules
+    return [
+        schedule
+        for schedule in saved_schedules + temp_schedules
+        if schedule.get("request_kind") != "group_schedule"
+    ]
 
 
 def json_payload(payload: dict[str, Any]) -> str:
@@ -303,17 +307,19 @@ def _collect_member_schedules(
 
     external_members = [name for name in normalized_members if name != "나"]
 
-    payload = call_mcp_tool_sync(
-        "extract_schedules_from_history",
-        {
-            "member_names": external_members,
-            "date_from": date_from,
-            "date_to": date_to,
-        },
-    )
+    external_rows: list[dict[str, Any]] = []
+    if external_members:
+        payload = call_mcp_tool_sync(
+            "extract_schedules_from_history",
+            {
+                "member_names": external_members,
+                "date_from": date_from,
+                "date_to": date_to,
+            },
+        )
 
-    data = json.loads(payload)
-    external_rows = data.get("rows", [])
+        data = json.loads(payload)
+        external_rows = data.get("rows", [])
 
     my_rows: list[dict[str, Any]] = []
     for schedule in personal_schedules:
@@ -321,9 +327,9 @@ def _collect_member_schedules(
         schedule_date = str(request.date or "").split("T", 1)[0].strip()
         if not schedule_date:
             continue
-        if date_from and schedule_date < date_from:
-            continue
-        if date_to and schedule_date > date_to:
+        if (date_from and schedule_date < date_from) or (
+            date_to and schedule_date > date_to
+        ):
             continue
         my_rows.append(
             {
@@ -333,10 +339,18 @@ def _collect_member_schedules(
                 "start_time": request.start_time or "미정",
                 "end_time": request.end_time or "미정",
                 "notes": "내 일정",
+                "source_conversation_id": None,
             }
         )
 
-    rows = my_rows + external_rows
+    rows = sorted(
+        my_rows + external_rows,
+        key=lambda row: (
+            str(row.get("date") or ""),
+            str(row.get("start_time") or ""),
+            str(row.get("member_name") or ""),
+        ),
+    )
     return {
         "ok": True,
         "tool_name": "collect_member_schedules",
@@ -413,8 +427,21 @@ def create_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
-    # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    payload = call_mcp_tool_sync(
+        "create_shared_schedule",
+        {
+            "member_name": member_name,
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "notes": notes,
+            "source_conversation_id": source_conversation_id,
+            "schedule_id": schedule_id,
+        },
+    )
+
+    return payload
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -424,8 +451,15 @@ def delete_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
-    # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    payload = call_mcp_tool_sync(
+        "delete_shared_schedule",
+        {
+            "schedule_id": schedule_id,
+            "source_conversation_id": source_conversation_id,
+        },
+    )
+
+    return payload
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -475,8 +509,8 @@ def week05_tools() -> list[Any]:
         search_previous_conversations,
         load_conversation_messages,
         extract_schedules_from_history,
-        #        create_shared_schedule,
-        #        delete_shared_schedule,
+        create_shared_schedule,
+        delete_shared_schedule,
         list_shared_schedules,
         collect_member_schedules,
     ]
@@ -498,10 +532,17 @@ def week05_prompt_parts() -> list[str]:
             "내 개인 일정, 할 일, 참고자료는 지금까지의 앱 내부 tool로 처리한다. "
             "다른 사람의 과거 대화 내용이 궁금하면 search_previous_conversations로 검색하고, "
             "특정 대화의 전체 내용이 필요하면 그 결과의 conversation_id로 load_conversation_messages를 호출한다. "
-            "다른 사람이 언제 바쁜지 알아야 하면 extract_schedules_from_history를 사용한다. "
-            "'나를 포함해 여러 명의 시간을 맞추자'는 요청은 collect_member_schedules 하나로 "
-            "내 일정과 외부 멤버의 busy time을 같은 rows 구조로 모은다. "
-            "공유 일정 저장소에 무엇이 등록돼 있는지 확인할 때는 list_shared_schedules를 사용한다. "
+            "'철수랑 영희 일정 알려줘'처럼 member_names에 '나'가 없는 순수 외부 멤버 조회는 "
+            "extract_schedules_from_history를 쓴다. "
+            "'나랑 철수 언제 시간 되지', '나랑 민준이 언제 바쁜지 정리해줘'처럼 "
+            "나와 다른 사람의 일정을 함께 봐야 하는 요청은 collect_member_schedules 하나로 처리한다. "
+            "이때 personal_list_saved_schedules와 list_shared_schedules를 각각 불러 따로 보여주지 않는다. "
+            "collect_member_schedules가 두 출처를 같은 구조의 rows로 합치고 시간순으로 정렬해 주기 때문이다. "
+            "공유 일정 저장소에 무엇이 등록돼 있는지 확인할 때는 list_shared_schedules를 사용하며, "
+            "저장소 전체를 확인하는 요청에는 날짜 필터를 넣지 않는다. "
+            "공유 저장소에 일정을 직접 등록하거나 지워야 하면 "
+            "create_shared_schedule / delete_shared_schedule을 사용하고, "
+            "삭제 전에는 list_shared_schedules로 대상 schedule_id를 먼저 확인한다. "
             "답변은 tool이 돌려준 rows와 schedule_summary에 있는 내용만 근거로 삼고, "
             "조회되지 않은 일정을 지어내지 않는다."
         ),
