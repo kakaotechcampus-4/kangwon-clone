@@ -303,7 +303,7 @@ def _collect_member_schedules(
         "date_to": date_to,
     }
     result = json.loads(call_mcp_tool_sync("extract_schedules_from_history", args))
-    mcp_rows = result.get("rows", [])
+    mcp_rows: list[dict[str, Any]] = result.get("rows", [])
 
     personal_rows: list[dict[str, Any]] = []
     for schedule in personal_schedules:
@@ -320,7 +320,7 @@ def _collect_member_schedules(
                     "date": schedule_date,
                     "start_time": structured_schedule.start_time,
                     "end_time": structured_schedule.end_time,
-                    "notes": schedule.get("notes", "")
+                    "notes": ""
                 }
             )
 
