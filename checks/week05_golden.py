@@ -28,13 +28,16 @@ if str(PACKAGE_ROOT) not in sys.path:
 
 from fixed.config import CONFIG
 
-WEEK5_TOOLS = {
+# 외부 멤버 조회용 read tool — external_people 케이스는 이 중 하나가 불려야 pass
+WEEK5_READ_TOOLS = {
     "search_previous_conversations",
     "load_conversation_messages",
     "extract_schedules_from_history",
     "list_shared_schedules",
     "collect_member_schedules",
 }
+# read + write(추가과제) 전체 — control 케이스는 이 중 무엇도 불리면 오호출
+WEEK5_TOOLS = WEEK5_READ_TOOLS | {"create_shared_schedule", "delete_shared_schedule"}
 
 _TONES = ["{p}", "{p}?", "혹시 {p}", "{p} 좀 알려줘"]
 
@@ -105,7 +108,7 @@ def main() -> int:
         called = _called(result.trace)
         w5_called = [t for t in called if t in WEEK5_TOOLS]
         if case["category"] == "external_people":
-            passed = len(w5_called) > 0
+            passed = any(t in WEEK5_READ_TOOLS for t in called)
         else:
             passed = len(w5_called) == 0
         return {"category": case["category"], "called": called, "w5_called": w5_called, "passed": passed}

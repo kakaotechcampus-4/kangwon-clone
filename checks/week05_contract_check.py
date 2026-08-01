@@ -115,6 +115,40 @@ def main() -> int:
             if s in PERSONAL_SCHEDULES:
                 PERSONAL_SCHEDULES.remove(s)
 
+    # 7. (멘토 1차 수정요청) 실제 MCP — 조회 범위 밖 내 일정이 rows에 섞이면 안 됨
+    scope_r = "w5_range_scope"
+    aug = {"id": "p_aug", "title": "8월 개인 미팅", "date": "2026-08-20", "start_time": "14:00", "end_time": "15:00", "attendees": [], "session_id": scope_r}
+    PERSONAL_SCHEDULES.append(aug)
+    try:
+        with conversation_session_scope(scope_r):
+            d = _invoke(w5.collect_member_schedules, {"member_names": [MEMBER], "date_from": "2026-07-07", "date_to": "2026-07-16"})
+        rows = d.get("rows", [])
+        out_of_range = [r for r in rows if not (r.get("date") and "2026-07-07" <= r["date"] <= "2026-07-16")]
+        check("7) 조회 범위(7/7~7/16) 밖 일정이 rows에 없음", out_of_range == [])
+        check("7) 8월 개인 일정이 rows에서 제외됨", all(r.get("date") != "2026-08-20" for r in rows))
+    except Exception as exc:  # noqa: BLE001
+        check(f"7) 범위 밖 필터 예외 없음 ({type(exc).__name__}: {exc})", False)
+    finally:
+        if aug in PERSONAL_SCHEDULES:
+            PERSONAL_SCHEDULES.remove(aug)
+
+    # 8. (추가과제) create/delete_shared_schedule round-trip — 만든 row만 건드리고 정리
+    unique_id = "sharedtest_w5contract"
+    w5.delete_shared_schedule.invoke({"schedule_id": unique_id})  # 사전 정리
+    try:
+        created = _invoke(w5.create_shared_schedule, {"member_name": "테스트원", "title": "계약검증용", "date": "2026-07-11", "start_time": "10:00", "end_time": "11:00", "schedule_id": unique_id})
+        check("8) create_shared_schedule: shared_schedule 반환 + schedule_id 보존", created.get("shared_schedule", {}).get("schedule_id") == unique_id)
+        listed = _invoke(w5.list_shared_schedules, {"member_names": ["테스트원"]})
+        check("8) 등록한 공유 일정이 list에 나타남", any(r.get("schedule_id") == unique_id for r in listed.get("rows", [])))
+        deleted = _invoke(w5.delete_shared_schedule, {"schedule_id": unique_id})
+        check("8) delete_shared_schedule: deleted_count>=1", deleted.get("deleted_count", 0) >= 1)
+        listed2 = _invoke(w5.list_shared_schedules, {"member_names": ["테스트원"]})
+        check("8) 삭제 후 list에서 사라짐", all(r.get("schedule_id") != unique_id for r in listed2.get("rows", [])))
+    except Exception as exc:  # noqa: BLE001
+        check(f"8) create/delete round-trip 예외 없음 ({type(exc).__name__}: {exc})", False)
+    finally:
+        w5.delete_shared_schedule.invoke({"schedule_id": unique_id})  # 사후 정리
+
     print()
     total = len(failures)
     if total:

@@ -295,6 +295,8 @@ def _collect_member_schedules(
     rows: list[dict[str, Any]] = []
     for schedule in personal_schedules:
         request = _structured_request_from_schedule_row(schedule)
+        if request.date is None or not (normalized_from <= request.date <= normalized_to):
+            continue
         rows.append(
             {
                 "member_name": PERSONAL_SHARED_MEMBER_NAME,
@@ -368,8 +370,19 @@ def create_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
-    # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    return call_mcp_tool_sync(
+        "create_shared_schedule",
+        {
+            "member_name": member_name,
+            "title": title,
+            "date": date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "notes": notes,
+            "source_conversation_id": source_conversation_id,
+            "schedule_id": schedule_id,
+        },
+    )
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -379,8 +392,10 @@ def delete_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
-    # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    return call_mcp_tool_sync(
+        "delete_shared_schedule",
+        {"schedule_id": schedule_id, "source_conversation_id": source_conversation_id},
+    )
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -428,6 +443,8 @@ def week05_tools() -> list[Any]:
         extract_schedules_from_history,
         list_shared_schedules,
         collect_member_schedules,
+        create_shared_schedule,
+        delete_shared_schedule,
     ]
 
 
@@ -454,6 +471,9 @@ def week05_prompt_parts() -> list[str]:
         "이 tool은 내 일정('나')과 외부 멤버 일정을 같은 구조의 rows로 합쳐 준다.",
         "외부 멤버 일정을 뽑거나 모을 때는 member_names와 date_from/date_to(YYYY-MM-DD)를 함께 넘긴다. "
         "인사·감사·잡담이거나 순수하게 내 것만 묻는 질문에는 외부 MCP tool을 호출하지 않는다.",
+        "공유 일정 저장소에 일정을 직접 등록·수정하라는 요청에는 create_shared_schedule을, "
+        "등록된 공유 일정을 삭제하라는 요청에는 delete_shared_schedule을 사용한다. "
+        "이후 수정·삭제 동기화가 가능하도록 schedule_id나 source_conversation_id를 보존한다.",
         "여러 사람의 일정을 조회·수집하는 것까지가 이번 주차 범위이며, 그중 최종 회의 시간을 확정해 고르는 것은 다음 주차 범위다.",
     ]
 
