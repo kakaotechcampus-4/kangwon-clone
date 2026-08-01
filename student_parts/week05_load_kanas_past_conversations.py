@@ -295,6 +295,8 @@ def _collect_member_schedules(
     my_rows = []
     for schedule in personal_schedules:
         structured = _structured_request_from_schedule_row(schedule)
+        if structured.date and not (date_from <= structured.date <= date_to):
+            continue
         my_rows.append({
             "member_name": "나",
             "title": structured.title,
@@ -306,12 +308,18 @@ def _collect_member_schedules(
         
     normalized_members = normalize_external_member_names(member_names)
     normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
-        member_names, date_from, date_to
+        normalized_members, date_from, date_to
     )
 
-    args = {"member_names": member_names, "date_from": date_from, "date_to": date_to}
+    args = {
+        "member_names": normalized_members, 
+        "date_from": normalized_date_from, 
+        "date_to": normalized_date_to,
+    }
+    
     external_result = call_mcp_tool_sync("extract_schedules_from_history", args)
-    external_rows = json.loads(external_result)
+    external_rows = json.loads(external_result).get("rows", [])
+
 
     all_rows = [*my_rows, *external_rows]
 
@@ -455,7 +463,7 @@ def week05_prompt_parts() -> list[str]:
         "팀원들의 바쁜 시간(일정)만 필요하면 extract_schedules_from_history를 호출해.",
         "공유 일정 저장소에 등록된 일정을 확인하려면 list_shared_schedules를 사용해.",
         "내 일정과 여러 팀원의 일정을 한 번에 모아야 하면 collect_member_schedules를 사용해. 이 tool은 나와 팀원들의 일정을 같은 구조로 합쳐서 반환해.",
-        "공유 일정 등록/삭제 요청이 오면, 현재는 지원하지 않는 기능이라고 안내해.",
+        "공유 일정을 새로 등록하거나 삭제해달라는 요청이 오면, 현재는 지원하지 않는 기능이라고 안내해. 단, 공유 일정을 조회하는 것(list_shared_schedules)은 이 제한과 무관하니 정상적으로 처리해.",
     ]
 
 
