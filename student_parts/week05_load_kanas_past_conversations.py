@@ -186,20 +186,28 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    # 1. SQLite 저장 일정 가져오기
-    sqlite_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules()
+    # 1. SQLite 저장 일정 가져오기 — 날짜 조건을 쿼리 단계에서 적용
+    sqlite_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
+        date_from=date_from,
+        date_to=date_to,
+    )
 
-
-    # 2. 현재 대화 범위 temp 일정 가져오기
+    # 2. 현재 대화 범위 temp 일정 가져오기 — 같은 날짜 조건으로 필터링
     current_scope = current_session_scope()
-    temp_schedules = [s for s in PERSONAL_SCHEDULES if _schedule_scope(s) == current_scope]
+    temp_schedules = [
+        s for s in PERSONAL_SCHEDULES
+        if _schedule_scope(s) == current_scope
+        and (date_from is None or (s.get("date") or "") >= date_from)
+        and (date_to is None or (s.get("date") or "") <= date_to)
+    ]
 
     # 3. SQLite 저장 일정과 temp 일정 중복 제거 및 합치기
-
     sqlite_schedule_ids = {s.get("schedule_id") for s in sqlite_schedules}
     merged_schedules = sqlite_schedules + [s for s in temp_schedules if s['id'] not in sqlite_schedule_ids]
 
@@ -294,11 +302,16 @@ def _collect_member_schedules(
     date_to: str,
     personal_schedules: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
+    """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다.
+
+    외부 조회(extract_schedules_from_history)는 '나'를 제외한 멤버만 대상으로 하며,
+    개인 일정은 personal_schedules로 별도 전달됩니다.
+    """
 
     # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
     # 1. 외부 멤버 일정 rows
-    external_payload = json.loads(call_mcp_tool_sync("extract_schedules_from_history", {"member_names": member_names, "date_from": date_from, "date_to": date_to}))
+    external_member = [n for n in member_names if n != "나"]
+    external_payload = json.loads(call_mcp_tool_sync("extract_schedules_from_history", {"member_names": external_member, "date_from": date_from, "date_to": date_to}))
     external_rows = external_payload["rows"]
 
     # 2. 내 일정 rows
@@ -408,7 +421,7 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
 
     # TODO: 내 일정과 외부 멤버 busy-time rows를 모아 JSON 문자열로 반환하세요.
     # 1. 내 일정 rows
-    personal_schedules = _personal_schedules_for_current_scope()
+    personal_schedules = _personal_schedules_for_current_scope(date_from=date_from, date_to=date_to)
 
     # 2. 외부 멤버 일정 rows
     merged_result = _collect_member_schedules(
@@ -461,8 +474,7 @@ def week05_prompt_parts() -> list[str]:
         "conversation_id를 지어내지 마라.",
         "collect_member_schedules/extract_schedules_from_history를 호출할 때 member_names에는 "
         "'다른 사람/외부 멤버' 이름만 넣어라. 내 일정은 collect_member_schedules가 항상 자동으로 "
-        "함께 모아주므로, 사용자가 '나까지 포함해서'라고 말해도 member_names에 '나'를 넣지 마라. "
-        "'나'를 넣으면 내 일정이 두 번 겹쳐서 나온다.",
+        "함께 모아주므로, 사용자가 '나까지 포함해서'라고 말해도 member_names에 '나'를 넣지 않아도 된다.",
         "외부 멤버 busy-time 조회와 공유 저장소 row 조회는 Week 5 범위지만, "
         "여러 사람의 일정을 모아 그중 하나를 최종 회의 시간으로 확정해서 답하는 것은 Week 6 범위다. "
         "collect_member_schedules/list_shared_schedules 결과로 각자의 바쁜 시간을 보여주는 것까지만 하고, "
