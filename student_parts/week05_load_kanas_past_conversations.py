@@ -606,6 +606,12 @@ def week05_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         # TODO: Week 5 Kana history agent system prompt를 자유롭게 추가하세요.
+        f"날짜를 판단할 때에는 {current_app_date_iso()}를 기준으로 오늘 날짜를 판단한다.",
+        "사용자의 과거 대화를 검색하기 위해서는 search_previous_conversations를 사용하여 검색한 뒤 그 결과값을 사용하여 load_conversation_messages를 사용해 메시지를 불러온다.",
+        "외부 멤버의 과거 채팅의 일정을 검색하기 위해서는 extract_schedules_from_history를 사용한다.",
+        "사용자와 외부멤버의 일정을 조율하기 위해서는 collect_member_schedules를 사용한다.",
+        "일정이 존재하는지 확인하기 위해서는 list_shared_schedules를 사용한다.",
+        "조회된 일정이 존재하지 않을 때는 임의로 일정을 만들지 않는다.",
     ]
 
 
