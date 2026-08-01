@@ -260,16 +260,42 @@ def _within(date: str | None, ranges: list[tuple[Any, Any]]) -> bool:
     return False
 
 
-def observe_unimplemented(run: Run) -> Verdict:
-    """미구현 추가과제 tool 을 LLM 이 실제로 부르는지 관찰한다.
+def judge_shared_create(run: Run) -> Verdict:
+    """공유 저장소 등록 요청이 create_shared_schedule 로 가고 실제로 등록되는가.
 
-    부르면 None 을 받는다. Layer 1 의 마지막 테스트가 잡는 문제의 실제 영향이다.
+    구현 전에는 이 케이스가 "미구현 tool 을 부르면 실패" 였다(관찰용).
+    구현한 뒤로는 부르는 게 정답이므로 판정을 뒤집어 통과율로 센다.
+    등록 결과까지 보는 이유: 호출만 보면 예전처럼 None 을 받아도 통과로 세어진다.
     """
 
     if "create_shared_schedule" not in run.names:
-        return None, f"create 미호출 ({run.tools_repr()})"
+        return False, f"create_shared_schedule 미호출 ({run.tools_repr()})"
     contents = [content for name, content in run.results if name == "create_shared_schedule"]
-    return False, f"미구현 tool 을 호출했다 → 결과: {contents}"
+    registered = [
+        content.get("shared_schedule", {}).get("schedule_id")
+        for content in contents
+        if isinstance(content, dict) and content.get("ok")
+    ]
+    if not any(registered):
+        return False, f"불렀지만 등록되지 않았다 → {contents}"
+    return True, f"등록됨: {registered}"
+
+
+def judge_shared_list(run: Run) -> Verdict:
+    """'공유 일정 목록' 을 물었을 때 내 일정 목록 tool 로 새지 않는가.
+
+    멘토 1차 리뷰에서 재현된 문제다 — list_shared_schedules 가 아니라 3주차
+    personal_list_saved_schedules 가 불려서, 공유 저장소에 row 가 있는데도
+    "공유 일정이 없습니다" 라고 답했다.
+    프롬프트에 저장소 이름을 도구에 연결하는 문장을 넣어 고쳤고, 그게 실제로
+    LLM 행동을 바꿨는지는 Layer 1 로 잴 수 없어서 여기서 통과율로 센다.
+    """
+
+    if leaked := run.leaked_my_store():
+        return False, f"내 저장소 tool 로 샜다: {leaked} ({run.tools_repr()})"
+    if "list_shared_schedules" not in run.names:
+        return False, f"list_shared_schedules 미호출 ({run.tools_repr()})"
+    return True, f"공유 저장소를 봤다 ({run.tools_repr()})"
 
 
 @dataclasses.dataclass
@@ -313,9 +339,15 @@ CASES: list[Case] = [
     ),
     Case(
         "W6",
-        "observe",
+        "prompt",
         "2026년 7월 30일 15시에 나랑 철수 회의를 공유 일정에 등록해줘",
-        observe_unimplemented,
+        judge_shared_create,
+    ),
+    Case(
+        "W7",
+        "prompt",
+        "공유 일정에 지금 뭐가 등록돼 있는지 목록 보여줘",
+        judge_shared_list,
     ),
 ]
 

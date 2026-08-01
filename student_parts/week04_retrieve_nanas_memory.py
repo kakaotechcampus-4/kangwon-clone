@@ -289,7 +289,7 @@ def search_conversation_messages_dict(
         query=query,
         top_k=top_k,
         conversation_id=conversation_id,
-        exclude_conversation_id=None if conversation_id else current_session_scope(),        
+        exclude_conversation_id=None if conversation_id else current_session_scope(),
     )
     return {
         "hits": hits,
