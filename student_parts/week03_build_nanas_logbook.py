@@ -600,9 +600,8 @@ def week03_prompt_parts() -> list[str]:
         """[week2->week3 연결흐름] extract_schedule_request로 pydantic 과 json 서로 상호작용한 구조화한 결과를 save_structured_request로 sqlite에 저장한다.""",
         SQLITE_MEMORY_PROMPT,
         WEEK03_TOOL_CALL_PROMPT,
-        """[agent 구조] 오늘 날짜는 {current_app_date_iso()}이다. '내일', '다음 주 화요일' 같은 상대 날짜는
-        이 날짜를 기준으로 계산한다.
-        - Week 2에서 만든 StructuredRequest를 Pydantic 입력 스키마로 검증한 뒤 SQLite에 저장하고, 
+        """[agent 구조]
+        - Week 2에서 만든 StructuredRequest를 Pydantic 입력 스키마로 검증한 뒤 SQLite에 저장하고,
         저장된 요청/일정을 다시 조회/수정/삭제한다.
         - 저장,조회,수정,삭제 요청은 Week 3 tool을 사용한다.
         - RAG 검색, 외부 멤버 조율, 그룹 일정은 이번 주차의 범위가 아니다."""
