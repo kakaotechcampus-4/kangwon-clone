@@ -11,6 +11,7 @@ from fixed.app_store import AppSQLiteStore
 from fixed.config import CONFIG
 from fixed.external_mcp import call_external_tool_payload
 from fixed.external_people_store import (
+    PERSONAL_SHARED_MEMBER_NAME,
     external_schedule_summary,
     normalize_external_member_names,
     normalize_external_schedule_date_bounds,
@@ -186,10 +187,18 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
     return str(schedule.get("session_id") or DEFAULT_SESSION_SCOPE)
 
 
-def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
+def _personal_schedules_for_current_scope(
+    *,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
-    stored_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(limit=200)
+    stored_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
+        limit=200,
+        date_from=date_from,
+        date_to=date_to,
+    )
     stored_schedule_ids = {
         str(schedule_id)
         for schedule in stored_schedules
@@ -201,6 +210,8 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
         for schedule in PERSONAL_SCHEDULES
         if _schedule_scope(schedule) == session_scope
         and str(schedule.get("schedule_id") or schedule.get("id") or "") not in stored_schedule_ids
+        and (not date_from or str(schedule.get("date") or "") >= date_from)
+        and (not date_to or str(schedule.get("date") or "") <= date_to)
     ]
     return [*stored_schedules, *temporary_schedules]
 
@@ -290,7 +301,6 @@ def _collect_member_schedules(
     member_names: list[str],
     date_from: str,
     date_to: str,
-    personal_schedules: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
@@ -301,18 +311,18 @@ def _collect_member_schedules(
         date_to,
     )
 
+    personal_schedules = _personal_schedules_for_current_scope(
+        date_from=normalized_date_from,
+        date_to=normalized_date_to,
+    )
     personal_rows: list[dict[str, Any]] = []
     for schedule in personal_schedules:
         request = _structured_request_from_schedule_row(schedule)
         if not request.date:
             continue
-        if normalized_date_from and request.date < normalized_date_from:
-            continue
-        if normalized_date_to and request.date > normalized_date_to:
-            continue
         personal_rows.append(
             {
-                "member_name": "나",
+                "member_name": PERSONAL_SHARED_MEMBER_NAME,
                 "title": request.title or "제목 없음",
                 "date": request.date,
                 "start_time": request.start_time or "미정",
@@ -330,13 +340,17 @@ def _collect_member_schedules(
         },
     )
     external_payload = json.loads(external_payload_text)
-    external_rows = external_payload.get("rows") or []
+    external_rows = [
+        row
+        for row in (external_payload.get("rows") or [])
+        if row.get("member_name") != PERSONAL_SHARED_MEMBER_NAME
+    ]
     rows = [*personal_rows, *external_rows]
 
     return {
         "ok": bool(external_payload.get("ok", True)),
         "tool_name": "collect_member_schedules",
-        "member_names": ["나", *normalized_member_names],
+        "member_names": [PERSONAL_SHARED_MEMBER_NAME, *normalized_member_names],
         "date_from": normalized_date_from,
         "date_to": normalized_date_to,
         "rows": rows,
@@ -445,7 +459,6 @@ def collect_member_schedules(member_names: list[str], date_from: str, date_to: s
         member_names=member_names,
         date_from=date_from,
         date_to=date_to,
-        personal_schedules=_personal_schedules_for_current_scope(),
     )
     return json_payload(payload)
 
