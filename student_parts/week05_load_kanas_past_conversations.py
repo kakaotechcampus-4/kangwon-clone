@@ -317,7 +317,9 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
     """
 
     return StructuredRequest(
-        kind="group_schedule" if row.get("request_kind") == "group_schedule" else "personal_schedule",
+        kind="group_schedule"
+        if row.get("request_kind") == "group_schedule"
+        else "personal_schedule",
         title=row.get("title"),
         date=row.get("date"),
         start_time=row.get("start_time"),
@@ -337,7 +339,11 @@ def _my_schedule_notes(request: StructuredRequest) -> str:
     members = [
         str(member).strip() for member in (request.members or []) if str(member).strip()
     ]
-    return f"Nana 그룹 일정 · 참석자: {', '.join(members)}" if members else "Nana 그룹 일정"
+    return (
+        f"Nana 그룹 일정 · 참석자: {', '.join(members)}"
+        if members
+        else "Nana 그룹 일정"
+    )
 
 
 # [메인] _dedupe_schedule_rows(rows)
@@ -669,6 +675,9 @@ def week05_prompt_parts() -> list[str]:
         "사용자와 외부멤버의 일정을 조율하기 위해서는 collect_member_schedules를 사용한다.",
         "일정이 존재하는지 확인하기 위해서는 list_shared_schedules를 사용한다.",
         "조회된 일정이 존재하지 않을 때는 임의로 일정을 만들지 않는다.",
+        "공유 저장소의 일정만 삭제할 때는 list_shared_schedules를 통해 나온 id를 가지고 delete_shared_schedule을 사용한다.",
+        "일정 자체를 완전히 삭제하기 위해서는 list_shared_schedules를 사용해 일정 존재 여부만 확인하고, date, title, start_time을 사용해 personal_delete_saved_schedules로 삭제한다.",
+        "personal_delete_saved_schedules를 사용하면 공유 저장소의 일정도 자동으로 삭제되기 때문에 다시 list_shared_schedules를 호출할 필요가 없다.",
     ]
 
 
