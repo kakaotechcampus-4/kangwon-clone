@@ -1,0 +1,200 @@
+{"item": "supervisor_system_prompt", "kind": "static", "assert": "nonempty"}
+{"item": "supervisor_system_prompt", "kind": "static", "assert": "contains", "target": "nana_agent"}
+{"item": "supervisor_system_prompt", "kind": "static", "assert": "contains", "target": "kana_agent"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "supervisor_system_prompt", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}

@@ -1,0 +1,200 @@
+{"item": "kana_prompt_parts", "kind": "static", "assert": "nonempty"}
+{"item": "kana_prompt_parts", "kind": "static", "assert": "contains", "target": "Kana"}
+{"item": "kana_prompt_parts", "kind": "static", "assert": "contains", "target": "collect_member_schedules"}
+{"item": "kana_prompt_parts", "kind": "static", "assert": "contains", "target": "extract_schedules_from_history"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린랑 철수랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수랑 영희랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "하린 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "영희랑 민준랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준 busy time 뽑아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연랑 지훈 7월 일정 알려줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "지훈랑 하린 공통으로 시간 되는 회의 시간 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "팀원들 이번 달 언제 바빠"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "철수 예전 대화에서 일정 찾아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "공유 일정 목록 보여줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "민준랑 서연랑 나까지 다 되는 시간 찾아서 회의 잡아줘"}
+{"item": "kana_prompt_parts", "kind": "golden", "prompt": "서연 busy time 뽑아줘"}
