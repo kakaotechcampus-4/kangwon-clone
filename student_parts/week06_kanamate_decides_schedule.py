@@ -301,8 +301,8 @@ def kana_prompt_parts() -> list[str]:
         [도구 선택 기준]
         
         - 자연어 일정 조건을 구조화해야 하면 extract_schedule_request를 사용한다.
-        - 외부 멤버의 과거 대화를 검색해야 하면 search_previous_conversations를 사용한다.
-        - 검색된 특정 대화의 전체 내용이 필요하면 load_conversations_messages를 사용한다.
+        - 외부 멤버의 과거 대화를 검색해야 하면 search_previous_conversation를 사용한다.
+        - 검색된 특정 대화의 전체 내용이 필요하면 load_conversation_messages를 사용한다.
         - 과거 대화에서 일정 정보를 추출해야 하면 extract_schedules_from_history를 사용한다.
         - 공유 일정 저장소의 row를 확인해야 하면 list_shared_schedules를 사용한다.
         - 내 일정과 외부 멤버 일정을 같은 날짜 범위에서 함께 확인해야 하면 collect_member_schedules를 사용한다.
