@@ -497,15 +497,31 @@ def propose_group_schedule(
 
 @tool(args_schema=AgentQueryInput)
 def nana_agent(query: str) -> str:
-    """개인 일정과 개인 RAG 작업을 프롬프트 기반 Nana 하위 에이전트에게 위임합니다."""
+    """"나"의 개인 일정/저장/RAG 요청을 Nana 하위 에이전트에게 위임합니다.
 
-    # TODO: Week 4 도구를 가진 Nana 하위 agent를 실행하고 answer/trace/inner_tool_names를 반환하세요.
-    #   - _NANA_SUBAGENT가 None일 때만 create_agent(model=chat_model(), tools=week04_tools(),
-    #     system_prompt=nana_system_prompt())로 만들고 이후에는 재사용합니다.
-    #   - query를 user 메시지로 invoke하고, extract_agent_events(...)와 extract_final_text(...)로
-    #     trace와 answer를 뽑습니다.
-    #   - selected_agent, answer, trace, inner_tool_names를 담은 JSON 문자열을 반환합니다.
-    ...
+    "나" 한 사람의 개인 일정 조회·생성·수정·삭제, 개인 참고자료 저장·검색, SQLite에 저장된
+    요청/할 일/알림 검색, 앱 대화 RAG 검색처럼 "나"의 기록만 다루는 요청일 때 호출하세요.
+    다른 멤버의 일정·대화, 공유 일정 저장소, 여러 사람의 공통 가능 시간 조율처럼
+    "나" 이외의 사람이 관련된 요청은 이 tool이 아니라 kana_agent를 호출하세요.
+    반환값은 answer(Nana의 최종 답변)와 trace/inner_tool_names(내부에서 호출한 tool 실행 로그)를
+    담은 JSON 문자열입니다.
+    """
+
+    global _NANA_SUBAGENT
+    if _NANA_SUBAGENT is None:
+        _NANA_SUBAGENT = create_agent(
+            model=chat_model(),
+            tools=week04_tools(),
+            system_prompt=nana_system_prompt(),
+        )
+    query_result = _NANA_SUBAGENT.invoke({"messages": query})
+    trace = extract_agent_events(query_result)
+    answer = extract_final_text(query_result)
+    return json.dumps({
+        "answer": answer,
+        "trace": trace,
+        "inner_tool_names": _tool_call_names(trace),
+    }, ensure_ascii=False)
 
 
 @tool(args_schema=AgentQueryInput)
