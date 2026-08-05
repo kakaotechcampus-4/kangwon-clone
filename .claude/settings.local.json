@@ -42,7 +42,8 @@
       "Bash(sqlite3 data/kanana_app.sqlite3 \"SELECT schedule_id, request_id, title, date, start_time, end_time, source, created_at FROM schedules WHERE title IN \\('개인 코칭','분기 리뷰 팀 회의'\\) ORDER BY title, created_at;\")",
       "Bash(git ls-remote *)",
       "Bash(gh pr *)",
-      "Bash(bash -n run.sh)"
+      "Bash(bash -n run.sh)",
+      "Bash(git log *)"
     ]
   }
 }
