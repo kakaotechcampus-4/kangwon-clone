@@ -186,7 +186,11 @@ def _schedule_scope(schedule: dict[str, Any]) -> str:
 
 
 def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
-    """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
+    """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다.
+
+    schedules 테이블의 row는 개인이든 그룹이든 owner가 "나"인 내 일정이고,
+    둘 다 그 시간에 내가 바쁘다는 근거이므로 request_kind로 걸러내지 않습니다.
+    """
 
     store = AppSQLiteStore(CONFIG.app_db_path)
     saved_schedules = store.list_schedules(limit=200)
@@ -204,11 +208,7 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
             continue
         temp_schedules.append(schedule)
 
-    return [
-        schedule
-        for schedule in saved_schedules + temp_schedules
-        if schedule.get("request_kind") != "group_schedule"
-    ]
+    return saved_schedules + temp_schedules
 
 
 def json_payload(payload: dict[str, Any]) -> str:
@@ -278,10 +278,14 @@ class CollectMemberSchedulesInput(BaseModel):
 
 
 def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequest:
-    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다."""
+    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다.
+
+    SQLite row는 request_kind로 개인/그룹을 구분합니다. Week 1 임시 일정 row에는
+    이 값이 없으므로 개인 일정으로 봅니다.
+    """
 
     return StructuredRequest(
-        kind="personal_schedule",
+        kind="group_schedule" if row.get("request_kind") == "group_schedule" else "personal_schedule",
         title=row.get("title"),
         date=row.get("date"),
         start_time=row.get("start_time"),
@@ -289,6 +293,15 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         members=row.get("attendees") or row.get("members") or [],
         original_text=str(row.get("title") or ""),
     )
+
+
+def _my_schedule_notes(request: StructuredRequest) -> str:
+    """내 일정 row가 개인 일정인지, 참석자가 있는 그룹 일정인지 설명합니다."""
+
+    if request.kind != "group_schedule":
+        return "Nana 개인 일정"
+    members = [str(member).strip() for member in (request.members or []) if str(member).strip()]
+    return f"Nana 그룹 일정 · 참석자: {', '.join(members)}" if members else "Nana 그룹 일정"
 
 
 def _collect_member_schedules(
@@ -338,7 +351,7 @@ def _collect_member_schedules(
                 "date": schedule_date,
                 "start_time": request.start_time or "미정",
                 "end_time": request.end_time or "미정",
-                "notes": "내 일정",
+                "notes": _my_schedule_notes(request),
                 "source_conversation_id": None,
             }
         )
