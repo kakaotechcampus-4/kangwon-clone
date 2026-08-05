@@ -14,6 +14,7 @@ from fixed.external_people_store import (
     external_schedule_summary,
     normalize_external_member_names,
     normalize_external_schedule_date_bounds,
+    strip_parenthetical_text,
 )
 from fixed.llm import chat_model
 from fixed.mcp_client import (
@@ -190,9 +191,7 @@ def _personal_schedules_for_current_scope() -> list[dict[str, Any]]:
     """SQLite 저장 일정과 현재 대화의 임시 일정만 group 조율 후보로 사용합니다."""
 
     # TODO: SQLite 저장 일정과 현재 대화의 임시 일정을 합쳐 반환하세요.
-    saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(
-        limit=200, kind="personal_schedule"
-    )
+    saved_schedules = AppSQLiteStore(CONFIG.app_db_path).list_schedules(limit=200)
     saved_ids = {row.get("schedule_id") for row in saved_schedules}
 
     session_id = current_session_scope()
@@ -272,10 +271,13 @@ class CollectMemberSchedulesInput(BaseModel):
 
 
 def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequest:
-    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다."""
+    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다.
+
+    SQLite row의 request_kind가 없으면 Week 1 임시 개인 일정으로 봅니다.
+    """
 
     return StructuredRequest(
-        kind="personal_schedule",
+        kind="group_schedule" if row.get("request_kind") == "group_schedule" else "personal_schedule",
         title=row.get("title"),
         date=row.get("date"),
         start_time=row.get("start_time"),
@@ -283,6 +285,28 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         members=row.get("attendees") or row.get("members") or [],
         original_text=str(row.get("title") or ""),
     )
+
+
+def _my_schedule_notes(request: StructuredRequest) -> str:
+    if request.kind != "group_schedule":
+        return "Nana 개인 일정"
+    members = [str(member).strip() for member in (request.members or []) if str(member).strip()]
+    return f"Nana 그룹 일정 · 참석자: {', '.join(members)}" if members else "Nana 그룹 일정"
+
+
+def _dedupe_schedule_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """앱 DB와 공유 저장소에서 중복된 같은 일정을 한 번만 남깁니다."""
+
+    deduped: dict[tuple[str, ...], dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row.get("member_name") or "").strip(),
+            str(row.get("date") or "").strip(),
+            str(row.get("start_time") or "").strip() or "미정",
+            strip_parenthetical_text(str(row.get("title") or "")),
+        )
+        deduped.setdefault(key, row)
+    return list(deduped.values())
 
 
 def _collect_member_schedules(
@@ -294,14 +318,20 @@ def _collect_member_schedules(
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
-    # TODO: 내 SQLite/임시 일정과 외부 MCP 일정 rows를 같은 구조로 합치세요.
+    normalized_members = normalize_external_member_names(member_names)
+    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
+        normalized_members,
+        date_from,
+        date_to,
+    )
     my_rows: list[dict[str, Any]] = []
-
-    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds( member_names, date_from, date_to)
-    
     for schedule in personal_schedules:
         structured = _structured_request_from_schedule_row(schedule)
-        if not (normalized_date_from <= structured.date <= normalized_date_to):  
+        if not structured.date:
+            continue
+        if normalized_date_from and structured.date < normalized_date_from:
+            continue
+        if normalized_date_to and structured.date > normalized_date_to:
             continue
         my_rows.append(
             {
@@ -309,26 +339,32 @@ def _collect_member_schedules(
                 "title": structured.title,
                 "date": structured.date,
                 "start_time": structured.start_time,
-                "end_time": structured.end_time,
-                "notes": None,
+                "end_time": "18:00" if schedule.get("end_time") == "미정" else structured.end_time,
+                "notes": _my_schedule_notes(structured),
             }
         )
 
-    normalized_members = normalize_external_member_names(member_names)
-
-    if not normalized_members:
-        external_rows = []
-    else:
+    external_payload = {"rows": []}
+    if normalized_members:
         external_payload = json.loads(
             call_mcp_tool_sync(
                 "extract_schedules_from_history",
-                {"member_names": member_names, "date_from": date_from, "date_to": date_to},
+                {
+                    "member_names": normalized_members,
+                    "date_from": normalized_date_from,
+                    "date_to": normalized_date_to,
+                },
             )
         )
-        external_rows = external_payload.get("rows", [])
 
-    rows = [*my_rows, *external_rows]
-    return {"rows": rows, "schedule_summary": external_schedule_summary(rows)}
+    rows = _dedupe_schedule_rows([*my_rows, *external_payload.get("rows", [])])
+    return {
+        "ok": True,
+        "tool_name": "collect_member_schedules",
+        "members": ["나", *[name for name in normalized_members if name != "나"]],
+        "rows": rows,
+        "schedule_summary": external_schedule_summary(rows),
+    }
 
 
 @tool(args_schema=SearchPreviousConversationsInput)
