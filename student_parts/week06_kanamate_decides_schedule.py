@@ -526,13 +526,47 @@ def nana_agent(query: str) -> str:
 
 @tool(args_schema=AgentQueryInput)
 def kana_agent(query: str) -> str:
-    """그룹 일정 종합 작업을 프롬프트 기반 Kana 하위 에이전트에게 위임합니다."""
+    """다른 멤버가 관련된 일정·그룹 조율 요청을 Kana 하위 에이전트에게 위임합니다.
 
-    # TODO: Kana 하위 agent를 실행하고 trace에서 final_slot_payload/final_decision_payload를 끌어올려 반환하세요.
-    #   - _KANA_SUBAGENT를 kana_tools()와 kana_system_prompt()로 한 번만 만들고 재사용합니다.
-    #   - trace event의 content를 훑어 final_slot이 들어 있는 dict와 final_decision 값을 찾습니다.
-    #   - answer, trace, inner_tool_names, final_slot_payload, final_decision_payload를 JSON으로 반환합니다.
-    ...
+    다른 멤버와 나눈 과거 대화 검색, 외부 멤버의 일정·바쁜 시간 조회, 공유 일정 저장소 조회,
+    여러 사람의 공통 가능 시간 후보 검증과 최종 시간 결정처럼 "나" 이외의 사람이 관련된
+    요청일 때 호출하세요. "나" 한 사람만의 개인 일정 조회·저장·RAG 요청은 이 tool이 아니라
+    nana_agent를 호출하세요.
+    반환값은 answer(Kana의 최종 답변)와 trace/inner_tool_names(내부에서 호출한 tool 실행 로그),
+    확정된 시간이 있다면 final_slot_payload(최종 시간/이유/후보)까지 담은 JSON 문자열입니다.
+    """
+
+    global _KANA_SUBAGENT
+    if _KANA_SUBAGENT is None:
+        _KANA_SUBAGENT = create_agent(
+            model=chat_model(),
+            tools=kana_tools(),
+            system_prompt=kana_system_prompt(),
+        )
+    query_result = _KANA_SUBAGENT.invoke({"messages": query})
+    trace = extract_agent_events(query_result)
+    answer = extract_final_text(query_result)
+
+    final_slot_payload: dict[str, Any] | None = None
+    final_decision_payload: dict[str, Any] | None = None
+    for event in trace:
+        content = event.get("content")
+        if isinstance(content, dict):
+            if content.get("final_slot_payload"):
+                final_slot_payload = content["final_slot_payload"]
+            elif "final_slot" in content:
+                final_slot_payload = content
+            if content.get("final_decision_payload"):
+                final_decision_payload = content["final_decision_payload"]
+
+    return json.dumps({
+        "answer": answer,
+        "trace": trace,
+        "inner_tool_names": _tool_call_names(trace),
+        "final_slot_payload": final_slot_payload,
+        "final_decision_payload": final_decision_payload,
+    }, ensure_ascii=False)
+        
 
 
 def build_langchain_supervisor_agent() -> object:
