@@ -371,7 +371,7 @@ def _collect_member_schedules(
             "notes": _my_schedule_notes(request),
         })
 
-    rows = _dedupe_schedule_rows([*my_rows, *external_rows.get("rows", [])])
+    rows = _dedupe_schedule_rows([*my_rows, *external_rows])
     return {
         "ok": True,
         "tool_name": "collect_member_schedules",
