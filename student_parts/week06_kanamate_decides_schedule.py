@@ -371,7 +371,21 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
     #     duration_minutes, reason을 포함해야 한다는 형식을 적습니다.
     #   - 후보는 어떤 busy row와도 겹치면 안 되고, busy_rows도 앞선 tool output에서 복사해 넘기게 합니다.
     #   - 이 결과로 답변을 끝내지 말고 decide_final_slot을 이어서 호출하도록 유도합니다.
-    ""
+    
+
+    # 인자 이름과 형식 -> FindCommonAvailableSlotsInput
+    # 후보 항목 형식 -> CommonSlotCandidate (fixed/schedule_decision.py)
+    # 버려지는 조건 -> normalize_llm_candidate_slots가 실제로 거르는 조건
+    "여러 사람의 busy-time을 근거로 네가 직접 고른 공통 가능 시간 후보를 검증하고 기록한다. "
+    "이 도구는 후보를 대신 찾아주지 않는다. "
+    "앞선 일정 조회 결과의 rows를 네가 읽고 비어 있는 시간대를 골라 candidate_slots에 채워 넘겨야 한다. "
+    "비운 채 넘기면 결과도 빈다. "
+    "candidate_slots의 각 항목은 date('YYYY-MM-DD'), start_time('HH:MM'), end_time('HH:MM'), duration_minutes, reason을 포함한다. "
+    "busy_rows에는 앞선 일정 조회 tool이 돌려준 rows를 그대로 복사해 넘긴다. "
+    "넘기지 않으면 이 도구가 일정을 다시 모으느라 왕복이 한 번 더 생긴다. "
+    "다음 후보는 경고 없이 버려지므로 애초에 만들지 않는다. "
+    "date_from~date_to 밖의 날짜, workday_start 이전이나 workday_end 이후의 시간, duration_minutes보다 짧은 구간, busy_rows와 조금이라도 겹치는 구간. "
+    "이 도구의 결과로 답변을 끝내지 말고, 이어서 decide_final_slot을 호출해 최종 시간을 확정한다."
 )
 
 
@@ -382,7 +396,15 @@ DECIDE_FINAL_SLOT_DESCRIPTION = (
     #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
     #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
     #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+    "find_common_available_slots가 검증한 후보 중에서 네가 고른 최종 회의 시간을 기록한다. "
+    "이 도구는 최종 시간을 대신 고르지 않는다. "
+    "네가 selected_index 또는 selected_slot과 final_slot을 직접 채워 넘겨야 한다. "
+    "final_slot 형식은 'YYYY-MM-DD HH:MM-HH:MM'이며, 시간을 확정했다면 needs_agent_selection을 false로 둔다. "
+    "아직 고르지 못했거나 고를 후보 자체가 없으면 final_slot을 null로 두고 needs_agent_selection을 true로 둔다. "
+    "임의로 아무 시간이나 채우지 않는다. "
+    "reason에는 그 시간을 고른 이유, 또는 확정하지 못한 이유를 사용자에게 보여 줄 문장으로 적는다. "
+    "판단 근거가 남도록 candidate_slots, busy_rows, member_names, date_from, date_to도 함께 넘긴다."
+
 )
 
 
