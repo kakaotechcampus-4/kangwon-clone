@@ -486,7 +486,41 @@ def nana_agent(query: str) -> str:
     #   - query를 user 메시지로 invoke하고, extract_agent_events(...)와 extract_final_text(...)로
     #     trace와 answer를 뽑습니다.
     #   - selected_agent, answer, trace, inner_tool_names를 담은 JSON 문자열을 반환합니다.
-    ...
+    
+    # 1. Nana 하위 agent는 모듈 전역에 만들어 재사용
+    #    supervisor가 nana_agent를 부를 때마다 create 하면 낭비이므로 재사용하도록 유도.
+    #    모듈 전역에 만들어 재사용하는 만큼, system prompt는 해당 시점에 한 번만 평가되므로 프롬프트 수정 시 앱 재시작 필요.
+    global _NANA_SUBAGENT
+    if _NANA_SUBAGENT is None:
+        _NANA_SUBAGENT = create_agent(
+            model=chat_model(),
+            tools=week04_tools(),
+            system_prompt=nana_system_prompt(),
+        )
+
+    # 2. supervisor가 넘긴 query를 user 메시지 하나로 만들어 하위 agent 실행
+    result = _NANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
+
+    # 3. 실행 결과에서 trace event 추출
+    events = extract_agent_events(result)
+
+    # 4. supervisor가 읽을 JSON으로 wrapping
+    #    selected_agent:    어느 하위 agent가 처리하였는가
+    #    answer:            하위 agent의 최종 답변. supervisor가 이를 근거로 사용자에게 답함.
+    #    trace:             하위 agent가 무엇을 호출했는지에 대한 근거
+    #    inner_tool_names:  호출 순서만 추린 목록. 이미 구현된 _tool_call_names를 사용
+    #    ok/tool_name:      같은 파일 propose_group_schedule의 반환 형태에 맞춘 것.
+    return json.dumps(
+        {
+            "ok": True,
+            "tool_name": "nana_agent",
+            "selected_agent": "nana_agent",
+            "answer": extract_final_text(result),
+            "trace": events,
+            "inner_tool_names": _tool_call_names(events),
+        },
+        ensure_ascii=False,
+    )
 
 
 @tool(args_schema=AgentQueryInput)
