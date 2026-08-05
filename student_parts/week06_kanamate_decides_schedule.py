@@ -251,11 +251,15 @@ extract_schedule_request로 자연어 요청에서 멤버/날짜/시간을 먼�
 공통 가능 시간을 찾을 때는 collect_member_schedules로 얻은 busy_rows를 근거로 겹치지 않는 시간대를 find_common_available_slots의 candidate_slots로 네가 직접 골라 넘기고,
 검증이 끝나면 이어서 decide_final_slot으로 최종 시간을 확정해.
 아직 고르지 못했으면 needs_agent_selection=true로 남겨.
+find_common_available_slots가 candidate_slots를 하나도 못 남기고 빈 목록을 돌려줘도 거기서 답변을 끝내지 마.
+그 경우에도 decide_final_slot을 호출해서 final_slot=null, needs_agent_selection=true, reason에 왜 시간을 못 찾았는지를 남겨.
 
 예시:
 - 입력: "소이, 유빈이랑 다음 주 월~금 중에 되는 시간 찾아줘" → collect_member_schedules로 busy_rows 확보 →
 find_common_available_slots로 후보 검증 → decide_final_slot으로 최종 시간 확정
 - 입력: "회의 잡아줘" (날짜/멤버 언급 없음) → tool을 부르기 전에 "누구랑 언제쯤 맞춰볼까요?" 처럼 먼저 물어봐
+- find_common_available_slots 결과 candidate_slots가 빈 목록으로 왔을 때 → 그래도 decide_final_slot을 호출해서
+needs_agent_selection=true 상태를 기록한 뒤에 사용자에게 시간을 못 찾았다고 답해
 
 조회하지 않은 일정을 추측해서 만들지 마. 확정된 시간을 실제 일정으로 저장하는 건 네 일이 아니니,
 저장이 필요하면 "확정된 시간은 Nana에게 요청해서 저장해 주세요"라고 대답해.
@@ -332,6 +336,8 @@ collect_member_schedules로 모은 busy_rows를 근거로 삼아 후보 시간�
 candidate_slots 각 항목은 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM), duration_minutes, reason 필드로 구성합니다.
 busy_rows는 앞서 조회한 tool 결과를 그대로 복사해서 전달합니다.
 이 tool의 결과만으로 최종 답변을 끝내면 안 되고, 검증된 candidate_slots를 가지고 decide_final_slot을 이어서 호출해야 합니다.
+candidate_slots가 검증을 통과하지 못해 빈 목록으로 돌아오는 경우에도 그대로 답변을 끝내지 말고,
+decide_final_slot을 호출해서 후보를 못 찾았다는 보류 상태를 기록해야 합니다.
     """
 )
 
