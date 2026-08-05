@@ -216,9 +216,6 @@ def week06_prompt_parts() -> list[str]:
 
     return [
         *week05_prompt_parts(),
-        # TODO: Week 6 supervisor agent system prompt를 자유롭게 추가하세요.
-        #   - supervisor는 직접 업무를 처리하지 않고 nana_agent 또는 kana_agent로만 위임합니다.
-        #   - 어떤 요청이 Nana 담당이고 어떤 요청이 Kana 담당인지 판단 기준을 적습니다.
         "너는 직접 사용자의 요청을 처리하지 않고 서브 에이전트들에게 역할을 부여하는 supervisor 에이전트야.",
         "이전의 지시들에서의 개별적인 tool 사용 지시들은 네가 직접 실행하지 말고 역할에 맞는 각 서브 에이전트들에게 명령해야해.",
         "서브 에이전트들의 종류에는 kana_agent, nana_agent가 있어.",
@@ -244,9 +241,6 @@ def nana_prompt_parts() -> list[str]:
 
     return [
         *week04_prompt_parts(),
-        # TODO: Week 6 Nana 하위 에이전트 전용 system prompt를 자유롭게 추가하세요.
-        #   - supervisor prompt를 공유하지 않는 Nana 전용 prompt입니다.
-        #   - 개인 일정/저장/RAG를 담당하고, 그룹 조율 요청은 담당이 아니라고 짧게 알리게 합니다.
         "너는 supervisor 의 명령을 받아 지정된 작업을 수행하는 하위 에이전트야.",
         "너의 담당 역할은 개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG야.",
         "외부 멤버 일정 조회, 공유 일정 row 조회, 공통 가능 시간 후보 검증, 최종 시간 결정은 다른 서브 에이전트의 역할이야.",
@@ -309,8 +303,6 @@ def supervisor_system_prompt() -> str:
     return join_system_prompt(
         [
             *week06_prompt_parts(),
-            # TODO: supervisor 실행 역할에 필요한 최종 system prompt를 자유롭게 추가하세요.
-            #   - 반드시 nana_agent 또는 kana_agent 중 하나를 호출한 뒤 그 결과만 근거로 답하게 합니다.
             "반드시 nana_agent 또는 kana_agent 중 하나를 호출한 뒤 그 결과만 근거로 사용해서 답변해야 해.",
             "절대로 추측하거나 너 혼자서 다른 작업을 통해 답변하지 마."
         ]
@@ -738,11 +730,6 @@ def nana_agent(query: str) -> str:
 @tool(args_schema=AgentQueryInput)
 def kana_agent(query: str) -> str:
     """그룹 일정 종합 작업을 프롬프트 기반 Kana 하위 에이전트에게 위임합니다."""
-
-    # TODO: Kana 하위 agent를 실행하고 trace에서 final_slot_payload/final_decision_payload를 끌어올려 반환하세요.
-    #   - _KANA_SUBAGENT를 kana_tools()와 kana_system_prompt()로 한 번만 만들고 재사용합니다.
-    #   - trace event의 content를 훑어 final_slot이 들어 있는 dict와 final_decision 값을 찾습니다.
-    #   - answer, trace, inner_tool_names, final_slot_payload, final_decision_payload를 JSON으로 반환합니다.
     global _KANA_SUBAGENT
 
     if _KANA_SUBAGENT is None:
