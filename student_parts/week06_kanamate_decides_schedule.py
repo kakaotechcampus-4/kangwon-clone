@@ -304,7 +304,7 @@ def tool_name(tool_object: Any) -> str:
 
 
 FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
-    "당신은 여러 멤버의 공통 가능 시간 후보를 검증하는 도구입니다.\n"
+    "여러 멤버의 공통 가능 시간 후보를 검증하는 도구입니다.\n"
     "이 도구는 후보 시간을 대신 계산하지 않습니다. 후보는 당신이 직접 busy_rows를 읽고" 
     "어떤 busy row와도 겹치지 않는 시간을 골라 candidate_slots로 넘겨야 합니다.\n" 
     "candidate_slots 항목은 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM),"
@@ -315,13 +315,15 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
 
 
 DECIDE_FINAL_SLOT_DESCRIPTION = (
-    # TODO: decide_final_slot tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 최종 시간을 자동 선택하지 않는다는 점을 분명히 알려야 합니다.
-    #     agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘기게 만듭니다.
-    #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
-    #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
-    #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+    "그룹 회의의 최종 시간을 기록하는 도구입니다. "
+    "이 도구는 최종 시간을 대신 골라주지 않습니다."
+    "당신이 find_common_available_slots로 검증한 candidate_slots 중에서 최종 시간을 직접 선택해서 넘겨야합니다."
+    "최종 시간을 골랐다면 selected_index 또는 selected_slot와 함께 "
+    "final_slot을 'YYYY-MM-DD HH:MM-HH:MM' 형식으로 넘기고, needs_agent_selection은 false로 둡니다.\n"
+    "아직 최종 시간을 고를 수 없다면 final_slot은 null로 두고 needs_agent_selection은 true로 유지합니다. "
+    "임의로 시간을 지어내 확정하지 마세요.\n"
+    "reason에는 그 시간을 고른(또는 보류한) 이유를 사용자에게 설명하듯 적습니다.\n"
+    "- 결정 근거를 남기기 위해 candidate_slots, busy_rows, member_names, date_from, date_to도 함께 넘깁니다."
 )
 
 
@@ -473,10 +475,28 @@ def decide_final_slot(
 ) -> str:
     """LLM이 직접 고른 후보/최종 시간을 course repo payload로 기록합니다."""
 
-    # TODO: Kana agent가 고른 최종 시간 정보를 course repo JSON 계약에 맞춰 기록하세요.
-    #   - 직접 최종 시간을 고르지 말고 받은 인자를 그대로 decide_final_slot_payload(...)에 넘깁니다.
-    #   - 결과를 JSON 문자열로 반환합니다.
-    ...
+    normalized_candidates = [
+        slot.model_dump() if hasattr(slot, "model_dump") else slot
+        for slot in candidate_slots or []
+    ]
+    normalized_selected = (
+        selected_slot.model_dump() if hasattr(selected_slot, "model_dump") else selected_slot
+    )
+
+    payload = decide_final_slot_payload(
+        candidate_slots=normalized_candidates,
+        selected_slot=normalized_selected,
+        selected_index=selected_index,
+        final_slot=final_slot,
+        needs_agent_selection=needs_agent_selection,
+        member_names=member_names,
+        date_from=date_from,
+        date_to=date_to,
+        duration_minutes=duration_minutes,
+        reason=reason,
+        busy_rows=busy_rows,
+    )
+    return json.dumps(payload, ensure_ascii=False)
 
 
 def kana_tools() -> list[Any]:
