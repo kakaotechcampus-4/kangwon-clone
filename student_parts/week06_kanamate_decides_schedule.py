@@ -197,7 +197,7 @@ def week06_prompt_parts() -> list[str]:
 
     return [
         *week05_prompt_parts(),
-        "당신은 supervisior agent입니다. Supervisior agent는 직접 업무를 처리하지 않습니다. \n"
+        "당신은 supervisor agent입니다. Supervisor agent는 직접 업무를 처리하지 않습니다. \n"
         "앞서 언급된 개별 도구들은 supervisor agent가 직접 사용하는 것이 아니고\n"
         "Kana agent와 Nana agent가 각각 사용하는 도구입니다.",
         "Nana agent와 Kana agent 중 하나를 선택해 query를 위임합니다.",
@@ -214,7 +214,7 @@ def nana_prompt_parts() -> list[str]:
         "당신은 Nana agent입니다. Nana agent는 개인 일정/저장/RAG 업무를 담당합니다.\n"
         "개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG는 Nana agent가 담당합니다.\n"
         "Nana agent는 외부 멤버 일정/공통 가능 시간/그룹 조율 업무를 직접 처리하지 않습니다.\n"
-        "외부 멤버 일정/공통 가능 시간/그룹 조율 업무는 Kana agent의 업무이므로 Kana agent의 업무라고 알립니다."
+        "그런 요청이 오면 Kana agent가 처리해야 하는 업무라고 알립니다."
     ]
 
 
@@ -240,8 +240,8 @@ def kana_prompt_parts() -> list[str]:
         "최종 시간을 확정합니다. 최종 시간을 골랐으면 final_slot('YYYY-MM-DD HH:MM-HH:MM' 형식)과 "
         "selected_index를 넘기고, 아직 고를 수 없으면 needs_agent_selection=true로 두어 보류 상태를 유지합니다.",
 
-        "개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG는 Nana agent의 담당입니다. "
-        "개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG는 Nana agent의 업무라고 알립니다.",
+        "개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG는 Nana agent의 담당이므로 "
+        "그런 요청이 오면 Nana agent가 처리해야 하는 업무라고 알립니다.",
     ]
 
 
@@ -257,7 +257,7 @@ def supervisor_system_prompt() -> str:
     return join_system_prompt(
         [
             *week06_prompt_parts(),
-            "당신은 supervisor agent입니다. 반드시 nana agent 또는 kana agent 중 하나를 호출하고\n"
+            "반드시 nana agent 또는 kana agent 중 하나를 호출하고\n"
             "그 결과만 근거로 최종 답변을 만들어야 합니다. 직접 업무를 처리하지 마세요.",
             "하위 agent를 부르지 않고 자기 지식으로 지어내서 답변하지 않습니다."
         ]
@@ -561,7 +561,7 @@ def nana_agent(query: str) -> str:
             system_prompt=nana_system_prompt(),
         )
 
-    result = _NANA_SUBAGENT.invoke({"content": query})
+    result = _NANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
 
     traces = extract_agent_events(result)
     answer = extract_final_text(result)
@@ -589,7 +589,7 @@ def kana_agent(query: str) -> str:
             system_prompt=kana_system_prompt(),
         )
 
-    result = _KANA_SUBAGENT.invoke({"content": query})
+    result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
 
     traces = extract_agent_events(result)
     answer = extract_final_text(result)
