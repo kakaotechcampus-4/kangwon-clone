@@ -531,7 +531,64 @@ def kana_agent(query: str) -> str:
     #   - _KANA_SUBAGENT를 kana_tools()와 kana_system_prompt()로 한 번만 만들고 재사용합니다.
     #   - trace event의 content를 훑어 final_slot이 들어 있는 dict와 final_decision 값을 찾습니다.
     #   - answer, trace, inner_tool_names, final_slot_payload, final_decision_payload를 JSON으로 반환합니다.
-    ...
+    
+    # 1. Kana 하위 agent는 모듈 전역에 만들어 재사용
+    #    supervisor가 kana_agent를 부를 때마다 create 하면 낭비이므로 재사용하도록 유도.
+    #    모듈 전역에 만들어 재사용하는 만큼, system prompt는 해당 시점에 한 번만 평가되므로 프롬프트 수정 시 앱 재시작 필요.
+    global _KANA_SUBAGENT
+    if _KANA_SUBAGENT is None:
+        _KANA_SUBAGENT = create_agent(
+            model=chat_model(),
+            tools=kana_tools(),
+            system_prompt=kana_system_prompt(),
+        )
+
+    # 2. supervisor가 넘긴 query를 user 메시지 하나로 만들어 하위 agent 실행
+    result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
+    
+    # 3. 실행 결과에서 trace event 추출
+    events = extract_agent_events(result)
+
+    # 4. 하위 trace를 훑어 최종 시간 결정 결과를 끌어올림
+    
+    # 최종 시간
+    final_slot_payload: dict[str, Any] | None = None
+
+    # 최종 결정
+    final_decision_payload: dict[str, Any] | None = None
+
+    for event in events:
+        content = event.get("content")
+
+        # 4-1. content가 dict가 아니면 건너뜀
+        if not isinstance(content, dict):
+            continue
+
+        # 4-2. content에 final_slot이 있으면 끌어올림
+        if "final_slot" in content:
+            final_slot_payload = content
+
+        # 4-3. content에 final_decision이 있으면 끌어올림
+        if content.get("final_decision"):
+            final_decision_payload = content["final_decision"]
+
+    # 5. supervisor가 읽을 JSON으로 wrapping
+    #    supervisor는 이 tool의 반환값을 보고 하위 agent 내부는 볼 수 없음
+    #    Nana와는 다르게 kana만 payload 2개(final_slot_payload, final_decision_payload)를 끌어올려
+    #    supervisor가 최종 답변에 사용할 수 있게 함.
+    return json.dumps(
+        {
+            "ok": True,
+            "tool_name": "kana_agent",
+            "selected_agent": "kana_agent",
+            "answer": extract_final_text(result),
+            "trace": events,
+            "inner_tool_names": _tool_call_names(events),
+            "final_slot_payload": final_slot_payload,
+            "final_decision_payload": final_decision_payload,
+        },
+        ensure_ascii=False,
+    )
 
 
 def build_langchain_supervisor_agent() -> object:
