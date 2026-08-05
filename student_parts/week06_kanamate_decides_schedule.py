@@ -219,6 +219,13 @@ def week06_prompt_parts() -> list[str]:
         # TODO: Week 6 supervisor agent system prompt를 자유롭게 추가하세요.
         #   - supervisor는 직접 업무를 처리하지 않고 nana_agent 또는 kana_agent로만 위임합니다.
         #   - 어떤 요청이 Nana 담당이고 어떤 요청이 Kana 담당인지 판단 기준을 적습니다.
+        "너는 직접 사용자의 요청을 처리하지 않고 서브 에이전트들에게 역할을 부여하는 supervisor 에이전트야.",
+        "이전의 지시들에서의 개별적인 tool 사용 지시들은 네가 직접 실행하지 말고 역할에 맞는 각 서브 에이전트들에게 명령해야해.",
+        "서브 에이전트들의 종류에는 kana_agent, nana_agent가 있어.",
+        "kana_agent는 외부 멤버 일정 조회, 공유 일정 row 조회, 공통 가능 시간 후보 검증과 최종 시간 결정을 담당하는 서브 에이전트야.",
+        "nana_agent는 개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG를 담당하는 서브 에이전트야.",
+        "너한테 사용자의 요청이 들어오면 너는 요청의 내용을 판단해서 kana_agent 또는 nana_agent에게 각각 알맞은 명령을 내려 수행하도록 해야해.",
+
     ]
 
 
