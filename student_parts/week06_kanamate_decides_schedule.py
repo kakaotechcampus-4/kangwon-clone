@@ -752,15 +752,24 @@ def kana_agent(query: str) -> str:
 
     result = _KANA_SUBAGENT.invoke({"messages": query})
 
-    trace = extract_agent_events(result= result)
+    traces = extract_agent_events(result= result)
     answer = extract_final_text(result= result)
-    inner_tool_names = _tool_call_names(trace)
-    final_slot_payload = 
-    final_decision_payload = 
+    inner_tool_names = _tool_call_names(traces)
+    final_slot_payload = None
+    final_decision_payload = None
+
+    for trace in traces:
+        content = trace.get("content")
+        if isinstance(content, dict):
+            if "final_slot" in content:
+                final_slot_payload = content
+            if "final_decision" in content:
+                final_decision_payload = content["final_decision"]
+
 
     return json_payload({
         "answer": answer,
-        "trace": trace,
+        "trace": traces,
         "inner_tool_names": inner_tool_names,
         "final_slot_payload": final_slot_payload,
         "final_decision_payload": final_decision_payload
