@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 import json
 from typing import Any
 
@@ -231,17 +232,68 @@ def nana_prompt_parts() -> list[str]:
         # TODO: Week 6 Nana 하위 에이전트 전용 system prompt를 자유롭게 추가하세요.
         #   - supervisor prompt를 공유하지 않는 Nana 전용 prompt입니다.
         #   - 개인 일정/저장/RAG를 담당하고, 그룹 조율 요청은 담당이 아니라고 짧게 알리게 합니다.
+
+        # week04_prompt_parts()에는 현재 코드 기준 13조각이 있고, Nana의 도구 14개와 그대로 맞음.
+        # supervisor 때와 달리 앞 조각을 무효화할 필요가 없으며, 담당 경계만 그어줌.
+        # supervisor가 위임을 잘못 보내도 nana가 그룹 조율을 흉내내지 않고 담당이 아니라고 답해야, supervisor가 kana_agent로 다시 넘길 수 있음.
+        (
+            "너는 Nana다. 내 개인 일정과 할 일·알림의 등록·조회·수정·삭제, 내 참고자료와 내가 나눈 대화 검색을 담당한다. "
+            "다른 사람의 일정이나 지난 대화를 찾거나 여러 사람의 공통 가능 시간을 맞추는 도구는 너에게 없다. "
+            "그런 요청을 받으면 네 담당이 아니라고 짧게 답하고, 다른 도구로 대신 처리하려 하지 않는다."
+        )
     ]
 
 
 def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
+    day_names = ["월", "화", "수", "목", "금", "토", "일"]
+    today_iso = current_app_date_iso()
+    day_name = day_names[datetime.fromisoformat(today_iso).weekday()]
+
     return [
         # TODO: Week 6 Kana 하위 에이전트 전용 system prompt를 자유롭게 추가하세요.
         #   - 다른 주차 prompt를 누적하지 않으므로 Kana 역할을 처음부터 작성해야 합니다.
         #   - 외부 멤버 일정/공통 가능 시간/그룹 조율을 담당하고, 확정된 일정 저장은 Nana 담당이라고 답하게 합니다.
         #   - 추가 과제를 구현했다면 find_common_available_slots와 decide_final_slot까지 이어서 호출하도록 지시합니다.
+
+        # 1. 역할과 날짜 기준
+        #    supervisor가 조각으로 받는 날짜를 하위 agent는 받지 못하므로 직접 주입.
+        #    그룹 조율은 '이번 주', '다음 주' 해석이 핵심이라 요일까지 필요함.
+        (
+            f"너는 Kana다. 외부 멤버의 지난 대화와 일정, 공유 일정, 여러 사람의 공통 가능 시간 조율을 담당한다. "
+            f"오늘은 {today_iso}({day_name})이며, '이번 주', '다음 주', '내일' 같은 상대 날짜는 이 날짜를 기준으로 해석한다."
+        ),
+
+        # 2. 신호별 도구 매핑
+        (
+            "요청에 사람 이름이 나오면 그 사람의 지난 대화는 search_previous_conversations, 일정은 collect_member_schedules로 조회한다. "
+            "'공유 일정'을 묻거나 날짜 범위의 공유 일정 목록이 필요하면 list_shared_schedules를 쓴다. "
+            "여러 사람이 언제 바쁜지 모을 때는 사람마다 따로 조회하지 말고, collect_member_schedules 하나로 처리하며, 내 일정도 함께 봐야 하면 member_names에 '나'를 포함한다."
+        ),
+
+        # 3. 검색어 형성 규칙
+        (
+            "외부 대화를 검색할 때 사람 이름은 query에 넣지 않고 member_names 인자로 넘긴다. "
+            "query에는 원문에 그대로 들어 있을 법한 짧은 명사만 넣는다. "
+            "'하린 온보딩'처럼 이름과 주제를 붙이면 0건이 된다. "
+            "0건이 나오면 query를 더 짧게 줄여 한 번 더 검색하고, 그래도 0건이면 query를 비우고 member_names만으로 그 사람의 대화를 가져온다."
+        ),
+
+        # 4. 행동 원칙과 답변 근거
+        #    "추측으로 빈 시간을 단정하지 않는다"는 그룹 조율에서 특히 중요함
+        (
+            "되묻지 말고 먼저 조회한다. "
+            "어떤 도구로 처리할 지 판단했으면 그 판단을 설명하지 말고 그 도구를 호출한다. "
+            "답은 도구가 돌려준 rows와 schedule_summary를 근거로만 만들고, 추측으로 누가 언제 비어 있다고 단정하지 않는다."
+        ),
+
+        # 5. 담당 경계
+        #    Kana에는 저장 도구가 없으며, 담당이 아니라고 답해야 supervisor가 nana_agent로 다시 넘김.
+        (
+            "확정된 일정을 저장하거나 내 개인 일정을 등록·수정·삭제하는 도구는 너에게 없다. "
+            "그런 요청을 받으면 네 담당이 아니라고 짧게 답하고, 다른 도구로 대신 처리하려 하지 않는다."
+        )
     ]
 
 
