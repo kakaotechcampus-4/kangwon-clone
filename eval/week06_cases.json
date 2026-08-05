@@ -1,0 +1,55 @@
+[
+  {
+    "id": "personal_schedule_1",
+    "query": "내 일정 뭐 있어?",
+    "query_type": "personal_schedule_only",
+    "expected_agent": "nana_agent",
+    "expected_inner_tool": "personal_list_saved_schedules"
+  },
+  {
+    "id": "personal_reference_add_1",
+    "query": "나 커피 마시면 집중 잘된다고 기억해줘",
+    "query_type": "personal_reference_add",
+    "expected_agent": "nana_agent",
+    "expected_inner_tool": "add_personal_reference"
+  },
+  {
+    "id": "own_conversation_search_1",
+    "query": "저번 대화에서 사이드 프로젝트 API 설계 얘기했었는데 내가 뭐라고 했었지?",
+    "query_type": "own_conversation_search",
+    "expected_agent": "nana_agent",
+    "expected_inner_tool": "search_conversation_messages",
+    "note": "Week4 자체 대화 RAG. 팀원 이름이 없으므로 Nana 담당이어야 함."
+  },
+  {
+    "id": "previous_conversation_search_1",
+    "query": "철수랑 예전에 무슨 얘기했었지?",
+    "query_type": "previous_conversation_search",
+    "expected_agent": "kana_agent",
+    "expected_inner_tool": "search_previous_conversations",
+    "note": "팀원 이름(철수)이 있으므로 Kana 담당."
+  },
+  {
+    "id": "extract_schedules_1",
+    "query": "철수 이번 달에 언제 바쁜지 좀 알아봐줘",
+    "query_type": "extract_schedules_from_history",
+    "expected_agent": "kana_agent",
+    "expected_inner_tool": ["extract_schedules_from_history", "collect_member_schedules"],
+    "inner_match": "any",
+    "note": "collect_member_schedules는 내부적으로 extract_schedules_from_history를 포함하므로 둘 중 하나만 불려도 통과."
+  },
+  {
+    "id": "list_shared_schedules_1",
+    "query": "공유 일정에 등록된 거 뭐 있어?",
+    "query_type": "list_shared_schedules",
+    "expected_agent": "kana_agent",
+    "expected_inner_tool": "list_shared_schedules"
+  },
+  {
+    "id": "collect_member_schedules_1",
+    "query": "나랑 철수 이번 주에 언제 시간 맞을지 일정 좀 모아서 보여줘",
+    "query_type": "collect_member_schedules",
+    "expected_agent": "kana_agent",
+    "expected_inner_tool": "collect_member_schedules"
+  }
+]
