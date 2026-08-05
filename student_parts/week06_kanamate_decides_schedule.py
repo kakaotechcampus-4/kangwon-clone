@@ -600,7 +600,30 @@ def nana_agent(query: str) -> str:
     #   - query를 user 메시지로 invoke하고, extract_agent_events(...)와 extract_final_text(...)로
     #     trace와 answer를 뽑습니다.
     #   - selected_agent, answer, trace, inner_tool_names를 담은 JSON 문자열을 반환합니다.
-    ...
+    global _NANA_SUBAGENT
+    if _NANA_SUBAGENT is None:
+        _NANA_SUBAGENT = create_agent(
+            model=chat_model(),
+            tools=week04_tools(),
+            system_prompt=nana_prompt_parts()
+        )
+
+    result = _NANA_SUBAGENT.invoke({
+        "messages": [{"role": "user", "content": query}]
+    })
+
+    trace: list[dict[str, Any]] = extract_agent_events(result)
+    answer: str = extract_final_text(result)
+    tool_names = _tool_call_names(trace)
+
+    payload = {
+        "selected_agent": "nana_agent",
+        "answer": answer,
+        "trace": trace,
+        "inner_tool_names": tool_names
+    }
+
+    return json.dumps(payload, ensure_ascii=False)
 
 
 @tool(args_schema=AgentQueryInput)
