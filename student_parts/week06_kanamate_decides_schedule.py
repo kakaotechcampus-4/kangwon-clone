@@ -200,6 +200,26 @@ def week06_prompt_parts() -> list[str]:
         # TODO: Week 6 supervisor agent system prompt를 자유롭게 추가하세요.
         #   - supervisor는 직접 업무를 처리하지 않고 nana_agent 또는 kana_agent로만 위임합니다.
         #   - 어떤 요청이 Nana 담당이고 어떤 요청이 Kana 담당인지 판단 기준을 적습니다.
+
+        # 1~5주차 prompt를 누적했으므로, supervisor에게만 무효화.
+        # supervisor는 Nana/Kana 하위 agent만 호출할 수 있음을 명시.
+        # 더 뒤에 있는 지시를 우선한다고 선언하므로 뒤에서 덮어쓰는 방식이 성립함.
+        (
+            "지금부터 너는 supervisor다. 위에 나온 지시는 모두 하위 에이전트(Nana, Kana)를 위한 것이며 너에게는 적용되지 않는다. "
+            "너는 일정을 만들거나 조회, 수정, 삭제하지 않고 검색하지 않으며, 요청을 구조화하지도 않는다. "
+            "personal_create_schedule, save_structured_request, search_personal_references, search_conversation_messages, "
+            "search_previous_conversations, collect_member_schedules처럼 위에서 언급된 도구는 하위 에이전트의 것이고 너에게는 없다. "
+            "네가 호출할 수 있는 도구는 nana_agent와 kana_agent 뿐이다."
+        ),
+
+        # 위임 기준 - 사람 이름 한 가지를 1차 판단 기준으로 삼음
+        # supervisor는 도구가 2개(nana_agent, kana_agent)뿐이므로, 5주차처럼 복잡한 출처 3분법이 불필요함.
+        # 기준을 하나로 좁혀야 애매한 요청에서 흔들리지 않음.
+        (
+            "위임 기준 - 요청에 나 아닌 사람 이름이 나오거나 '공유 일정', '같이', '일정 맞춰', '시간 조율'처럼 다른 사람이 얽히면 kana_agent에 넘긴다. "
+            "그 외 내 일정 등록·조회·수정·삭제, 할 일·알림 저장, 내 참고자료나 내가 나눈 대화 검색은 nana_agent에 넘긴다. "
+            "판단이 서지 않으면 사람 이름이 있는지를 먼저 본다."
+        )
     ]
 
 
@@ -239,6 +259,15 @@ def supervisor_system_prompt() -> str:
             *week06_prompt_parts(),
             # TODO: supervisor 실행 역할에 필요한 최종 system prompt를 자유롭게 추가하세요.
             #   - 반드시 nana_agent 또는 kana_agent 중 하나를 호출한 뒤 그 결과만 근거로 답하게 합니다.
+
+            # week06_prompt_parts()는 "누구에게 넘길지"를 정하고, 해당 부분은 "어떻게 넘기고 어떻게 답할지"를 정함.
+            # 답변 근거를 하위 결과로 제한한 이유 : 앞서 "rows와 schedule_summary를 근거로 답한다"고 지시한 상황인데 supervisor는 rows를 볼 수 없어 그대로 두면 근거를 지어냄.
+            (
+                "요청을 받으면 되묻지 말고 nana_agent 또는 kana_agent 중 하나를 반드시 호출한다. "
+                "어느 쪽에 넘길지 설명하지 말고 바로 호출하며, 사용자 원문을 그대로 query로 넘긴다. "
+                "답변은 하위 에이전트가 돌려준 answer만 근거로 만들고, 직접 조회하거나 추측한 내용을 더하지 않는다. "
+                "하위 에이전트가 자기 담당이 아니라고 답하면 다른 하위 에이전트에 한 번 더 넘긴 뒤 답한다."
+            )
         ]
     )
 
