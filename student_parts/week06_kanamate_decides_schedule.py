@@ -649,13 +649,17 @@ def kana_agent(query: str) -> str:
     answer: str = extract_final_text(result)
     tool_names = _tool_call_names(trace)
 
+    # 2차 PR때 진행 예정
+    final_slot_payload = None
+    final_decision_payload = None
+
     payload = {
         "selected_agent": "kana_agent",
         "answer": answer,
         "trace": trace,
         "inner_tool_names": tool_names,
-        "final_slot_payload": "",
-        "final_decision_payload": ""
+        "final_slot_payload": final_slot_payload,
+        "final_decision_payload": final_decision_payload
     }
 
     return json.dumps(payload, ensure_ascii=False)
