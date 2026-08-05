@@ -485,7 +485,50 @@ def find_common_available_slots_dict(
     #   - busy_rows가 None이면 collect_member_schedules.invoke({...})를 호출해 rows를 채웁니다.
     #   - 검증 payload 생성은 find_common_available_slots_payload(...)에 넘깁니다. 이때 내 일정도 근거이므로
     #     member_names에는 "나"를 함께 포함합니다.
-    ...
+    
+    # 후보를 고르거나 검증하지 않고, 입력을 다듬어 넘기는 어댑터.
+    # 겹침 검증과 payload 정리는 fixed/schedule_decision.py가 담당.
+    # 이름 및 날짜 정규화 -> busy_rows 확보 -> 검증 위임
+
+    # 1. 외부 store 기준으로 이름과 날짜를 정규화
+    #    Kana agent가 넘긴 값이 ISO datetime일 수 있어 날짜 부분만 남김
+    normalized_member_names = normalize_external_member_names(member_names)
+    normalized_date_from = normalize_date_bound(date_from)
+    normalized_date_to = normalize_date_bound(date_to)
+
+    # 2. 조회 대상에 "나"를 포함
+    #    중복 방지: agent가 이미 "나"를 넣어 보냈을 수 있어 한 번만 남김
+    members_with_me = ["나", *[name for name in normalized_member_names if name != "나"]]
+
+    # 3. busy_rows가 없으면 직접 수집
+    #    agent가 앞선 조회 결과를 복사해 넘겼으면 그대로 사용, 안 넘겼을 때만 collect_member_schedules를 호출
+    #    tool 객체이므로 함수 호출이 아니라 .invoke(...)로 부르고, 반환은 JSON 문자열이므로 파싱함.
+    if busy_rows is None:
+        payload = json.loads(
+            collect_member_schedules.invoke(
+                {
+                    "member_names": members_with_me,
+                    "date_from": normalized_date_from,
+                    "date_to": normalized_date_to,
+                }
+            )
+        )
+        busy_rows = payload.get("rows", [])
+
+    # 4. 후보 검증을 fixed/schedule_decision.py에 위임
+    #    normalize_llm_candidate_slots가 조회 범위 밖 날짜, 업무 시간 밖, 요청 길이 미달, busy_rows와 겹치는 후보를 걸러냄
+    return find_common_available_slots_payload(
+        member_names=members_with_me,
+        date_from=normalized_date_from,
+        date_to=normalized_date_to,
+        busy_rows=busy_rows,
+        duration_minutes=duration_minutes,
+        workday_start=workday_start,
+        workday_end=workday_end,
+        limit=limit,
+        candidate_slots=candidate_slots,
+        llm_reason=llm_reason,
+    )
 
 
 @tool(description=FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION, args_schema=FindCommonAvailableSlotsInput)
