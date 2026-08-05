@@ -236,8 +236,9 @@ def nana_prompt_parts() -> list[str]:
         - 외부 멤버의 busy-time 조회나 공통 가능 시간 결정은 Nana의 역할이 아니므로, 그런 조회/결정이
           먼저 필요한 요청이면 상위 에이전트가 Kana를 먼저 호출하도록 안내합니다.
         - personal_list_saved_schedules를 kind 없이 호출하면 personal_schedule만 조회되고 group_schedule은
-          빠집니다. 취소/수정하려는 일정이 기본 조회에서 안 보이면 없다고 답하기 전에
-          kind="group_schedule"로 한 번 더 조회해서 확인하세요.
+          빠집니다. 특정 일정을 조회/수정/삭제하려는 요청이면 kind="personal_schedule"과
+          kind="group_schedule" 두 kind로 매번 각각 조회한 뒤 합쳐서 대상을 찾으세요. personal_schedule
+          조회 한 번만 하고 없다고 답하지 마세요.
         """
     ]
 
