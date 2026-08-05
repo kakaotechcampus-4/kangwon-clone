@@ -200,7 +200,6 @@ def week06_prompt_parts() -> list[str]:
         # TODO: Week 6 supervisor agent system prompt를 자유롭게 추가하세요.
         #   - supervisor는 직접 업무를 처리하지 않고 nana_agent 또는 kana_agent로만 위임합니다.
         #   - 어떤 요청이 Nana 담당이고 어떤 요청이 Kana 담당인지 판단 기준을 적습니다.
-        *week05_prompt_parts(),
         """
         **Week 6 Supervisor**
 
@@ -605,7 +604,7 @@ def nana_agent(query: str) -> str:
         _NANA_SUBAGENT = create_agent(
             model=chat_model(),
             tools=week04_tools(),
-            system_prompt=nana_prompt_parts()
+            system_prompt=nana_system_prompt()
         )
 
     result = _NANA_SUBAGENT.invoke({
@@ -639,7 +638,7 @@ def kana_agent(query: str) -> str:
         _KANA_SUBAGENT = create_agent(
             model=chat_model(),
             tools=kana_tools(),
-            system_prompt=kana_prompt_parts()
+            system_prompt=kana_system_prompt()
         )
 
     result = _KANA_SUBAGENT.invoke({
