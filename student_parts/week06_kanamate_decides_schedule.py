@@ -566,7 +566,6 @@ def kana_agent(query: str) -> str:
         "final_slot_payload": final_slot_payload,
         "final_decision_payload": final_decision_payload,
     }, ensure_ascii=False)
-        
 
 
 def build_langchain_supervisor_agent() -> object:
