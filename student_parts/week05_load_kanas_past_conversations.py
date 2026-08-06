@@ -332,53 +332,38 @@ def _collect_member_schedules(
 ) -> dict[str, Any]:
     """내 일정과 외부 멤버 일정을 같은 row 구조로 합칩니다."""
 
-    normalized_members = normalize_external_member_names(member_names)
-    normalized_date_from, normalized_date_to = normalize_external_schedule_date_bounds(
-        normalized_members,
-        date_from,
-        date_to,
-    )
-    my_rows: list[dict[str, Any]] = []
-    for row in personal_schedules:
-        request = _structured_request_from_schedule_row(row)
-        schedule_date = request.date
-        if not schedule_date:
-            continue
-        if normalized_date_from and schedule_date < normalized_date_from:
-            continue
-        if normalized_date_to and schedule_date > normalized_date_to:
-            continue
-        end_time = row.get("end_time")
-        my_rows.append(
-            {
-                "member_name": "나",
-                "title": request.title,
-                "date": schedule_date,
-                "start_time": request.start_time,
-                "end_time": request.end_time if end_time != "미정" else "18:00",
-                "notes": _my_schedule_notes(request),
-            }
-        )
+    # 1. 외부 MCP 일정 rows 파싱
+    raw = call_mcp_tool_sync("extract_schedules_from_history", {
+        "member_names": member_names,
+        "date_from": date_from,
+        "date_to": date_to,
+    })
+    external_result = json.loads(raw)
+    external_rows = external_result.get("rows", [])
 
-    external_payload = {"rows": []}
-    if normalized_members:
-        external_payload = json.loads(
-            call_mcp_tool_sync(
-                "extract_schedules_from_history",
-                {
-                    "member_names": normalized_members,
-                    "date_from": normalized_date_from,
-                    "date_to": normalized_date_to,
-                },
-            )
-        )
-    rows = _dedupe_schedule_rows([*my_rows, *external_payload.get("rows", [])])
+    # 2. 내 일정을 외부 MCP 일정과 같은 구조로 변환
+    my_rows = []
+    for schedule in personal_schedules:
+        structured = _structured_request_from_schedule_row(schedule)
+        my_rows.append({
+            "member_name" : "나",
+            "title": structured.title,
+            "date": structured.date,
+            "start_time": structured.start_time,
+            "end_time": structured.end_time,
+            "notes": _my_schedule_notes(structured),
+        })
+
+    # 3. 두 rows를 합치고 (member_names에 "나"가 있으면 앱 DB/공유 저장소 양쪽에서 같은 일정이
+    #    들어올 수 있으므로 중복을 제거), LLM이 이해하기 쉬운 형태의 요약 생성
+    rows = _dedupe_schedule_rows(my_rows + external_rows)
+    schedule_summary = external_schedule_summary(rows)
+
     return {
         "ok": True,
         "tool_name": "collect_member_schedules",
-        "members": ["나", *[name for name in normalized_members if name != "나"]],
         "rows": rows,
-        "schedule_summary": external_schedule_summary(rows),
+        "schedule_summary": schedule_summary,
     }
 
 
