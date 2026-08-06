@@ -245,6 +245,9 @@ def kana_prompt_parts() -> list[str]:
             "  find_common_available_slots에 넘긴다. 이 tool은 계산을 대신 해주지 않는다.\n"
             "- 후보 중 하나를 최종 확정하거나, 아직 확정할 수 없으면 needs_agent_selection=true로 두고\n"
             "  decide_final_slot을 호출해 근거를 남긴다.\n"
+            "- collect_member_schedules, find_common_available_slots 등의 결과에 ok:false가 있으면,\n"
+            "  이 실패를 무시하지 않는다. 임의로 시간을 확정하지도 않는다. 대신 즉시 사용자에게\n"
+            "  '일정 조회에 실패해 지금은 확인할 수 없다. 잠시 후 다시 요청해달라'고 안내한다.\n"
             "확정된 일정을 실제로 저장하는 것은 네 담당이 아니다. 저장은 Nana가 처리해야 한다고 답한다."
         ),
     ]
@@ -404,12 +407,30 @@ def find_common_available_slots_dict(
     # busy_rows=[]는 "아무도 안 바쁨"과 "아직 조회 안 됨"을 구분할 수 없으므로,
     # 빈 리스트도 미조회 상태로 간주해 collect_member_schedules를 다시 호출한다.
     if not busy_rows:
-        result_json = collect_member_schedules.invoke({
+        collect_result_json = collect_member_schedules.invoke({
             "member_names": payload_members,
             "date_from": normalized_date_from,
             "date_to": normalized_date_to,
         })
-        busy_rows = json.loads(result_json).get("rows", [])
+        collect_result = json.loads(collect_result_json)
+        if not collect_result.get("ok", False):
+            # collect_member_schedules 조회 자체가 실패한 경우, 빈 busy_rows를
+            # "아무도 안 바쁨"으로 착각해 후보를 통과시키면 안 되므로 실패를 그대로 알린다.
+            # 재시도는 하지 않고 즉시 실패를 반환해 agent가 사용자에게 안내하게 한다.
+            error_code = collect_result.get("error_code", "collect_member_schedules_failed")
+            print(f"[find_common_available_slots] busy_rows 수집 실패 code={error_code}")
+            return {
+                "ok": False,
+                "tool_name": "find_common_available_slots",
+                "error_code": error_code,
+                "members": payload_members,
+                "busy_rows": [],
+                "candidate_slots": [],
+                "slot_source": "llm",
+                "payload_source": "tool_description",
+                "llm_reason": "",
+            }
+        busy_rows = collect_result.get("rows", [])
 
     return find_common_available_slots_payload(
         member_names=payload_members,
