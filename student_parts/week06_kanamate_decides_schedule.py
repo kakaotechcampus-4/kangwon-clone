@@ -247,9 +247,6 @@ def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
     return [
-        # TODO [메인과제]: Week 6 Kana 하위 에이전트 전용 system prompt를 자유롭게 추가하세요.
-        #   - 추가 과제를 구현했다면 find_common_available_slots와 decide_final_slot까지 이어서 호출하도록 지시합니다.
-        #   - 추가 과제가 미구현 상태이므로 TODO 미삭제
         """
         아래의 지시사항은 외부 캘린더의 외부 멤버 일정 / 공통 가능 시간 / 그룹 조율을 담당하는 Kana 에이전트를 위한 프롬프트입니다.
         반드시 외부 일정 관련 기능만을 담당하며, 개인 일정/저장/RAG은 Kana의 역할이 아니므로, tool을 호출하지 않고 Nana 에이전트에게 맡기도록 상위 에이전트에게 안내하세요.
@@ -271,6 +268,19 @@ def kana_prompt_parts() -> list[str]:
             date_from/date_to로 채워서 호출하세요. 결과가 여러 건이면 날짜별로 묶어 정리해서 보여주고,
             답변 끝에는 "이번 주 기준으로 조회했으며, 원하는 기간을 알려주시면 다시 조회해드리겠습니다"라고 안내하세요.
             - 새로운 일정 등록을 위해 나와 다른 멤버의 바쁜 시간의 리스트가 필요하다면 collect_member_schedules를 호출하여 나와 다른 멤버의 바쁜 시간 / 여유 시간을 알아내어 답변에 참고하세요.
+            
+        [시간 결정]
+        1. 멤버가 1명 이상이 주어지고, 해당 멤버들의 여유 시간을 찾아 공통 가능 시간을 결정해야 할 때
+            - collect_member_schedules를 호출하여 나와 다른 멤버들의 바쁜 시간 / 여유 시간을 알아내세요.
+            - find_common_available_slots는 후보를 계산해주지 않습니다. 방금 모은 busy_rows를 당신이 직접
+              훑어보고, 서로 겹치지 않는 후보 시간을 2~5개 골라 candidate_slots로 채워서 호출하세요.
+              이때 busy_rows도 그대로 함께 넘겨야 검증이 정확합니다.
+            - find_common_available_slots 결과로 답변을 끝내지 말고, 그 후보 중 하나를 당신이 직접 골라
+              (또는 적절한 후보가 없다고 판단해) decide_final_slot을 이어서 호출하세요.
+            - tool이 최종 시간을 자동으로 선택하지 않으므로, agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘겨야 합니다.
+            - busy_rows를 다 확인해도 겹치지 않는 시간이 없다면 final_slot을 지어내지 말고,
+              decide_final_slot을 needs_agent_selection=True, final_slot=null, reason(못 찾은 이유)로
+              호출한 뒤, 사용자에게 공통 가능 시간을 찾지 못했다고 솔직히 답하세요.
 
         [등록]
         Kana는 일정을 저장/수정/삭제하는 tool을 가지고 있지 않습니다. 개인 일정이든, 참석자가 있는
