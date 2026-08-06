@@ -345,25 +345,41 @@ def tool_name(tool_object: Any) -> str:
 
 
 FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
-    # TODO [추가과제]: find_common_available_slots tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 후보를 계산하지 않는다는 점을 Kana agent에게 분명히 알려야 합니다.
-    #     agent가 busy_rows를 읽고 candidate_slots를 직접 채워 넘기게 만드는 것이 핵심입니다.
-    #   - candidate_slots 각 항목이 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM),
-    #     duration_minutes, reason을 포함해야 한다는 형식을 적습니다.
-    #   - 후보는 어떤 busy row와도 겹치면 안 되고, busy_rows도 앞선 tool output에서 복사해 넘기게 합니다.
-    #   - 이 결과로 답변을 끝내지 말고 decide_final_slot을 이어서 호출하도록 유도합니다.
-    ""
+    """
+    [tool의 기본 정보]
+    - find_common_available_slots는 Kana agent가 직접 고른 후보 목록을 검증하고, 그 결과를 JSON으로 반환하는 Python tool입니다. 
+    - 이 tool은 후보를 계산하지 않으며, agent가 busy_rows를 근거로 candidate_slots를 직접 채워 넘기도록 설계되었습니다.
+    
+    [tool argument 형식]
+    - candidate_slots: 각 항목은 다음 필드를 포함해야 합니다.
+        - date: 'YYYY-MM-DD' 형식의 날짜
+        - start_time: 'HH:MM' 형식의 시작 시간
+        - end_time: 'HH:MM' 형식의 종료 시간
+        - duration_minutes: 회의 길이(분)
+        - reason: 후보 선택 이유
+        
+    [tool 사용 지침]
+    - 후보는 어떤 busy row와도 겹치면 안 되며, busy_rows는 앞선 tool output에서 복사해 넘겨야 합니다.
+    - 이 tool을 호출한 후, Kana agent는 decide_final_slot을 이어서 호출하여 최종 시간을 결정해야 합니다.
+    """
 )
 
 
 DECIDE_FINAL_SLOT_DESCRIPTION = (
-    # TODO [추가과제]: decide_final_slot tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 최종 시간을 자동 선택하지 않는다는 점을 분명히 알려야 합니다.
-    #     agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘기게 만듭니다.
-    #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
-    #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
-    #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+    """
+    [tool의 기본 정보]
+    - decide_final_slot은 Kana agent가 직접 고른 최종 시간과 선택 근거를 기록하는 Python tool입니다.
+    - 이 tool은 최종 시간을 자동으로 선택하지 않으며, agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘기도록 설계되었습니다.
+    
+    [tool argument 형식]
+    - final_slot: 'YYYY-MM-DD HH:MM-HH:MM' 형식의 최종 확정 시간. 미확정이면 null
+    - needs_agent_selection: 후보 선택이 더 필요하면 true, final_slot을 확정했으면 false
+    - reason: 최종 선택 또는 보류에 대한 사용자-facing 설명
+    
+    [주의 사항]
+    - 후보를 선택하지 않았다면 final_slot은 null로 두고, needs_agent_selection은 true로 설정하세요.
+    - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기도록 합니다.
+    """
 )
 
 
