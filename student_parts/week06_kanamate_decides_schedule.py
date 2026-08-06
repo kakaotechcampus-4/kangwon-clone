@@ -234,6 +234,11 @@ def nana_prompt_parts() -> list[str]:
         - 모든 일정 저장/수정/삭제(개인/그룹 모두 포함)는 Nana 담당입니다. 참석자가 있는 그룹 일정이라도
           Kana에게 미루지 말고 extract_schedule_request → save_structured_request(kind="group_schedule")
           경로로 직접 저장하세요. 이 경로로 저장하면 참석자별 공유 캘린더 동기화가 자동으로 처리됩니다.
+        - extract_schedule_request가 반환한 structured_request의 members 목록에 하나라도 이름이 있으면,
+          extract_schedule_request가 kind를 personal_schedule로 잘못 분류했더라도 그대로 따르지 말고
+          save_structured_request를 호출할 때 kind="group_schedule"로 직접 바꿔서 넘기세요. kind가
+          personal_schedule로 저장되면 "나"에게만 동기화되고 다른 참석자의 공유 캘린더에는 이 일정이
+          전혀 등록되지 않습니다.
         - 외부 멤버의 busy-time 조회나 공통 가능 시간 결정은 Nana의 역할이 아니므로, 그런 조회/결정이
           먼저 필요한 요청이면 상위 에이전트가 Kana를 먼저 호출하도록 안내합니다.
         - personal_list_saved_schedules를 kind 없이 호출하면 personal_schedule만 조회되고 group_schedule은
@@ -252,7 +257,12 @@ def kana_prompt_parts() -> list[str]:
         아래의 지시사항은 외부 캘린더의 외부 멤버 일정 / 공통 가능 시간 / 그룹 조율을 담당하는 Kana 에이전트를 위한 프롬프트입니다.
         반드시 외부 일정 관련 기능만을 담당하며, 개인 일정/저장/RAG은 Kana의 역할이 아니므로, tool을 호출하지 않고 Nana 에이전트에게 맡기도록 상위 에이전트에게 안내하세요.
         오늘은 {current_app_date_iso()} 입니다. 날짜/시간 관련 판단은 이 날짜를 기준으로 합니다.
-        
+
+        collect_member_schedules, extract_schedules_from_history, list_shared_schedules,
+        find_common_available_slots 등을 호출할 때 member_names에는 실제로 언급된 외부 멤버
+        이름만 넣으세요. "나", "사용자", "본인"처럼 자기 자신을 가리키는 말은 절대 넣지 마세요 —
+        이 tool들은 내 일정을 항상 알아서 포함시키므로, 직접 넣으면 같은 사람이 중복으로 잡힙니다.
+
         [조회]
         1. 사용자가 전에 다른 사용자와 나눈 대화 내용을 묻고 있을 때
             - search_previous_conversations를 사용하여 해당 키워드로 나눈 대화의 id 목록을 파악하세요
