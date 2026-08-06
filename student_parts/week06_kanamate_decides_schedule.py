@@ -438,13 +438,36 @@ def find_common_available_slots_dict(
     llm_reason: str | None = None,
 ) -> dict[str, Any]:
     """멤버별 busy-time rows와 LLM이 고른 후보 payload를 검증 결과로 바꿉니다."""
-
-    # TODO [추가과제]: 멤버 이름/날짜 범위를 정규화하고, busy_rows를 수집한 뒤 후보 검증 payload를 만드세요.
-    #   - normalize_external_member_names(...)로 멤버 이름을, normalize_date_bound(...)로 날짜를 정규화합니다.
-    #   - busy_rows가 None이면 collect_member_schedules.invoke({...})를 호출해 rows를 채웁니다.
-    #   - 검증 payload 생성은 find_common_available_slots_payload(...)에 넘깁니다. 이때 내 일정도 근거이므로
-    #     member_names에는 "나"를 함께 포함합니다.
-    ...
+    
+    # 1. 멤버 이름과 날짜 범위를 정규화합니다.
+    normalized_member_names = normalize_external_member_names(member_names)
+    normalized_date_from = normalize_date_bound(date_from)
+    normalized_date_to = normalize_date_bound(date_to)
+    
+    # 2. busy_rows가 None이면 collect_member_schedules를 호출해 busy_rows를 수집합니다.
+    if busy_rows is None:
+        busy_rows = json.loads(collect_member_schedules.invoke({
+            "member_names": normalized_member_names,
+            "date_from": normalized_date_from,
+            "date_to": normalized_date_to,
+        })).get("rows", [])
+    
+    # 3. find_common_available_slots_payload(...)를 호출해 최종 payload를 생성합니다.
+    final_payload = find_common_available_slots_payload(
+        member_names=["나", *normalized_member_names],
+        date_from=normalized_date_from,
+        date_to=normalized_date_to,
+        duration_minutes=duration_minutes,
+        workday_start=workday_start,
+        workday_end=workday_end,
+        limit=limit,
+        busy_rows=busy_rows,
+        candidate_slots=candidate_slots,
+        llm_reason=llm_reason,
+    )
+    
+    # 4. 최종 payload를 반환합니다.
+    return final_payload
 
 
 @tool(description=FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION, args_schema=FindCommonAvailableSlotsInput)
@@ -485,7 +508,7 @@ def decide_final_slot(
     # TODO [추가과제]: Kana agent가 고른 최종 시간 정보를 course repo JSON 계약에 맞춰 기록하세요.
     #   - 직접 최종 시간을 고르지 말고 받은 인자를 그대로 decide_final_slot_payload(...)에 넘깁니다.
     #   - 결과를 JSON 문자열로 반환합니다.
-    ...
+    
 
 
 def kana_tools() -> list[Any]:
