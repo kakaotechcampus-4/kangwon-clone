@@ -466,6 +466,11 @@ def save_structured_request(
     source_schedule_id: str | None = None,
 ) -> str:
     """Week 2 structured_request 필드를 검증한 뒤 SQLite에 저장합니다."""
+    # personal_schedule/group_schedule 여부는 LLM의 판단이 아니라 members 필드의
+    # 존재 여부로 코드가 강제한다. members가 있으면 반드시 group_schedule,
+    # 없으면 personal_schedule로 보정해 분류 실수를 방지한다.
+    if kind in {"personal_schedule", "group_schedule"}:
+        kind = "group_schedule" if members else "personal_schedule"
 
     record = {k: v for k, v in locals().items() if v is not None}
     store = _store()
