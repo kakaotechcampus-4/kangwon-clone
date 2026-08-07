@@ -423,7 +423,15 @@ DECIDE_FINAL_SLOT_DESCRIPTION = (
     #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
     #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
     #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+    """
+    검증된 후보에서 최종 시간을 결정한다.
+    이 도구는 최종 시간을 자동으로 선택하는 데 사용하지 않는다.
+    candidate_slots에서 selected_index 또는 selected_slot을 직접 선택하여 넘긴다.
+    final_slot은 'YYYY-MM-DD HH:MM-HH:MM' 형식으로 전달한다.
+    선택을 완료했다면 needs_agent_selection은 False로 설정한다
+    선택하지 못햇다면 final_slot은 null, needs_agent_selection은 True로 설정하고, reason을 작성한다.
+    근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from, date_to도 함께 전달한다.
+    """
 )
 
 
