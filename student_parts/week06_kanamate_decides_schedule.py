@@ -391,7 +391,7 @@ def find_common_available_slots_dict(
     normalized_date_from = normalize_date_bound(date_from)
     normalized_date_to = normalize_date_bound(date_to)
 
-    if busy_rows is None:
+    if not busy_rows:
         payload = json.loads(
             collect_member_schedules.invoke({
                 "member_names": normalized_member_names,
