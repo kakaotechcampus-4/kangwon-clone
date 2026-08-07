@@ -235,7 +235,8 @@ def kana_prompt_parts() -> list[str]:
         "특정 대화의 전체 메시지가 필요하면 그 conversation_id로 load_conversation_messages를 호출합니다.\n"
         "외부 멤버들이 언제 바쁜지 알아야 하면 extract_schedules_from_history로 멤버별 일정을 추출합니다.\n"
         "공유 일정 저장소에 등록된 일정을 확인할 때는 list_shared_schedules를 씁니다.\n"
-        "나와 다른 사람들의 일정을 한꺼번에 모아야 할 때는 collect_member_schedules를 사용합니다.",
+        "나와 다른 사람들의 일정을 한꺼번에 모아야 할 때는 collect_member_schedules를 사용합니다.\n"
+        f"오늘 날짜는 {current_app_date_iso()} 입니다.",
 
         "그룹 회의 시간을 잡을 때는 다음 순서를 반드시 지킵니다.\n"
         "1. collect_member_schedules로 나와 멤버들의 바쁜 시간(busy_rows)을 모읍니다.\n"
