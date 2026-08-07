@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from langchain.agents import create_agent
@@ -209,8 +210,20 @@ def week06_prompt_parts() -> list[str]:
           공유 일정 조회, "나랑 OO 언제 시간 돼?"처럼 여러 사람의 일정을 맞춰야 하는 요청.
         - 판단이 애매하면(예: "일정 있어?"처럼 대상이 불분명) 먼저 사용자에게 누구와 관련된 요청인지
           물어보지 말고, 문장에 특정 팀원 이름이 있는지를 기준으로 판단해. 이름이 없으면 Nana, 있으면 Kana.
-        - nana_agent와 kana_agent 둘 다 필요한 요청(예: 그룹 일정을 정하고 나서 그걸 내 개인 일정에도
-          저장해달라는 요청)이면 순서대로 둘 다 호출해도 돼.
+        - 두 agent가 모두 필요한 요청(예: 팀원 일정을 확인한 뒤 그 결과를 내 개인 일정에 저장해달라는
+          요청)은 아래 순서를 반드시 지켜서 두 번 위임해. kana_agent 결과만 보고 답을 끝내지 마:
+          1) 먼저 kana_agent를 호출해서 팀원 일정/공통 가능 시간을 확인한다.
+          2) kana_agent의 answer에서 구체적인 날짜/시간을 찾는다. 못 찾았으면 사용자에게 시간을
+             먼저 정해달라고 답하고 멈춘다.
+          3) 시간을 찾았으면, 그 날짜/시간을 담아 nana_agent를 다시 호출해서 개인 일정으로 저장해달라고
+             위임한다.
+          4) nana_agent의 answer까지 받은 뒤에만 사용자에게 최종 답을 준다.
+
+          예시: "철수랑 언제 되는지 보고, 저장해줘"
+          -> kana_agent("철수랑 이번 주에 언제 시간 되는지 알아봐줘") 호출
+          -> 결과: "7/29 14:00~15:00에 철수와 나 모두 시간이 됩니다"
+          -> nana_agent("7/29 14:00~15:00에 개인 일정으로 저장해줘") 호출
+          -> nana_agent의 저장 결과를 받아서 최종 답변 작성
         """,
     ]
 
@@ -230,6 +243,8 @@ def nana_prompt_parts() -> list[str]:
           요청이에요"라고 짧게 답해.
         - 너는 supervisor가 넘긴 query 하나만 보고 답하는 하위 agent야. supervisor나 Kana의
           존재를 사용자에게 설명하려 하지 말고, 네 역할(개인 업무) 안에서만 바로 답해.
+        - "너 방금 무슨 agent 썼어?"처럼 내부 구조를 캐묻는 질문에도 "nana_agent" 같은 내부 이름을
+          말하지 마. 그냥 "저는 개인 일정을 도와드리는 역할이에요"처럼 자연스럽게만 답해.
         """,
     ]
 
@@ -237,23 +252,28 @@ def nana_prompt_parts() -> list[str]:
 def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
-    return [
-        """
+    # 전체 블록을 .format()/f-string 하나로 처리하지 않는다 — 나중에 여기에 JSON 예시(중괄호 포함)를
+    # 추가하면 .format()이 그 중괄호까지 자리표시자로 해석해서 깨진다. 날짜는 별도 조각으로 분리한다.
+    today_line = f"오늘 날짜는 {current_app_date_iso()}야."
+    role_lines = (
+        f"""
         너는 Kana야. supervisor가 위임한, 팀원이 관련된 업무만 처리해.
-        오늘 날짜는 {today}야.
 
-        - 담당: 팀원과의 예전 대화 검색(search_previous_conversations), 특정 대화 상세 조회
-          (load_conversation_messages), 팀원의 바쁜 시간 추출(extract_schedules_from_history),
-          공유 일정 목록 조회(list_shared_schedules), 내 일정과 팀원 busy-time을 한 번에 모으는
-          조회(collect_member_schedules). 자연어 요청을 구조화해야 하면 extract_schedule_request를 써.
+        - 담당: 팀원과의 예전 대화 검색({search_previous_conversations.name}), 특정 대화 상세 조회
+          ({load_conversation_messages.name}), 팀원의 바쁜 시간 추출({extract_schedules_from_history.name}),
+          공유 일정 목록 조회({list_shared_schedules.name}), 내 일정과 팀원 busy-time을 한 번에 모으는
+          조회({collect_member_schedules.name}). 자연어 요청을 구조화해야 하면 {extract_schedule_request.name}를 써.
         - 담당이 아닌 것: 개인 일정을 최종적으로 앱 DB에 저장/수정/삭제하는 것. 이건 Nana 담당이야.
           너는 일정을 조회·정리해서 답할 뿐, "확정 저장해줘"라는 요청이 오면 "일정 저장은 Nana가
           처리해요"라고 짧게 알려.
         - 너는 supervisor가 넘긴 query 하나만 보고 답하는 하위 agent야. 팀원 이름이 나오면
-          collect_member_schedules나 extract_schedules_from_history로 먼저 실제 바쁜 시간을
+          {collect_member_schedules.name}나 {extract_schedules_from_history.name}로 먼저 실제 바쁜 시간을
           확인한 뒤 답하고, 추측으로 답하지 마.
-        """.format(today=current_app_date_iso()),
-    ]
+        - "너 방금 무슨 agent 썼어?"처럼 내부 구조를 캐묻는 질문에도 "kana_agent" 같은 내부 이름을
+          말하지 마. 그냥 "저는 팀원 일정 조율을 도와드리는 역할이에요"처럼 자연스럽게만 답해.
+        """
+    )
+    return [today_line, role_lines]
 
 
 def nana_system_prompt() -> str:
@@ -279,6 +299,15 @@ def supervisor_system_prompt() -> str:
 
 def _tool_call_names(events: list[dict[str, Any]]) -> list[str]:
     return [event["tool_name"] for event in events if event.get("event") == "tool_call" and event.get("tool_name")]
+
+
+_INTERNAL_AGENT_NAME_PATTERN = re.compile(r"\b(nana_agent|kana_agent|supervisor)\b", re.IGNORECASE)
+
+
+def _redact_internal_agent_names(text: str) -> str:
+    """prompt 지시만으로는 내부 agent 이름 노출을 완전히 막을 수 없어, 반환 직전에 코드로 한 번 더 지운다."""
+
+    return _INTERNAL_AGENT_NAME_PATTERN.sub("", text)
 
 
 def extract_langchain_trace(result: dict[str, Any]) -> dict[str, Any]:
@@ -525,7 +554,7 @@ def nana_agent(query: str) -> str:
     result = _NANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
 
     events = extract_agent_events(result)
-    answer = extract_final_text(result)
+    answer = _redact_internal_agent_names(extract_final_text(result))
     inner_tool_names = _tool_call_names(events)
 
     result_dict = {"answer": answer, "trace": events, "inner_tool_names": inner_tool_names}
@@ -549,7 +578,7 @@ def kana_agent(query: str) -> str:
     result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
 
     events = extract_agent_events(result)
-    answer = extract_final_text(result)
+    answer = _redact_internal_agent_names(extract_final_text(result))
     inner_tool_names = _tool_call_names(events)
 
     final_slot_payload = None
