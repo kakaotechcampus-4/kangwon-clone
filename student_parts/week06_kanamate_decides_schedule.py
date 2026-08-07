@@ -730,9 +730,20 @@ def kana_agent(query: str) -> str:
     answer: str = extract_final_text(result)
     tool_names = _tool_call_names(trace)
 
-    # 2차 PR때 진행 예정
     final_slot_payload = None
     final_decision_payload = None
+
+    for event in trace:
+        content = event.get("content")
+
+        if not isinstance(content, dict):
+            continue
+
+        if "final_slot" in content:
+            final_slot_payload = content
+            
+        if "final_decision" in content:
+            final_decision_payload = content["final_decision"]
 
     payload = {
         "selected_agent": "kana_agent",
