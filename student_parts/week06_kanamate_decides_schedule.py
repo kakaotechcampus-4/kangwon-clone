@@ -306,6 +306,8 @@ def kana_prompt_parts() -> list[str]:
         - 과거 대화에서 일정 정보를 추출해야 하면 extract_schedules_from_history를 사용한다.
         - 공유 일정 저장소의 row를 확인해야 하면 list_shared_schedules를 사용한다.
         - 내 일정과 외부 멤버 일정을 같은 날짜 범위에서 함께 확인해야 하면 collect_member_schedules를 사용한다.
+        - 공통 가능 시간 후보를 검증해야 하면 find_common_available_slots를 사용한다.
+        - 검증된 후보에서 최종 시간을 결정해야 하면 decide_final_slot을 사용한다.
             
             [주의 사항]
             - search_previous_conversations과 load_conversation_messages를 동시에 호출하지 않는다.
@@ -603,6 +605,8 @@ def kana_tools() -> list[Any]:
         extract_schedules_from_history,
         list_shared_schedules,
         collect_member_schedules,
+        find_common_available_slots,
+        decide_final_slot
     ]
 
 
