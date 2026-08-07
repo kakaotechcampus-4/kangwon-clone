@@ -19,6 +19,7 @@ from fixed.schedule_decision import (
 )
 from student_parts.week01_wake_up_nana import join_system_prompt
 from student_parts.week02_structure_natural_language_requests import extract_schedule_request
+from student_parts.week03_build_nanas_logbook import save_structured_request_payload
 from student_parts.week04_retrieve_nanas_memory import json_payload, week04_prompt_parts, week04_tools
 from student_parts.week05_load_kanas_past_conversations import (
     collect_member_schedules,
@@ -197,6 +198,7 @@ def week06_prompt_parts() -> list[str]:
 
     return [
         *week05_prompt_parts(),
+        f"오늘 날짜는 {current_app_date_iso()}이다. 상대 날짜 표현은 이 날짜를 기준으로 해석한다.",
         (
             "너는 supervisor다. 직접 일정 조회·저장·검색·조율을 처리하지 말고, "
             "반드시 nana_agent 또는 kana_agent 하나에 요청 전체를 위임하라. "
@@ -213,6 +215,7 @@ def nana_prompt_parts() -> list[str]:
 
     return [
         *week04_prompt_parts(),
+        f"오늘 날짜는 {current_app_date_iso()}이다. 상대 날짜 표현은 이 날짜를 기준으로 해석한다.",
         (
             "너는 Nana다. 개인 일정 생성·조회·수정·삭제, 할 일·리마인더, "
             "개인 참고자료와 앱 대화 검색을 처리한다. "
@@ -227,12 +230,14 @@ def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
     return [
-         (
+        f"오늘 날짜는 {current_app_date_iso()}이다. 상대 날짜 표현은 이 날짜를 기준으로 해석한다.",
+        (
             "너는 Kana다. 외부 멤버 대화와 공유 일정 조회, 여러 사람의 일정 조율을 담당한다. "
             "공통 시간이 필요하면 collect_member_schedules로 busy_rows를 수집하고, "
             "겹치지 않는 candidate_slots를 직접 고른 뒤 find_common_available_slots로 검증한다. "
             "검증된 후보 중 하나를 선택해 decide_final_slot으로 최종 결정을 기록한다. "
-            "개인 일정 저장·수정·삭제는 Nana 담당이므로 처리하지 않는다."
+            "개인 일정 저장·수정·삭제는 Nana 담당이므로 처리하지 않는다. "
+            "busy_rows가 비어 있으면 해당 기간에 확정된 바쁜 일정이 없다는 뜻이므로, 업무 시간 안에서 후보를 만들어 다음 단계로 진행한다."
         ),
     ]
 
@@ -255,7 +260,12 @@ def supervisor_system_prompt() -> str:
                 "하위 agent 결과에 없는 사실을 만들지 마라. "
                 "라우팅 우선순위: 요청에 나 외의 멤버 이름이 있고 일정·가능 시간·후보·순번·확정이 "
                 "포함되면 반드시 kana_agent를 호출한다. 예를 들어 '나와 하린이 만날 수 있는 시간'은 "
-                "kana_agent 요청이며 nana_agent를 호출하면 안 된다."
+                "kana_agent 요청이며 nana_agent를 호출하면 안 된다. "
+                "직전 대화에서 kana_agent가 외부 멤버와의 공통 일정을 다루고 있었다면, 후속 요청이 "
+                "이름을 다시 언급하지 않고 '그 시간', '역시', '대신', '다른 후보로' 처럼 그 맥락만 이어도 "
+                "여전히 kana_agent 요청이다. 예를 들어 방금 '나와 하린'의 시간을 조율하던 중 "
+                "'역시 그 시간 말고 두 번째 후보로 바꿔줘'라고만 해도 kana_agent를 호출해야 하며, "
+                "이름이 없다는 이유로 nana_agent를 호출하면 안 된다."
             ),
         ]
     )
@@ -278,14 +288,15 @@ def extract_langchain_trace(result: dict[str, Any]) -> dict[str, Any]:
         if event.get("event") == "tool_call" and event.get("tool_name") in {"nana_agent", "kana_agent"}:
             selected_agent = event["tool_name"]
         content = event.get("content")
-        if isinstance(content, dict):
-            inner_tool_names.extend(content.get("inner_tool_names") or [])
-            if content.get("final_slot_payload"):
-                final_slot_payload = content["final_slot_payload"]
-            elif "final_slot" in content:
-                final_slot_payload = content
-            if content.get("final_decision_payload"):
-                final_decision_payload = content["final_decision_payload"]
+        if not isinstance(content, dict):
+            continue
+        inner_tool_names.extend(content.get("inner_tool_names") or [])
+        if content.get("final_slot_payload"):
+            final_slot_payload = content["final_slot_payload"]
+        elif "final_slot" in content:
+            final_slot_payload = content
+        if content.get("final_decision_payload"):
+            final_decision_payload = content["final_decision_payload"]
 
     return {
         "events": events,
@@ -476,21 +487,37 @@ def decide_final_slot(
     # TODO: Kana agent가 고른 최종 시간 정보를 course repo JSON 계약에 맞춰 기록하세요.
     #   - 직접 최종 시간을 고르지 말고 받은 인자를 그대로 decide_final_slot_payload(...)에 넘깁니다.
     #   - 결과를 JSON 문자열로 반환합니다.
-    return json_payload(
-        decide_final_slot_payload(
-            candidate_slots=candidate_slots,
-            selected_slot=selected_slot,
-            selected_index=selected_index,
-            final_slot=final_slot,
-            needs_agent_selection=needs_agent_selection,
-            member_names=member_names,
-            date_from=date_from,
-            date_to=date_to,
-            duration_minutes=duration_minutes,
-            reason=reason,
-            busy_rows=busy_rows,
-        )
+    payload = decide_final_slot_payload(
+        candidate_slots=candidate_slots,
+        selected_slot=selected_slot,
+        selected_index=selected_index,
+        final_slot=final_slot,
+        needs_agent_selection=needs_agent_selection,
+        member_names=member_names,
+        date_from=date_from,
+        date_to=date_to,
+        duration_minutes=duration_minutes,
+        reason=reason,
+        busy_rows=busy_rows,
     )
+
+    if payload.get("final_slot") and not payload.get("needs_agent_selection"):
+        slot_date, _, slot_range = payload["final_slot"].partition(" ")
+        slot_start, _, slot_end = slot_range.partition("-")
+        attendees = payload.get("members") or member_names or []
+        save_structured_request_payload(
+            {
+                "kind": "group_schedule",
+                "title": f"{'/'.join(attendees)} 회의" if attendees else "그룹 회의",
+                "date": slot_date,
+                "start_time": slot_start or None,
+                "end_time": slot_end or None,
+                "members": attendees,
+                "reason": payload.get("reason"),
+            }
+        )
+
+    return json_payload(payload)
 
 
 def kana_tools() -> list[Any]:
@@ -591,12 +618,20 @@ def kana_agent(query: str) -> str:
 
     result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
     events = extract_agent_events(result)
+    final_slot_payload = None
+    for event in events:
+        content = event.get("content")
+        if isinstance(content, dict) and "final_slot" in content:
+            final_slot_payload = content
+
     return json_payload(
         {
             "selected_agent": "kana_agent",
             "answer": extract_final_text(result),
             "trace": events,
             "inner_tool_names": _tool_call_names(events),
+            "final_slot_payload": final_slot_payload,
+            "final_decision_payload": final_slot_payload,
         }
     )
 
