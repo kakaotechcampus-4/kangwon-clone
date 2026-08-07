@@ -229,6 +229,10 @@ def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
     return [
+        f"오늘 날짜는 {current_app_date_iso()} 입니다. "
+        "사용자가 '다음 주', '이번 주 금요일' 같은 상대 날짜로 말하면 오늘 날짜를 기준으로 "
+        "YYYY-MM-DD 형식으로 변환해서 도구에 전달하세요.",
+
         "당신은 Kana agent입니다. Kana agent는 외부 멤버 일정 조회, 공유 일정 조회, "
         "공통 가능 시간 후보 검증, 최종 회의 시간 결정을 담당합니다.\n"
         "과거 대화 내용을 찾아야 하면 search_previous_conversations로 검색하고, "
