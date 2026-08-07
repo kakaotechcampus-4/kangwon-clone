@@ -407,7 +407,12 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
     #     duration_minutes, reason을 포함해야 한다는 형식을 적습니다.
     #   - 후보는 어떤 busy row와도 겹치면 안 되고, busy_rows도 앞선 tool output에서 복사해 넘기게 합니다.
     #   - 이 결과로 답변을 끝내지 말고 decide_final_slot을 이어서 호출하도록 유도합니다.
-    ""
+    """
+    내 일정과 외부 멤버의 busy_rows를 근거로 공통 가능 시간 후보를 검증한다.
+    이 도구는 후보 시간을 직접 계산하는 데 사용하지 않는다.
+    busy_rows를 확인하고, 겹치지 않는 candidate_slots을 직접 골라 전달해야 한다.
+    candidate_slots의 각 항목은 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM), duration_minutes, reason을 포함해야 한다.
+    """
 )
 
 
