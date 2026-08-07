@@ -268,7 +268,7 @@ def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
     return [
-        """
+        f"""
         **Kana 하위 에이전트**
 
         너는 외부 멤버의 대화와 일정을 조회하고, 여러 사람의 일정을 담당하는
@@ -290,27 +290,27 @@ def kana_prompt_parts() -> list[str]:
 
         [도구 선택 기준]
         
-        - 자연어 일정 조건을 구조화해야 하면 extract_schedule_request를 사용한다.
-        - 외부 멤버의 과거 대화를 검색해야 하면 search_previous_conversations를 사용한다.
-        - 검색된 특정 대화의 전체 내용이 필요하면 load_conversation_messages를 사용한다.
-        - 과거 대화에서 일정 정보를 추출해야 하면 extract_schedules_from_history를 사용한다.
-        - 공유 일정 저장소의 row를 확인해야 하면 list_shared_schedules를 사용한다.
-        - 내 일정과 외부 멤버 일정을 같은 날짜 범위에서 함께 확인해야 하면 collect_member_schedules를 사용한다.
-        - 공통 가능 시간 후보를 검증해야 하면 find_common_available_slots를 사용한다.
-        - 검증된 후보에서 최종 시간을 결정해야 하면 decide_final_slot을 사용한다.
+        - 자연어 일정 조건을 구조화해야 하면 {extract_schedule_request.name}을 사용한다.
+        - 외부 멤버의 과거 대화를 검색해야 하면 {search_previous_conversations.name}을 사용한다.
+        - 검색된 특정 대화의 전체 내용이 필요하면 {load_conversation_messages.name}을 사용한다.
+        - 과거 대화에서 일정 정보를 추출해야 하면 {extract_schedules_from_history.name}을 사용한다.
+        - 공유 일정 저장소의 row를 확인해야 하면 {list_shared_schedules.name}을 사용한다.
+        - 내 일정과 외부 멤버 일정을 같은 날짜 범위에서 함께 확인해야 하면 {collect_member_schedules.name}을 사용한다.
+        - 공통 가능 시간 후보를 검증해야 하면 {find_common_available_slots.name}을 사용한다.
+        - 검증된 후보에서 최종 시간을 결정해야 하면 {decide_final_slot.name}을 사용한다.
         - 그룹 일정 조율 순서는 다음과 같다.
             
             [그룹 일정 조율 순서]
 
-            1. collect_member_schedules로 일정을 수집한다.
-            2. 수집한 busy_rows를 근거로 후보를 직접 골라 find_common_available_slots로 검증한다.
-            3. 검증된 후보에서 최종 시간을 직접 선택한 다음 decide_final_slot을 호출한다.
-            4. decide_final_slot 결과를 근거로 최종 답변한다.
+            1. {collect_member_schedules.name}으로 일정을 수집한다.
+            2. 수집한 busy_rows를 근거로 후보를 직접 골라 {find_common_available_slots.name}으로 검증한다.
+            3. 검증된 후보에서 최종 시간을 직접 선택한 다음 {decide_final_slot.name}을 호출한다.
+            4. {decide_final_slot.name} 결과를 근거로 최종 답변한다.
 
         - 다음은 주의 사항이다.
 
             [주의 사항]
-            - search_previous_conversations과 load_conversation_messages를 동시에 호출하지 않는다.
+            - {search_previous_conversations.name}과 {load_conversation_messages.name}을 동시에 호출하지 않는다.
 
         [담당하지 않는 업무]
 
@@ -338,13 +338,13 @@ def supervisor_system_prompt() -> str:
     return join_system_prompt(
         [
             *week06_prompt_parts(),
-            """
+            f"""
             [Supervisor 실행 규칙]
             
             사용자 요청을 받으면 다음 순서를 따른다.
 
             1. 요청의 핵심 대상이 개인인지 외부 멤버 및 그룹인지 판단한다.
-            2. 판단 결과에 따라 nana_agent 또는 kana_agent 중 하나를 호출한다.
+            2. 판단 결과에 따라 {nana_agent.name} 또는 {kana_agent.name} 중 하나를 호출한다.
             3. 하위 에이전트가 반환한 결과를 확인한다.
             4. 결과만을 근거로 사용자에게 최종 답변한다.
 
