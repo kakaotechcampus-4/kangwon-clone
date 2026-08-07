@@ -432,16 +432,16 @@ def find_common_available_slots(
 
     return json_payload(
         find_common_available_slots_dict(
-            member_names,
-            date_from,
-            date_to,
-            duration_minutes,
-            workday_start,
-            workday_end,
-            limit,
-            busy_rows,
-            candidate_slots,
-            llm_reason,
+            member_names=member_names,
+            date_from=date_from,
+            date_to=date_to,
+            duration_minutes=duration_minutes,
+            workday_start=workday_start,
+            workday_end=workday_end,
+            limit=limit,
+            busy_rows=busy_rows,
+            candidate_slots=andidate_slots,
+            llm_reason=llm_reason,
         )
     )
 
