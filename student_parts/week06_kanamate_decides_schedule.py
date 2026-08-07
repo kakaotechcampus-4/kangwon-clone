@@ -17,7 +17,7 @@ from fixed.schedule_decision import (
     find_common_available_slots_payload,
     normalize_date_bound,
 )
-from student_parts.week01_wake_up_nana import get_current_date,join_system_prompt
+from student_parts.week01_wake_up_nana import get_current_date, join_system_prompt
 from student_parts.week02_structure_natural_language_requests import extract_schedule_request
 from student_parts.week04_retrieve_nanas_memory import week04_prompt_parts, week04_tools
 from student_parts.week05_load_kanas_past_conversations import (
@@ -40,6 +40,7 @@ WEEK06_SUPERVISOR_PROMPT = """
 
 - 개인 일정 생성·조회·수정·삭제, 할 일·알림 저장, 개인 참고자료 저장·검색, 앱 대화 내용 검색은 nana_agent에게 위임한다. (예: "내일 10시에 코칭 일정 잡아줘", "내 일정 보여줘", "내가 선호하는 회의 시간이 뭐라고 했지?")
 - 외부 멤버의 과거 대화·일정 조회, 공유 일정 저장소 조회, 여러 사람의 바쁜 시간 수집과 그룹 일정 조율은 kana_agent에게 위임한다. (예: "철수 일정 알려줘", "민준이랑 언제 시간 되는지 봐줘", "우리 팀 이번 주 바쁜 시간 모아줘")
+- 다른 사람 이름이 나와도 시간이 이미 정해져 있어 조율할 필요가 없으면(예: "철수랑 다음 주 화요일 3시에 회의 잡아줘") nana_agent에게 위임한다. kana_agent는 시간을 찾거나 여러 사람의 가능한 시간을 맞춰야 할 때 사용한다.
 - 어느 쪽인지 애매하면 "내 것만 다루는 요청인가, 다른 사람이 관련된 요청인가"를 기준으로 판단한다. 다른 사람 이름이 나오면 kana_agent 쪽이다.
 - 한 요청에 두 영역이 섞여 있으면(예: 조율한 결과를 내 일정으로 저장) 필요한 순서대로 각각 위임한다.
 
@@ -72,7 +73,7 @@ KANA_AGENT_PROMPT = """
 - 공유 일정 저장소에 등록된 일정을 확인해야 하면 list_shared_schedules를 사용한다.
 - 자연어 일정 요청을 구조화해야 하면 extract_schedule_request를 사용한다.
 - 날짜 범위(date_from/date_to)는 반드시 YYYY-MM-DD 형식으로 넘긴다. '다음 주'처럼 상대적이거나 연도가 없는 날짜가 나오면 추측하지 말고 먼저 get_current_date로 오늘 날짜를 확인한 뒤 계산한다.
-- 확정된 일정을 사용자의 개인 일정으로 저장하는 일은 네 담당이 아니다. 그런 요청을 받으면 "개인 일정 저장은 Nana 담당입니다"라고 짧게 답한다.
+- 시간이 이미 정해진 일정을 저장·등록해 달라는 요청(예: "3시에 회의 잡아줘")은 조율이 아니라 저장이므로 네 담당이 아니다. 가용성만 확인하고 "잡아도 된다"로 답을 끝내지 말고, "개인 일정 저장은 Nana 담당입니다"라고 답한다.
 
 ## 답변 규칙
 - tool이 돌려준 rows/schedule_summary를 그대로 보여주지 말고, 누가 언제 바쁜지 사람이 읽기 쉬운 한국어로 정리해 답한다.
