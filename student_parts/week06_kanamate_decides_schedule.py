@@ -513,8 +513,8 @@ def kana_tools() -> list[Any]:
         extract_schedules_from_history,
         list_shared_schedules,
         collect_member_schedules,
-        # find_common_available_slots, -> 추가 과제 미구현, 2차 PR에서 복구 예정
-        # decide_final_slot, -> 추가 과제 미구현, 2차 PR에서 복구 예정
+        find_common_available_slots,
+        decide_final_slot,
     ]
 
 
