@@ -440,7 +440,7 @@ def find_common_available_slots(
             workday_end=workday_end,
             limit=limit,
             busy_rows=busy_rows,
-            candidate_slots=andidate_slots,
+            candidate_slots=candidate_slots,
             llm_reason=llm_reason,
         )
     )
