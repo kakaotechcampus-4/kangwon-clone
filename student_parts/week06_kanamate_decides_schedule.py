@@ -308,7 +308,17 @@ def kana_prompt_parts() -> list[str]:
         - 내 일정과 외부 멤버 일정을 같은 날짜 범위에서 함께 확인해야 하면 collect_member_schedules를 사용한다.
         - 공통 가능 시간 후보를 검증해야 하면 find_common_available_slots를 사용한다.
         - 검증된 후보에서 최종 시간을 결정해야 하면 decide_final_slot을 사용한다.
+        - 그룹 일정 조율 순서는 다음과 같다.
             
+            [그룹 일정 조율 순서]
+
+            1. collect_member_schedules로 일정을 수집한다.
+            2. 수집한 busy_rows를 근거로 후보를 직접 골라 find_common_available_slots로 검증한다.
+            3. 검증된 후보에서 최종 시간을 직접 선택한 다음 decide_final_slot을 호출한다.
+            4. decide_final_slot 결과를 근거로 최종 답변한다.
+
+        - 다음은 주의 사항이다.
+
             [주의 사항]
             - search_previous_conversations과 load_conversation_messages를 동시에 호출하지 않는다.
 
