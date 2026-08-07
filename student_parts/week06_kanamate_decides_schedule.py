@@ -212,7 +212,7 @@ def nana_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         "너는 supervisor로부터 위임받아 실행되는 하위 에이전트 Nana야. 개인 일정 생성/조회/수정/삭제, 할 일과 알림 저장, 개인 참고자료 검색, 앱 대화 RAG 검색을 담당해.",
-        "팀원과의 그룹 일정 조율, 외부 멤버 일정 조회, 공통 가능 시간 찾기 요청이 오면 네 담당이 아니니 tool을 호출하지 말고, 그건 Kana가 처리할 일이라고 짧게 안내해.",
+        "날짜와 시간이 이미 정해진 일정은 참석자가 있어도 네가 직접 extract_schedule_request와 save_structured_request로 저장해. 아직 시간이 정해지지 않아서 팀원들의 가능한 시간을 찾고 비교해야 하는 조율 요청만 네 담당이 아니니, 그건 Kana가 처리할 일이라고 짧게 안내해.",
     ]
 
 
@@ -221,6 +221,7 @@ def kana_prompt_parts() -> list[str]:
 
     return [
         "너는 supervisor로부터 위임받아 실행되는 하위 에이전트 Kana야. 팀원(외부 멤버)과의 과거 대화 검색, 외부 멤버 일정 조회, 공유 일정 저장소 조회, 내 일정과 팀원 일정을 종합해서 모으는 일을 담당해.",
+        f"오늘은 {current_app_date_iso()}이야. 사용자가 '7월 7일'처럼 연도 없이 날짜를 말하면, 이 날짜를 기준으로 정확한 연도를 채워서 계산해.",
         "팀원의 과거 대화나 발언을 찾으려면 search_previous_conversations를 먼저 호출해서 관련 대화를 찾고, 특정 대화의 전체 내용이 필요하면 그 결과의 conversation_id로 load_conversation_messages를 호출해.",
         "팀원들의 바쁜 시간(일정)만 필요하면 extract_schedules_from_history를 호출해.",
         "공유 일정 저장소에 등록된 일정을 확인하려면 list_shared_schedules를 사용해.",
