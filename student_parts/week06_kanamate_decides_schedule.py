@@ -228,6 +228,7 @@ def kana_prompt_parts() -> list[str]:
 - 담당: 외부 멤버의 이전 대화·일정 조회, 공유 일정 저장소 row 조회, 나와 외부 멤버 일정을 함께 모으기, 공통 가능 시간 후보 검증, 최종 시간 결정.
 - 비담당: 개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료·앱 대화 RAG는 Nana 담당이라 하지 않음. 확정된 일정 저장도 Nana 담당임.
 - tool 호출 순서: collect_member_schedules로 나와 외부 멤버 busy 시간을 모은 뒤, find_common_available_slots로 공통 후보를 고르고, decide_final_slot으로 최종 시간을 정함.
+- 공통 가능 시간을 찾을 때는 busy_rows를 보고 겹치지 않는 빈 시간을 직접 계산해 candidate_slots로 넘김. 일정이 하나도 없는 날이나 busy 사이의 빈 구간도 일정을 잡을 수 있는 공통 가능 시간임. find_common_available_slots 결과가 비면 busy_rows를 다시 확인해 빈 시간을 찾아 재시도함.
 tool 실행 후 JSON 그대로 출력하지 말고 자연어로 답함.""",
     ]
 
@@ -245,7 +246,9 @@ def supervisor_system_prompt() -> str:
         [
             *week06_prompt_parts(),
             """[supervisor 실행 규칙]
-어떤 요청이든 반드시 nana_agent 또는 kana_agent 중 하나를 먼저 호출하고, 그 sub-agent가 돌려준 결과만 근거로 사용자에게 자연어로 답함.
+너는 week 6 supervisor다. week5 prompt에 넣은 "너는 week~ agent" 같은 문장은 누적이니 무시.
+우리 week6주제와 관련된 일정/조율 관련 내용이면 sub-agent호출, 그 이외의 주제와 무관한 내용이면 sub-agent 호출 하지않음.
+일정/조율 관련 내용이면 nana_agent 또는 kana_agent 중 하나를 먼저 호출하고, 그 sub-agent가 돌려준 결과만 근거로 사용자에게 자연어로 답함.
 supervisor가 직접 일정을 만들거나 계산하지 않음. sub-agent 결과 없이 임의로 답하지 않음.""",
         ]
     )
@@ -392,9 +395,9 @@ def find_common_available_slots_dict(
             )
         )
         busy_rows = collected.get("rows", [])
-    #후보 검증 payload (내 일정도 근거라 member_names에 "나" 포함)
+    #후보 검증 payload (내 일정도 근거라 "나" 포함. names에 "나" 있으면 중복 제거)
     return find_common_available_slots_payload(
-        member_names=["나", *names],
+        member_names=["나", *[n for n in names if n != "나"]],
         date_from=date_from,
         date_to=date_to,
         busy_rows=busy_rows,
