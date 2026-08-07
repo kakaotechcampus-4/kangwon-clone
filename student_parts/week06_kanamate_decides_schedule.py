@@ -422,7 +422,7 @@ DECIDE_FINAL_SLOT_DESCRIPTION = (
     candidate_slots에서 selected_index 또는 selected_slot을 직접 선택하여 넘긴다.
     final_slot은 'YYYY-MM-DD HH:MM-HH:MM' 형식으로 전달한다.
     선택을 완료했다면 needs_agent_selection은 False로 설정한다
-    선택하지 못햇다면 final_slot은 null, needs_agent_selection은 True로 설정하고, reason을 작성한다.
+    선택하지 못했다면 final_slot은 null, needs_agent_selection은 True로 설정하고, reason을 작성한다.
     근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from, date_to도 함께 전달한다.
     """
 )
