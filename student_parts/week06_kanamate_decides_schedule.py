@@ -405,7 +405,15 @@ DECIDE_FINAL_SLOT_DESCRIPTION = (
     #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
     #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
     #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+    "이 decide_final_slot tool은 최종 시간 선택이 자동으로 되는 tool이 아니야. "
+    "네(AI 에이전트)가 직접 앞에서 받은 시간 후보들을 보고 최종 시간을 결정해야 해. "
+    "결정된 최종 시간은 selected_index와 selected_slot중 하나를 선택하고 final_slot와 함께 인자로 넘겨야 해. "
+    "final_slot의 형식은 YYYY-MM-DD HH:MM-HH:MM이야. "
+    "needs_agent_selection의 값은 네가 최종 시간 선택을 완료했다면 false로 채워줘. "
+    "reason의 값은 네가 최종 시간 선택을 하게 된 이유에 대해서 적어야 해. "
+    "아직 최종 시간 선택을 하지 못했다면 final_slot의 값은 null, needs_agent_selection은 true로 채워줘. "
+    "억지로 다른 값을 넣으려고 하지 마. "
+    "trace를 위해서 candidate_slots, busy_rows, member_names, date_from, date_to 인자값들도 채워줘. "
 )
 
 
