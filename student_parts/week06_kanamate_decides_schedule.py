@@ -290,7 +290,7 @@ def extract_langchain_trace(result: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "events": events,
-        "supervisor_selected_agent": selected_agent,
+        "selected_agent": selected_agent,
         "inner_tool_names": inner_tool_names,
         "final_slot_payload": final_slot_payload,
         "final_decision_payload": final_decision_payload,
@@ -396,12 +396,15 @@ def find_common_available_slots_dict(
     workday_end: str = "18:00",
     limit: int = 5,
     busy_rows: list[dict[str, Any]] | None = None,
-    candidate_slots: list[dict[str, Any]] | None = None,
+    candidate_slots: list[Any] | None = None,
     llm_reason: str | None = None,
 ) -> dict[str, Any]:
     """멤버별 busy-time rows와 LLM이 고른 후보 payload를 검증 결과로 바꿉니다."""
 
-    normalized_member_names = normalize_external_member_names(member_names)
+    normalized_member_names = [
+        name for name in normalize_external_member_names(member_names)
+        if name != PERSONAL_SHARED_MEMBER_NAME
+    ]
     member_names_with_me = normalized_member_names + [PERSONAL_SHARED_MEMBER_NAME]
     normalized_date_from = normalize_date_bound(date_from)
     normalized_date_to = normalize_date_bound(date_to)
