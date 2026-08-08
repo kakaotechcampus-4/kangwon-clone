@@ -412,6 +412,7 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
     내 일정과 외부 멤버의 busy_rows를 근거로 공통 가능 시간 후보를 검증한다.
     이 도구는 후보 시간을 직접 계산하는 데 사용하지 않는다.
     busy_rows를 확인하고, 겹치지 않는 candidate_slots을 직접 골라 전달해야 한다.
+    가능한 시간이 하나라도 있으면 candidate_slots를 빈 배열로 전달하지 않는다.
     candidate_slots의 각 항목은 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM), duration_minutes, reason을 포함해야 한다.
     """
 )
@@ -447,6 +448,7 @@ class FindCommonAvailableSlotsInput(BaseModel):
         description=(
             "LLM agent가 직접 고른 후보 목록. 각 항목은 date, start_time, end_time, "
             "duration_minutes, reason을 포함하고 busy_rows와 겹치면 안 됩니다."
+            "가능한 시간이 하나라도 있으면 빈 배열로 전달하면 안 됩니다."
         ),
     )
     llm_reason: str | None = Field(default=None, description="LLM agent가 후보 목록을 고른 전체 이유")
