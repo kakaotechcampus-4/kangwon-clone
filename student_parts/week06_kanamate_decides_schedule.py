@@ -374,14 +374,17 @@ def tool_name(tool_object: Any) -> str:
 #     - candidate_slots 항목 형식(date, start_time, end_time, duration_minutes, reason)과
 #       final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')을 명시해 argument 형태를 고정합니다.
 FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
-    # TODO: find_common_available_slots tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 후보를 계산하지 않는다는 점을 Kana agent에게 분명히 알려야 합니다.
-    #     agent가 busy_rows를 읽고 candidate_slots를 직접 채워 넘기게 만드는 것이 핵심입니다.
-    #   - candidate_slots 각 항목이 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM),
-    #     duration_minutes, reason을 포함해야 한다는 형식을 적습니다.
-    #   - 후보는 어떤 busy row와도 겹치면 안 되고, busy_rows도 앞선 tool output에서 복사해 넘기게 합니다.
-    #   - 이 결과로 답변을 끝내지 말고 decide_final_slot을 이어서 호출하도록 유도합니다.
-    ""
+
+    "이 find_common_available_slots tool은 가능한 최적 날짜 계산을 하지 않는 tool이야. "
+    "네(AI 에이전트)가 busy_rows를 보고나서 직접 계산을 해야해. "
+    "계산을 마친 후 계산된 날짜들에 대한 정보들을 candidate_slots에 채워 넣어야 해. "
+    "candidate_slots 에 들어갈 날짜 정보 항목에는 date, start_time, end_time, duration_minutes, reason이 있어. "
+    "각 항목의 형식은 date는 YYYY-MM-DD, start_time은 HH:MM, end_time은 HH:MM의 형식이야. "
+    "duration_minutes에는 end_time에서 start_time 을 뺀 값을 분 단위로 넣어줘. "
+    "reason에는 네가 왜 이 시간을 정했는지에 대한 이유를 적어줘. "
+    "네가 고른 날짜 후보들은 절대로 busy_rows 들과 겹쳐서는 안돼. "
+    "busy_rows의 값은 앞서 부른 tool의 output 에서 복사해서 가져와서 넣어줘. "
+    "계산을 하고 결과를 낸 뒤 답변을 끝내지 않고 decide_final_slot을 바로 이어서 호출해야 해. "
 )
 
 
