@@ -304,9 +304,10 @@ def kana_prompt_parts() -> list[str]:
             [그룹 일정 조율 순서]
 
             1. {collect_member_schedules.name}으로 일정을 수집한다.
-            2. 수집한 busy_rows를 근거로 후보를 직접 골라 {find_common_available_slots.name}으로 검증한다.
-            3. 검증된 후보에서 최종 시간을 직접 선택한 다음 {decide_final_slot.name}을 호출한다.
-            4. {decide_final_slot.name} 결과를 근거로 최종 답변한다.
+            2. {collect_member_schedules.name} 결과의 rows 전체를 busy_rows로 전달한다. 일부 row만 선택하거나 수정해서 전달하면 안 된다.
+            3. 수집한 busy_rows를 근거로 후보를 직접 골라 {find_common_available_slots.name}으로 검증한다.
+            4. 검증된 후보에서 최종 시간을 직접 선택한 다음 {decide_final_slot.name}을 호출한다.
+            5. {decide_final_slot.name} 결과를 근거로 최종 답변한다.
 
         - 다음은 주의 사항이다.
 
