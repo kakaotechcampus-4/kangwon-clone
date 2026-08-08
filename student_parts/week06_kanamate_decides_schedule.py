@@ -399,12 +399,7 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
 #     - candidate_slots 항목 형식(date, start_time, end_time, duration_minutes, reason)과
 #       final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')을 명시해 argument 형태를 고정합니다.
 DECIDE_FINAL_SLOT_DESCRIPTION = (
-    # TODO: decide_final_slot tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 최종 시간을 자동 선택하지 않는다는 점을 분명히 알려야 합니다.
-    #     agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘기게 만듭니다.
-    #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
-    #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
-    #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
+
     "이 decide_final_slot tool은 최종 시간 선택이 자동으로 되는 tool이 아니야. "
     "네(AI 에이전트)가 직접 앞에서 받은 시간 후보들을 보고 최종 시간을 결정해야 해. "
     "결정된 최종 시간은 selected_index와 selected_slot중 하나를 선택하고 final_slot와 함께 인자로 넘겨야 해. "
