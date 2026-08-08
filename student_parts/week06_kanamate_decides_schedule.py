@@ -271,7 +271,9 @@ def kana_prompt_parts() -> list[str]:
         "개인 일정 생성/조회/수정/삭제, todo/reminder 저장, 개인 참고자료와 앱 대화 RAG는 다른 서브 에이전트의 역할이야.",
         "다른 서브 에이전트의 역할을 침범해서는 안돼.",
         f"오늘 날짜는 {current_app_date_iso()}야.",
-        "멤버가 여러명일 때는 모두 한번에 member_names에 담아서 호출해야 해."
+        "멤버가 여러명일 때는 모두 한번에 member_names에 담아서 호출해야 해.",
+        "일정 조율을 해야할 때에는 find_common_available_slots tool을 사용해야 해.",
+        "find_common_available_slots tool 사용 후에는 곧바로 decide_final_slot tool도 연속으로 사용해야 해."
 
     ]
 
