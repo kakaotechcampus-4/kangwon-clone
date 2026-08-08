@@ -441,7 +441,10 @@ class FindCommonAvailableSlotsInput(BaseModel):
     limit: int = Field(default=5, ge=1, le=20, description="최대 후보 수")
     busy_rows: list[dict[str, Any]] | None = Field(
         default=None,
-        description="앞선 일정 조회 tool output에서 복사한 busy_rows. 후보는 이 row들과 overlap/겹치면 안 됩니다.",
+        description=(
+            "앞선 일정 조회 tool output에서 복사한 busy_rows. 후보는 이 row들과 overlap/겹치면 안 됩니다."
+            "일정 조회 결과를 모두 포함해야 하며, 일부 row만 선택하거나 수정해서 전달하면 안 됩니다."
+        ),
     )
     candidate_slots: list[CommonSlotCandidate] = Field(
         default_factory=list,
