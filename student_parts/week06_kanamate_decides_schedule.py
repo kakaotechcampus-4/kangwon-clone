@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import textwrap
 from typing import Any
 
 from langchain.agents import create_agent
@@ -197,12 +198,18 @@ def week06_prompt_parts() -> list[str]:
 
     return [
         *week05_prompt_parts(),
-        """
-        Supervisor인 본인은 직접 업무를 처리하지 않습니다. 요청에 따라 nana_agent 또는 kana_agent에게 위임하여 업무를 처리합니다.
-        nana_agent는 개인 일정 조회/생성/수정/삭제, todo/reminder 저장, 개인 참고자료와 대화 RAG 검색을 담당합니다.
-        kana_agent는 외부 멤버의 이전 대화·일정 조회, 여러 사람의 공통 가능 시간 검증과 최종 시간 결정을 담당합니다.
-        요청에 외부 멤버 이름이 나오거나 여러 사람 일정을 맞춰야 하면 kana_agent, 그 외 나의 일정만 다루면 nana_agent로 위임합니다.
-"""
+        textwrap.dedent(
+            """
+            Supervisor인 본인은 직접 업무를 처리하지 않습니다. 요청에 따라 nana_agent 또는 kana_agent에게 위임하여 업무를 처리합니다.
+            nana_agent는 개인 일정 조회/생성/수정/삭제, todo/reminder 저장, 개인 참고자료와 대화 RAG 검색을 담당합니다.
+            kana_agent는 외부 멤버의 이전 대화·일정 조회, 여러 사람의 공통 가능 시간 검증과 최종 시간 결정을 담당합니다.
+            외부 멤버의 일정·가용 시간 조회, 이전 대화 확인, 여러 사람의 공통 가능 시간 조율이 필요한 요청만 kana_agent로 위임합니다.
+            외부 인물의 이름이 언급되더라도 그 사람의 일정 조회나 시간 조율 없이 내 일정에 참석자로 기록해 저장/조회/수정/삭제만 하면 되는 요청은 nana_agent로 위임합니다.
+            하위 agent의 answer가 자신의 담당이 아니라고 안내하거나 요청을 끝까지 처리하지 못했다면, 그 안내를 최종 답변으로 쓰지 말고 다른 하위 agent를 이어서 호출해 요청을 완료합니다.
+            예를 들어 kana_agent가 확정 일정 저장은 nana_agent 담당이라고 답하면 이어서 nana_agent를 호출해 저장까지 완료하고,
+            그룹 일정 조율로 최종 시간이 결정된 뒤 실제 일정으로 저장이 필요하면 nana_agent를 이어서 호출합니다.
+            """
+        ),
     ]
 
 
@@ -211,12 +218,14 @@ def nana_prompt_parts() -> list[str]:
 
     return [
         *week04_prompt_parts(),
-        """
-        Week 6부터 본인(nana_agent)은 supervisor가 위임한 개인 일정/저장/RAG 요청만 처리하는 하위 에이전트입니다.
-        nana_agent인 본인은 개인 일정/저장/RAG만 담당합니다.
-        위에서 누적된 Week 1~4 tool(개인 일정 CRUD, SQLite 저장/조회, 개인 참고자료·대화 RAG 검색)을 그대로 사용해 요청을 처리합니다.
-        외부 멤버 이전 대화 및 일정 조회, 그룹 조율 요청은 본인 담당이 아니므로 kana_agent가 처리해야 한다고 안내합니다.
-"""
+        textwrap.dedent(
+            """
+            Week 6부터 본인(nana_agent)은 supervisor가 위임한 개인 일정/저장/RAG 요청만 처리하는 하위 에이전트입니다.
+            nana_agent인 본인은 개인 일정/저장/RAG만 담당합니다.
+            위에서 누적된 Week 1~4 tool(개인 일정 CRUD, SQLite 저장/조회, 개인 참고자료·대화 RAG 검색)을 그대로 사용해 요청을 처리합니다.
+            외부 멤버 이전 대화 및 일정 조회, 그룹 조율 요청은 본인 담당이 아니므로 kana_agent가 처리해야 한다고 안내합니다.
+            """
+        ),
     ]
 
 
@@ -224,18 +233,20 @@ def kana_prompt_parts() -> list[str]:
     """Week 6 Kana 하위 에이전트 전용 system prompt 조각입니다."""
 
     return [
-        f"""
-        kana_agent인 본인은 외부 멤버 일정·이전 대화 조회와 그룹 시간 조율을 담당합니다.
-        오늘 날짜는 {current_app_date_iso()} 입니다. 상대 날짜("이번 주", "다음 주 화요일" 등)는 이 날짜 기준으로 계산합니다.
-        확정 일정 저장은 담당이 아니므로 nana_agent에게 안내합니다.
-        요청 문장에서 날짜/시간/참석자를 구조화해야 하면 extract_schedule_request를 먼저 사용합니다.
-        외부 멤버가 언급한 이전 대화를 찾을 때는 search_previous_conversations로 먼저 검색하고,
-        검색 결과 중 특정 대화의 전체 내용이 필요하면 load_conversation_messages로 이어서 불러옵니다.
-        외부 멤버의 일정이나 바쁜 시간은 extract_schedules_from_history로 확인하고,
-        공유 일정 저장소에 이미 등록된 일정 자체를 조회할 때는 list_shared_schedules를 사용합니다.
-        여러 사람의 공통 가능 시간을 조율해야 하면, collect_member_schedules로 모은 busy_rows와 겹치지 않는 후보를
-        본인이 직접 골라 find_common_available_slots로 검증하고, 검증된 후보 중 최종 시간을 본인이 직접 선택해 decide_final_slot으로 기록합니다. 
-"""
+        textwrap.dedent(
+            """
+            kana_agent인 본인은 외부 멤버 일정·이전 대화 조회와 그룹 시간 조율을 담당합니다.
+            사용자 메시지 앞에 "오늘 날짜는 YYYY-MM-DD 입니다"가 함께 전달됩니다. 상대 날짜("이번 주", "다음 주 화요일" 등)는 이 날짜 기준으로 계산합니다.
+            확정 일정 저장은 담당이 아니므로 nana_agent에게 안내합니다.
+            요청 문장에서 날짜/시간/참석자를 구조화해야 하면 extract_schedule_request를 먼저 사용합니다.
+            외부 멤버가 언급한 이전 대화를 찾을 때는 search_previous_conversations로 먼저 검색하고,
+            검색 결과 중 특정 대화의 전체 내용이 필요하면 load_conversation_messages로 이어서 불러옵니다.
+            외부 멤버의 일정이나 바쁜 시간은 extract_schedules_from_history로 확인하고,
+            공유 일정 저장소에 이미 등록된 일정 자체를 조회할 때는 list_shared_schedules를 사용합니다.
+            여러 사람의 공통 가능 시간을 조율해야 하면, collect_member_schedules로 모은 busy_rows와 겹치지 않는 후보를
+            본인이 직접 골라 find_common_available_slots로 검증하고, 검증된 후보 중 최종 시간을 본인이 직접 선택해 decide_final_slot으로 기록합니다.
+            """
+        ),
     ]
 
 
@@ -251,10 +262,12 @@ def supervisor_system_prompt() -> str:
     return join_system_prompt(
         [
             *week06_prompt_parts(),
-            """
-             답변하기 전에 반드시 nana_agent 또는 kana_agent 중 하나를 최소 한 번 호출하고, 그 결과(answer)만 근거로 최종 답변을 작성합니다.
-            하위 agent를 호출하지 않고 직접 추측으로 답하거나, 하위 agent가 반환한 내용 밖의 일정·시간을 지어내지 않습니다.
-            """
+            textwrap.dedent(
+                """
+                답변하기 전에 반드시 nana_agent 또는 kana_agent 중 하나를 최소 한 번 호출하고, 그 결과(answer)만 근거로 최종 답변을 작성합니다.
+                하위 agent를 호출하지 않고 직접 추측으로 답하거나, 하위 agent가 반환한 내용 밖의 일정·시간을 지어내지 않습니다.
+                """
+            ),
         ]
     )
 
@@ -553,7 +566,8 @@ def kana_agent(query: str) -> str:
             tools= kana_tools(),
             system_prompt=kana_system_prompt(),
         )
-    result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": query}]})
+    dated_query = f"오늘 날짜는 {current_app_date_iso()} 입니다. {query}"
+    result = _KANA_SUBAGENT.invoke({"messages": [{"role": "user", "content": dated_query}]})
     trace = extract_agent_events(result)
     final_slot_payload: dict[str, Any] | None = None
     final_decision_payload: dict[str, Any] | None = None
