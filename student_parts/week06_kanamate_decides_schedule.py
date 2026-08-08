@@ -451,6 +451,21 @@ def find_common_available_slots_dict(
                 }
             )
         )
+        if not collected.get("ok"):
+            return {
+                "ok": False,
+                "tool_name": "find_common_available_slots",
+                "error": "일정 조회에 실패해 공통 가능 시간을 검증할 수 없습니다.",
+                "collect_member_schedules": collected,
+            }
+        # 조회 실패를 빈 결과로 넘기면 "아무도 안 바쁘다"가 되어버립니다.
+        if not collected.get("ok"):
+            return {
+                "ok": False,
+                "tool_name": "find_common_available_slots",
+                "error": "일정 조회에 실패해 공통 가능 시간을 검증할 수 없습니다.",
+                "collect_member_schedules": collected,
+            }
         rows = collected.get("rows") or []
 
     return find_common_available_slots_payload(
