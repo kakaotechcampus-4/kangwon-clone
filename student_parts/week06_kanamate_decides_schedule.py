@@ -755,6 +755,7 @@ def kana_agent(query: str) -> str:
 
 
     return json_payload({
+        "selected_agent": "kana_agent",
         "answer": answer,
         "trace": traces,
         "inner_tool_names": inner_tool_names,
