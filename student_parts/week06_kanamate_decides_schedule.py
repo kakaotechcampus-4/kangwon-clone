@@ -1,9 +1,4 @@
 from __future__ import annotations
-import queue
-from mcp.server.fastmcp.prompts.base import UserMessage
-from student_parts.week03_build_nanas_logbook import json_payload
-from openai.types import ChatModel
-from pyexpat import model
 
 import json
 from typing import Any
@@ -26,6 +21,7 @@ from student_parts.week01_wake_up_nana import join_system_prompt
 from student_parts.week02_structure_natural_language_requests import (
     extract_schedule_request,
 )
+from student_parts.week03_build_nanas_logbook import json_payload
 from student_parts.week04_retrieve_nanas_memory import week04_prompt_parts, week04_tools
 from student_parts.week05_load_kanas_past_conversations import (
     collect_member_schedules,
