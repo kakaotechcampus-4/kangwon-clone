@@ -413,7 +413,12 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
     내 일정과 외부 멤버의 busy_rows를 근거로 공통 가능 시간 후보를 검증한다.
     이 도구는 후보 시간을 직접 계산하는 데 사용하지 않는다.
     busy_rows를 확인하고, 겹치지 않는 candidate_slots을 직접 골라 전달해야 한다.
-    가능한 시간이 하나라도 있으면 candidate_slots를 빈 배열로 전달하지 않는다.
+    도구를 호출하기 전에 Kana가 다음 작업을 직접 수행해야한다.
+        1. date_from부터 date_to까지 모든 날짜를 확인한다.
+        2. 각 날짜의 workday_start부터 workday_end까지 범위를 확인한다.
+        3. 모든 멤버와 본인의 busy_rows를 합쳐 바쁜 시간으로 처리한다.
+        4. busy_rows와 겹치지 않으면서 duration_minutes 이상 연속으로 비어 있는 구간을 candidate_slots으로 만든다.
+        5. 가능한 시간이 하나라도 있으면 candidate_slots를 빈 배열로 전달하지 않는다.
     candidate_slots의 각 항목은 date(YYYY-MM-DD), start_time(HH:MM), end_time(HH:MM), duration_minutes, reason을 포함해야 한다.
     """
 )
