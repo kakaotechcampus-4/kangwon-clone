@@ -209,6 +209,10 @@ def week06_prompt_parts() -> list[str]:
             "공통 가능 시간 탐색과 최종 시간 결정은 kana_agent에 위임한다. "
             "나와 외부 멤버가 함께 등장하는 혼합 요청도 kana_agent에 위임한다."
         ),
+        (
+            "외부 멤버나 그룹 조율 요청에서 kana_agent가 시간 후보와 최종 시간을 결정하면 그 결과로 즉시 답변한다. "
+            "같은 사용자 요청에서 nana_agent를 추가 호출하거나 개인 일정 저장 흐름으로 넘기지 않는다."
+        ),
     ]
 
 
@@ -260,7 +264,8 @@ def kana_prompt_parts() -> list[str]:
         ),
         (
             "사용자가 아직 선택을 요구하지 않았거나 유효한 후보가 없으면 final_slot을 null로 두고 "
-            "needs_agent_selection을 true로 전달한다. 확정된 일정을 실제로 저장하는 작업은 Nana 담당이라고 안내한다."
+            "needs_agent_selection을 true로 전달한다. 이번 요청에서는 최종 시간 결정까지만 수행하고 답변을 종료한다. "
+            "Nana 호출이나 일정 저장을 요구하지 않는다."
         ),
     ]
 
@@ -278,7 +283,8 @@ def supervisor_system_prompt() -> str:
         [
             *week06_prompt_parts(),
             (
-                "모든 사용자 요청에서 반드시 nana_agent 또는 kana_agent 중 정확히 하나를 먼저 호출한다. "
+                "모든 사용자 요청에서 반드시 nana_agent 또는 kana_agent 중 정확히 하나만 한 번 호출한다. "
+                "한 하위 에이전트를 호출한 뒤 다른 하위 에이전트를 추가 호출하지 않는다. "
                 "하위 에이전트가 반환한 answer와 구조화 결과만 근거로 최종 답변을 작성하고, "
                 "도구를 호출하지 않은 채 직접 답하거나 결과를 추측하지 않는다."
             ),
@@ -288,23 +294,6 @@ def supervisor_system_prompt() -> str:
 
 def _tool_call_names(events: list[dict[str, Any]]) -> list[str]:
     return [event["tool_name"] for event in events if event.get("event") == "tool_call" and event.get("tool_name")]
-
-
-def _event_payload(content: Any) -> dict[str, Any] | None:
-    if isinstance(content, dict):
-        return content
-    if isinstance(content, str):
-        try:
-            decoded = json.loads(content)
-        except json.JSONDecodeError:
-            return None
-        return decoded if isinstance(decoded, dict) else None
-    if isinstance(content, list):
-        for item in content:
-            payload = _event_payload(item)
-            if payload is not None:
-                return payload
-    return None
 
 
 def extract_langchain_trace(result: dict[str, Any]) -> dict[str, Any]:
@@ -319,18 +308,15 @@ def extract_langchain_trace(result: dict[str, Any]) -> dict[str, Any]:
     for event in events:
         if event.get("event") == "tool_call" and event.get("tool_name") in {"nana_agent", "kana_agent"}:
             selected_agent = event["tool_name"]
-        content = _event_payload(event.get("content"))
-        if content is None:
-            continue
-        inner_tool_names.extend(content.get("inner_tool_names") or [])
-        if content.get("final_slot_payload"):
-            final_slot_payload = content["final_slot_payload"]
-        elif "final_slot" in content:
-            final_slot_payload = content
-        if content.get("final_decision_payload"):
-            final_decision_payload = content["final_decision_payload"]
-        elif content.get("final_decision"):
-            final_decision_payload = content["final_decision"]
+        content = event.get("content")
+        if isinstance(content, dict):
+            inner_tool_names.extend(content.get("inner_tool_names") or [])
+            if content.get("final_slot_payload"):
+                final_slot_payload = content["final_slot_payload"]
+            elif "final_slot" in content:
+                final_slot_payload = content
+            if content.get("final_decision_payload"):
+                final_decision_payload = content["final_decision_payload"]
 
     return {
         "events": events,
@@ -460,13 +446,15 @@ def find_common_available_slots_dict(
     """멤버별 busy-time rows와 LLM이 고른 후보 payload를 검증 결과로 바꿉니다."""
 
     normalized_members = normalize_external_member_names(member_names)
+    external_members = [name for name in normalized_members if name != "나"]
+    members_with_me = ["나", *external_members]
     normalized_date_from = normalize_date_bound(date_from)
     normalized_date_to = normalize_date_bound(date_to)
 
     if busy_rows is None:
         collected = collect_member_schedules.invoke(
             {
-                "member_names": normalized_members,
+                "member_names": members_with_me,
                 "date_from": normalized_date_from,
                 "date_to": normalized_date_to,
             }
@@ -474,8 +462,6 @@ def find_common_available_slots_dict(
         normalized_busy_rows = _dict_rows(collected)
     else:
         normalized_busy_rows = [row for row in busy_rows if isinstance(row, dict)]
-
-    members_with_me = normalize_external_member_names(["나", *normalized_members])
 
     return find_common_available_slots_payload(
         member_names=members_with_me,
@@ -645,8 +631,8 @@ def kana_agent(query: str) -> str:
     final_decision_payload: dict[str, Any] | None = None
 
     for event in events:
-        content = _event_payload(event.get("content"))
-        if content is None:
+        content = event.get("content")
+        if not isinstance(content, dict):
             continue
         if content.get("final_slot_payload"):
             final_slot_payload = content["final_slot_payload"]
@@ -685,3 +671,4 @@ def build_week_agent() -> object:
     """active-week registry가 호출하는 표준 Week agent builder입니다."""
 
     return build_langchain_supervisor_agent()
+
