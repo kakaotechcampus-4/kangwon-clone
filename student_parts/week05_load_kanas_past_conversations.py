@@ -282,6 +282,17 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         original_text=str(row.get("title") or ""),
     )
 
+def _is_date_in_range(date: str | None, date_from: str, date_to: str) -> bool:
+    """일정 날짜가 조회 범위 안에 있는지 확인합니다. 날짜가 없으면 범위 밖으로 봅니다."""
+
+    if not date:
+        return False
+    if date_from and date < date_from:
+        return False
+    if date_to and date > date_to:
+        return False
+    return True
+
 
 def _collect_member_schedules(
     *,
@@ -316,11 +327,7 @@ def _collect_member_schedules(
     my_rows = []
     for schedule in personal_schedules:
         request = _structured_request_from_schedule_row(schedule)
-        if not request.date:
-            continue
-        if date_from and request.date < date_from:
-            continue
-        if date_to and request.date > date_to:
+        if not _is_date_in_range(request.date, date_from, date_to):
             continue
         my_rows.append(
             {
@@ -390,8 +397,20 @@ def create_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에 일정을 등록하거나 갱신합니다."""
 
-    # TODO: call_mcp_tool_sync("create_shared_schedule", args)로 공유 일정 row를 생성/갱신하세요.
-    ...
+    args = {
+        "member_name": member_name,
+        "title": title,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+    }
+    if notes:
+        args["notes"] = notes
+    if source_conversation_id:
+        args["source_conversation_id"] = source_conversation_id
+    if schedule_id:
+        args["schedule_id"] = schedule_id
+    return call_mcp_tool_sync("create_shared_schedule", args)
 
 
 @tool(args_schema=DeleteSharedScheduleInput)
@@ -401,8 +420,13 @@ def delete_shared_schedule(
 ) -> str:
     """외부 MCP 공유 일정 저장소에서 일정을 삭제합니다."""
 
-    # TODO: call_mcp_tool_sync("delete_shared_schedule", args)로 공유 일정을 삭제하세요.
-    ...
+    args = {}
+    # schedule_id와 source_conversation_id를 둘 다 넘기면 store가 OR로 묶어 삭제하므로 하나만 넘기도록 함.
+    if schedule_id:
+        args["schedule_id"] = schedule_id
+    if source_conversation_id:
+        args["source_conversation_id"] = source_conversation_id
+    return call_mcp_tool_sync("delete_shared_schedule", args)
 
 
 @tool(args_schema=ListSharedSchedulesInput)
@@ -450,8 +474,8 @@ def week05_tools() -> list[Any]:
         search_previous_conversations,
         load_conversation_messages,
         extract_schedules_from_history,
-        # create_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
-        # delete_shared_schedule, -> 추가 과제 미구현, 2차 PR에서 복구 예정
+        create_shared_schedule,
+        delete_shared_schedule,
         list_shared_schedules,
         collect_member_schedules,
     ]
