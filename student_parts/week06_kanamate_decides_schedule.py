@@ -314,13 +314,18 @@ FIND_COMMON_AVAILABLE_SLOTS_DESCRIPTION = (
 
 
 DECIDE_FINAL_SLOT_DESCRIPTION = (
-    # TODO: decide_final_slot tool description을 자유롭게 작성하세요.
-    #   - 이 Python tool이 최종 시간을 자동 선택하지 않는다는 점을 분명히 알려야 합니다.
-    #     agent가 selected_index 또는 selected_slot과 final_slot을 직접 골라 넘기게 만듭니다.
-    #   - final_slot 형식('YYYY-MM-DD HH:MM-HH:MM')과 needs_agent_selection, reason을 채우는 기준을 적습니다.
-    #   - 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두게 합니다.
-    #   - 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기게 합니다.
-    ""
+
+    """[kana agent 최종 시간 결정 tool description]
+    1. 이 tool은 최종 시간을 자동으로 선택하지 않습니다. 너는 busy_rows를 근거로 어떤 busy row와도 겹치지 않는 candidate_slots를 직접 골라 selected_index 또는 selected_slot과 final_slot을 넘겨야 합니다.
+    2. final_slot은 'YYYY-MM-DD HH:MM-HH:MM' 형식으로 채워야 합니다. 아직 고르지 않았다면 final_slot은 null, needs_agent_selection은 true로 두세요.
+    3. reason은 최종 선택 또는 보류에 대한 사용자-facing 설명을 담아야 합니다.
+    4. 근거 trace를 위해 candidate_slots, busy_rows, member_names, date_from/date_to도 함께 넘기세요.
+    5. 이 tool을 호출한 뒤 supervisor는 최종 답변에 final_slot, reason, candidates를 반드시 포함해야 합니다.
+    6. 후보 판단을 수행한 경우 members, busy_rows, candidate_slots도 함께 남겨 근거를 확인할 수 있게 하세요.
+    7. selected_index나 selected_slot이 없으면 final_slot을 자동으로 고르지 말고 needs_agent_selection=True 상태를 유지하세요.
+    8. 이 tool은 너가 직접 판단한 최종 선택을 기록하는 용도이지, 너가 직접 계산해주는 용도가 아닙니다. 너는 busy_rows를 근거로 후보와 최종 시간을 직접 골라 넘겨야 합니다.
+    """
+    
 )
 
 
