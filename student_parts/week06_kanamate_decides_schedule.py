@@ -566,7 +566,29 @@ def find_common_available_slots_dict(
         })
         busy_rows = json.loads(rows).get("rows", [])
 
-    return find_common_available_slots_payload(
+    if not candidate_slots:
+        return {
+            "ok": False,
+            "tool_name": "find_common_available_slots",
+            "error": "candidate_slots가 비어 있어서 검증할 후보가 없습니다. 이 tool은 후보를 대신 계산해주지 않습니다.",
+            "next_action": (
+                "아래 busy_rows를 근거로 겹치지 않는 시간대를 직접 골라 "
+                "candidate_slots에 date, start_time, end_time, duration_minutes, reason을 채운 항목을 "
+                "1개 이상 넣고 find_common_available_slots를 다시 호출하세요. "
+                "busy_rows가 빈 배열이면 모든 멤버가 한가하다는 뜻이므로 "
+                "workday_start~workday_end 안에서 자유롭게 후보를 고르면 됩니다."
+            ),
+            "members": members + ["나"],
+            "busy_rows": busy_rows,
+            "candidate_slots": [],
+            "date_from": normalized_date_from,
+            "date_to": normalized_date_to,
+            "duration_minutes": duration_minutes,
+            "workday_start": workday_start,
+            "workday_end": workday_end,
+        }
+
+    payload = find_common_available_slots_payload(
         member_names=members + ["나"],
         date_from=normalized_date_from,
         date_to=normalized_date_to,
@@ -578,6 +600,23 @@ def find_common_available_slots_dict(
         candidate_slots=candidate_slots,
         llm_reason=llm_reason
     )
+
+    if not payload["candidate_slots"]:
+        payload["ok"] = False
+        payload["error"] = "보낸 candidate_slots가 모두 검증에서 탈락해 남은 후보가 없습니다."
+        payload["next_action"] = (
+            f"후보는 {normalized_date_from}~{normalized_date_to} 사이의 날짜여야 하고, "
+            f"{workday_start}~{workday_end} 안에 들어와야 하며, "
+            f"길이가 {duration_minutes}분 이상이어야 하고, busy_rows와 겹치면 안 됩니다. "
+            "아래 rejected_candidate_slots와 busy_rows를 비교해 "
+            "조건에 맞는 후보로 고쳐서 find_common_available_slots를 다시 호출하세요."
+        )
+        payload["rejected_candidate_slots"] = [
+            slot.model_dump() if hasattr(slot, "model_dump") else slot
+            for slot in candidate_slots
+        ]
+
+    return payload
 
 
 # [추가] find_common_available_slots(...)
