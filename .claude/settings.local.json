@@ -43,7 +43,10 @@
       "Bash(git ls-remote *)",
       "Bash(gh pr *)",
       "Bash(bash -n run.sh)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(python -m py_compile student_parts/week06_kanamate_decides_schedule.py)",
+      "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)"
     ]
   }
 }
