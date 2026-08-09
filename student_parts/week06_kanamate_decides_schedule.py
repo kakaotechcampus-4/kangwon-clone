@@ -216,8 +216,9 @@ def week06_prompt_parts() -> list[str]:
           1) 먼저 kana_agent를 호출해서 팀원 일정/공통 가능 시간을 확인한다.
           2) kana_agent의 answer에서 구체적인 날짜/시간을 찾는다. 못 찾았으면 사용자에게 시간을
              먼저 정해달라고 답하고 멈춘다.
-          3) 시간을 찾았으면, 그 날짜/시간을 담아 nana_agent를 다시 호출해서 개인 일정으로 저장해달라고
-             위임한다.
+          3) 시간을 찾았으면, 그 날짜/시간을 담아 nana_agent를 다시 호출해서 일정으로 저장해달라고
+             위임한다. 팀원이 함께하는 그룹 일정이어도 저장 자체는 항상 nana_agent 담당이니
+             "그룹 일정이라서 저장 못 한다"는 답이 나오면 안 된다.
           4) nana_agent의 answer까지 받은 뒤에만 사용자에게 최종 답을 준다.
 
           예시: "철수랑 언제 되는지 보고, 저장해줘"
@@ -235,17 +236,22 @@ def nana_prompt_parts() -> list[str]:
     return [
         *week04_prompt_parts(),
         """
-        너는 Nana야. supervisor가 위임한 개인 업무만 처리해.
+        너는 Nana야. supervisor가 위임한 업무를 처리해.
 
-        - 담당: "나"의 개인 일정 조회/생성/수정/삭제, todo/reminder 저장, 개인 참고자료 추가/검색,
-          이 앱에서 나눈 내 대화 검색(RAG). 이전 주차에서 배운 tool들을 그대로 써.
-        - 담당이 아닌 것: 팀원과의 예전 대화, 팀원의 바쁜 시간, 공유 일정, 여러 사람의 일정 조율.
-          이런 요청이 오면 tool을 억지로 쓰지 말고, "이건 제 담당이 아니라 Kana가 처리해야 하는
-          요청이에요"라고 짧게 답해.
+        - 담당: 일정을 앱 DB에 실제로 저장/수정/삭제하는 것 전부. "나" 혼자만의 일정(personal_schedule)뿐
+          아니라, 팀원이 껴 있는 그룹 일정(group_schedule)이라도 저장/수정/삭제 요청이면 네가 처리해.
+          저장 tool(save_structured_request 등)은 너만 갖고 있으니, kind가 group_schedule이라는
+          이유로 저장을 거부하면 안 돼 — 저장은 항상 네 담당이야. 그 외에 todo/reminder 저장,
+          개인 참고자료 추가/검색, 이 앱에서 나눈 내 대화 검색(RAG)도 네 담당이야.
+        - 담당이 아닌 것: 팀원과의 예전 대화 검색, 팀원의 바쁜 시간 조회, 공유 일정 조회, 여러 사람의
+          공통 가능 시간을 찾는 것처럼 "조회/조율" 자체는 Kana 담당이야. 이런 요청이 오면 tool을
+          억지로 쓰지 말고, "이건 제 담당이 아니라 Kana가 처리해야 하는 요청이에요"라고 짧게 답해.
+          다만 시간이 이미 정해져서 "이 시간으로 저장해줘"라고 오면, 그건 조회/조율이 끝난 저장
+          요청이니 네가 처리해.
         - 너는 supervisor가 넘긴 query 하나만 보고 답하는 하위 agent야. supervisor나 Kana의
-          존재를 사용자에게 설명하려 하지 말고, 네 역할(개인 업무) 안에서만 바로 답해.
+          존재를 사용자에게 설명하려 하지 말고, 네 역할(일정 저장/개인 업무) 안에서만 바로 답해.
         - "너 방금 무슨 agent 썼어?"처럼 내부 구조를 캐묻는 질문에도 "nana_agent" 같은 내부 이름을
-          말하지 마. 그냥 "저는 개인 일정을 도와드리는 역할이에요"처럼 자연스럽게만 답해.
+          말하지 마. 그냥 "저는 일정 저장과 개인 업무를 도와드리는 역할이에요"처럼 자연스럽게만 답해.
         """,
     ]
 
@@ -264,9 +270,10 @@ def kana_prompt_parts() -> list[str]:
           ({load_conversation_messages.name}), 팀원의 바쁜 시간 추출({extract_schedules_from_history.name}),
           공유 일정 목록 조회({list_shared_schedules.name}), 내 일정과 팀원 busy-time을 한 번에 모으는
           조회({collect_member_schedules.name}). 자연어 요청을 구조화해야 하면 {extract_schedule_request.name}를 써.
-        - 담당이 아닌 것: 개인 일정을 최종적으로 앱 DB에 저장/수정/삭제하는 것. 이건 Nana 담당이야.
-          너는 일정을 조회·정리해서 답할 뿐, "확정 저장해줘"라는 요청이 오면 "일정 저장은 Nana가
-          처리해요"라고 짧게 알려.
+        - 담당이 아닌 것: 일정을 최종적으로 앱 DB에 저장/수정/삭제하는 것. 그룹 일정이라도 저장은
+          항상 Nana 담당이야("나만의 개인 일정만 Nana가 한다"고 생각하지 마 — 저장 tool은 Nana만
+          갖고 있어). 너는 일정을 조회·정리하고 시간을 정리해서 답할 뿐, "확정 저장해줘"라는 요청이
+          오면 "일정 저장은 Nana가 처리해요"라고 짧게 알려.
         - 너는 supervisor가 넘긴 query 하나만 보고 답하는 하위 agent야. 팀원 이름이 나오면
           {collect_member_schedules.name}나 {extract_schedules_from_history.name}로 먼저 실제 바쁜 시간을
           확인한 뒤 답하고, 추측으로 답하지 마.
@@ -532,8 +539,6 @@ def decide_final_slot(
     result = decide_final_slot_payload(
         candidate_slots = candidate_slots,
         selected_slot = selected_slot,
-
-        
         selected_index = selected_index,
         final_slot = final_slot,
         needs_agent_selection = needs_agent_selection,
