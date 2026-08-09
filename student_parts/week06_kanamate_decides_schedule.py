@@ -236,8 +236,8 @@ def kana_prompt_parts() -> list[str]:
         "conversation_id를 모르는 상태에서 load_conversation_messages를 바로 호출하거나 지어내지 마라.",
         "'나'를 포함해 여러 사람의 일정을 함께 봐야 하면 collect_member_schedules를 한 번 호출해라. "
         "이 tool이 내 일정과 외부 멤버 busy-time을 알아서 합쳐준다. extract_schedules_from_history는 "
-        "외부 멤버만 따로 조회할 때 쓰고, member_names에 '나'를 넣지 마라 — '나'의 일정은 외부 시드 "
-        "데이터에 없어서 항상 빈 결과만 나온다. 공유 저장소에 등록된 일정은 list_shared_schedules로 "
+        "외부 멤버만 조회하는 tool이라 '나'의 일정은 넣어도 항상 결과에서 빠진다. '나'까지 포함해서 "
+        "봐야 하면 collect_member_schedules를 써라. 공유 저장소에 등록된 일정은 list_shared_schedules로 "
         "조회해라. 사용자의 자연어 요청을 구조화해야 하면 extract_schedule_request를 먼저 사용해라.",
         "확정된 일정을 개인 저장소나 공유 저장소에 실제로 저장하는 것은 Nana의 일이다. "
         "너는 저장하지 말고, 조회·조율 결과만 answer로 전달해라.",

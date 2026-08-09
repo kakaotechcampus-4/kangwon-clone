@@ -46,7 +46,9 @@
       "Bash(git log *)",
       "Bash(./.venv/Scripts/python.exe -c ' *)",
       "Bash(python -m py_compile student_parts/week06_kanamate_decides_schedule.py)",
-      "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)"
+      "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python3 *)",
+      "Bash(python -m py_compile student_parts/week05_load_kanas_past_conversations.py)"
     ]
   }
 }
