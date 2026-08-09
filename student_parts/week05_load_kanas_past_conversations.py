@@ -14,6 +14,7 @@ from fixed.external_people_store import (
     external_schedule_summary,
     normalize_external_member_names,
     normalize_external_schedule_date_bounds,
+    strip_parenthetical_text,   #[6주차 수정] dedupe 제목 정규화용 추가
 )
 from fixed.llm import chat_model
 from fixed.mcp_client import (
@@ -268,10 +269,12 @@ class CollectMemberSchedulesInput(BaseModel):
 
 
 def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequest:
-    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다."""
-
+    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다.
+    SQLite row는 request_kind로 개인/그룹을 구분합니다. Week 1 임시 일정 row에는 이 값이 없으므로 개인 일정으로 봅니다.
+    """
+    #[6주차 수정] kind 수정 -> request_kind 값 보고 그룹, 개인일정 판단
     return StructuredRequest(
-        kind="personal_schedule",
+        kind="group_schedule" if row.get("request_kind") == "group_schedule" else "personal_schedule",
         title=row.get("title"),
         date=row.get("date"),
         start_time=row.get("start_time"),
@@ -279,6 +282,38 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         members=row.get("attendees") or row.get("members") or [],
         original_text=str(row.get("title") or ""),
     )
+
+
+def _my_schedule_notes(request: StructuredRequest) -> str:
+    #[6주차 수정] notes를 개인/그룹 구분해 생성하는 helper 추가
+    """내 일정 row가 개인 일정인지, 참석자가 있는 그룹 일정인지 설명합니다."""
+
+    if request.kind != "group_schedule":
+        return "Nana 개인 일정"
+    members = [str(member).strip() for member in (request.members or []) if str(member).strip()]
+    return f"Nana 그룹 일정 · 참석자: {', '.join(members)}" if members else "Nana 그룹 일정"
+
+
+def _dedupe_schedule_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    #[6주차 수정] 앱DB/공유 경로 중복 제거 helper 추가
+    """같은 일정이 앱 DB와 공유 저장소 양쪽에서 들어와도 한 번만 남깁니다.
+
+    앱 DB에 저장된 내 일정은 공유 저장소에도 자동 동기화되므로, member_names에 "나"가
+    들어온 호출에서는 같은 일정이 두 경로로 들어옵니다. 앞에 오는 앱 DB row를 남깁니다.
+    두 경로가 제목/시간을 다르게 다듬으므로 값 그대로가 아니라 다듬은 키로 비교합니다.
+    end_time은 앱 DB만 "미정"->"18:00"으로 바꿔 되돌릴 수 없어 키에서 뺍니다.
+    """
+
+    deduped: dict[tuple[str, ...], dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row.get("member_name") or "").strip(),
+            str(row.get("date") or "").strip(),
+            str(row.get("start_time") or "").strip() or "미정",
+            strip_parenthetical_text(str(row.get("title") or "")),
+        )
+        deduped.setdefault(key, row)
+    return list(deduped.values())
 
 
 def _collect_member_schedules(
@@ -302,16 +337,17 @@ def _collect_member_schedules(
     my_rows = [] 
     for s in personal_schedules:
         req = _structured_request_from_schedule_row(s)
-        #member_name, notes 키는 가져온 req에 없기때문에 '나'라고 표시 및 공란 
+        #[6주차 수정] notes를 개인/그룹 구분해 채움 (dedupe 후 남는 근거)
         my_rows.append({
             "member_name": "나",
             "title": req.title,
             "date": req.date,
             "start_time": req.start_time,
             "end_time": req.end_time,
-            "notes":"",
+            "notes": _my_schedule_notes(req),
         })
-    sum_rows = external_rows + my_rows
+    #[6주차 수정] my_rows 먼저 두고(앱DB notes 살림) 중복 제거
+    sum_rows = _dedupe_schedule_rows([*my_rows, *external_rows])
     #llm에 넘길려고 자연어 문자열로 변환
     summary = external_schedule_summary(sum_rows)
     #매 대화마다 반복 막기위해 summar도 넘김
