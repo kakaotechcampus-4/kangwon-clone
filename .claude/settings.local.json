@@ -42,7 +42,13 @@
       "Bash(sqlite3 data/kanana_app.sqlite3 \"SELECT schedule_id, request_id, title, date, start_time, end_time, source, created_at FROM schedules WHERE title IN \\('개인 코칭','분기 리뷰 팀 회의'\\) ORDER BY title, created_at;\")",
       "Bash(git ls-remote *)",
       "Bash(gh pr *)",
-      "Bash(bash -n run.sh)"
+      "Bash(bash -n run.sh)",
+      "Bash(git log *)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(python -m py_compile student_parts/week06_kanamate_decides_schedule.py)",
+      "Bash(PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python3 *)",
+      "Bash(python -m py_compile student_parts/week05_load_kanas_past_conversations.py)"
     ]
   }
 }
