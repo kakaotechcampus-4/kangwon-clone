@@ -14,6 +14,7 @@ from fixed.external_people_store import (
     external_schedule_summary,
     normalize_external_member_names,
     normalize_external_schedule_date_bounds,
+    strip_parenthetical_text,
 )
 from fixed.llm import chat_model
 from fixed.mcp_client import (
@@ -271,10 +272,14 @@ class CollectMemberSchedulesInput(BaseModel):
 
 
 def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequest:
-    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다."""
+    """앱 일정 row를 Week 2 StructuredRequest 기준으로 읽습니다.
+
+    개인/그룹 구분은 row의 request_kind 에 들어있으니 그걸 쓴다.
+    1주차 임시 일정 row 에는 이 값이 없어서 그때만 개인 일정으로 본다.
+    """
 
     return StructuredRequest(
-        kind="personal_schedule",
+        kind="group_schedule" if row.get("request_kind") == "group_schedule" else "personal_schedule",
         title=row.get("title"),
         date=row.get("date"),
         start_time=row.get("start_time"),
@@ -282,6 +287,43 @@ def _structured_request_from_schedule_row(row: dict[str, Any]) -> StructuredRequ
         members=row.get("attendees") or row.get("members") or [],
         original_text=str(row.get("title") or ""),
     )
+
+
+def _my_schedule_notes(request: StructuredRequest) -> str:
+    """내 일정이 개인 일정인지, 참석자가 있는 그룹 일정인지 남깁니다."""
+
+    if request.kind != "group_schedule":
+        return "Nana 개인 일정"
+    members = [str(member).strip() for member in (request.members or []) if str(member).strip()]
+    if not members:
+        return "Nana 그룹 일정"
+    return f"Nana 그룹 일정 · 참석자: {', '.join(members)}"
+
+
+def _dedupe_schedule_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """앱 DB 와 공유 저장소 양쪽에서 같은 일정이 들어와도 하나만 남깁니다.
+
+    내 일정은 저장될 때 공유 저장소에도 "나" 이름으로 동기화되니까
+    member_names 에 "나"가 들어온 호출에서는 같은 일정이 두 경로로 들어온다.
+
+    문제는 두 경로가 같은 일정을 다르게 다듬어서 값 비교로는 안 걸러진다는 것.
+      - 공유 저장소는 제목에서 소괄호를 지우고 공백을 줄인다. 앱 DB 는 원문 그대로.
+      - 앱 DB 경로만 end_time "미정"을 "18:00"으로 바꾼다. 되돌릴 수 없으니 키에서 뺐다.
+        같은 사람이 같은 날 같은 시각에 시작하는 같은 제목이면 같은 일정으로 본다.
+      - start_time 이 비어 있으면 공유 저장소는 "미정"으로 저장하니 그 값으로 맞춘다.
+    """
+
+    deduped: dict[tuple[str, ...], dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row.get("member_name") or "").strip(),
+            str(row.get("date") or "").strip(),
+            str(row.get("start_time") or "").strip() or "미정",
+            strip_parenthetical_text(str(row.get("title") or "")),
+        )
+        # setdefault 라서 먼저 들어온 앱 DB row 가 남는다 — notes 가 더 자세한 쪽이다.
+        deduped.setdefault(key, row)
+    return list(deduped.values())
 
 
 def _collect_member_schedules(
@@ -317,7 +359,7 @@ def _collect_member_schedules(
                 "date": request.date,
                 "start_time": request.start_time or "미정",
                 "end_time": request.end_time or "미정",
-                "notes": "",
+                "notes": _my_schedule_notes(request),
             }
         )
 
@@ -331,11 +373,13 @@ def _collect_member_schedules(
             },
         )
     )
-    rows.extend(payload.get("rows", []))
+    # 내 일정을 앞에 두고 dedupe 해야 notes 가 자세한 앱 DB row 가 살아남는다.
+    rows = _dedupe_schedule_rows([*rows, *payload.get("rows", [])])
 
     return {
         "ok": True,
         "tool_name": "collect_member_schedules",
+        "members": ["나", *[name for name in normalized_members if name != "나"]],
         "rows": rows,
         "schedule_summary": external_schedule_summary(rows),
     }
