@@ -1,0 +1,200 @@
+{"item": "nana_prompt_parts", "kind": "static", "assert": "nonempty"}
+{"item": "nana_prompt_parts", "kind": "static", "assert": "accumulates", "target": "week04"}
+{"item": "nana_prompt_parts", "kind": "static", "assert": "contains", "target": "Nana"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 저장된 회의 일정 검색해줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 일정 보여줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 일정 보여줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내일 오후 3시에 개인 코칭 잡아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내일 오후 3시에 개인 코칭 잡아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 할 일 목록 알려줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 할 일 목록 알려줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내가 저장한 참고자료 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내가 저장한 참고자료 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 취향 기억해둬: 나는 아침형이야?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 취향 기억해둬: 나는 아침형이야, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 이번 주 내 일정 뭐 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "이번 주 내 일정 뭐 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 알림 저장한 거 있어?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 알림 저장한 거 있어, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 저번에 내가 뭐라고 했는지 찾아줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "저번에 내가 뭐라고 했는지 찾아줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘 좀"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "혹시 내 개인 일정 하나 지워줘?"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 개인 일정 하나 지워줘, 부탁해"}
+{"item": "nana_prompt_parts", "kind": "golden", "prompt": "내 저장된 회의 일정 검색해줘"}
